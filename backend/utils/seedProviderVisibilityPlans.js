@@ -1,0 +1,147 @@
+const Plan = require('../models/Plan');
+
+const defaultProviderPlans = [
+  {
+    name: 'Add Multiple Skills',
+    slug: 'add-multiple-skills',
+    type: 'provider',
+    price: 300,
+    priceMonthly: 300,
+    discountedPrice: 0,
+    description: 'Show multiple skills in one pincode',
+    coverageType: 'pincode',
+    maxSkills: 5,
+    maxPincodes: 1,
+    maxCities: 1,
+    visibilityLevel: 'basic',
+    features: [
+      'Multiple skills',
+      '1 pincode coverage',
+      'Priority in search results',
+      'WhatsApp + SMS alerts',
+      'Performance insights',
+    ],
+    isPopular: false,
+    isActive: true,
+    sortOrder: 1,
+  },
+  {
+    name: 'One Pincode Top',
+    slug: 'one-pincode-top',
+    type: 'provider',
+    price: 299,
+    priceMonthly: 299,
+    discountedPrice: 499,
+    description: 'Top position in selected pincode',
+    coverageType: 'pincode',
+    maxSkills: 1,
+    maxPincodes: 1,
+    maxCities: 1,
+    visibilityLevel: 'pincode_top',
+    features: [
+      'Top position in selected pincode',
+      '1 skill category',
+      'Priority in search results',
+      'More profile views',
+      'WhatsApp + SMS alerts',
+      'Performance insights',
+    ],
+    isPopular: false,
+    isActive: true,
+    sortOrder: 2,
+  },
+  {
+    name: 'Top in City',
+    slug: 'top-in-city',
+    type: 'provider',
+    price: 499,
+    priceMonthly: 499,
+    discountedPrice: 799,
+    description: 'Top position in entire city',
+    coverageType: 'city',
+    maxSkills: 5,
+    maxPincodes: 99,
+    maxCities: 1,
+    visibilityLevel: 'city_top',
+    features: [
+      'Top position in entire city',
+      'Multiple skills',
+      'All pincodes in one city',
+      'Priority in search results',
+      'More profile views',
+      'WhatsApp + SMS alerts',
+      'Dedicated support',
+    ],
+    isPopular: true,
+    isActive: true,
+    sortOrder: 3,
+  },
+  {
+    name: 'Show Top in Country',
+    slug: 'show-top-in-country',
+    type: 'provider',
+    price: 2999,
+    priceMonthly: 2999,
+    discountedPrice: 4999,
+    description: 'Top position across country',
+    coverageType: 'country',
+    maxSkills: 10,
+    maxPincodes: 999,
+    maxCities: 100,
+    visibilityLevel: 'country_top',
+    features: [
+      'Top position across country',
+      'Multiple skills',
+      'Highest priority in search',
+      'Maximum profile visibility',
+      'WhatsApp + SMS alerts',
+      'Account manager support',
+      'Dedicated support',
+    ],
+    isPopular: false,
+    isActive: true,
+    sortOrder: 4,
+  },
+  {
+    name: 'Customise Plan',
+    slug: 'customise-plan',
+    type: 'provider',
+    price: 0,
+    priceMonthly: 0,
+    discountedPrice: 0,
+    description: 'Create a custom visibility plan',
+    coverageType: 'custom',
+    maxSkills: 50,
+    maxPincodes: 500,
+    maxCities: 50,
+    visibilityLevel: 'custom',
+    features: [
+      'Choose multiple cities',
+      'Choose multiple skills',
+      'Set visibility level',
+      'Flexible duration',
+      'Best for businesses',
+      'Tailored support',
+    ],
+    isPopular: false,
+    isActive: true,
+    sortOrder: 5,
+  },
+];
+
+const seedProviderVisibilityPlans = async () => {
+  const duration = 30;
+
+  for (const plan of defaultProviderPlans) {
+    const exists = await Plan.findOne({ type: 'provider', slug: plan.slug, duration }).lean();
+    if (exists) continue;
+
+    await Plan.create({
+      ...plan,
+      duration,
+      currency: 'INR',
+    });
+  }
+};
+
+module.exports = { seedProviderVisibilityPlans };

@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+
+# Private/authenticated routes — no value for crawlers
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /provider/
+Disallow: /recruiter/
+Disallow: /partner/
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /settings
+Disallow: /checkout
+Disallow: /payment
+Disallow: /transactions
+Disallow: /verification
+Disallow: /pending-approval
+Disallow: /unlock-matches
+Disallow: /recruiter-locked
+Disallow: /api/
+Disallow: /private/
+Disallow: /tmp/
+
+# Be polite to crawlers
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://www.lucohire.com/sitemap.xml

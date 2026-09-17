@@ -1,0 +1,308 @@
+1. Requirements summary
+- Marketplace must support deterministic + AI-assisted + semantic intelligence layers.
+- Core user roles: provider, recruiter/user, admin, super admin. Future: support/call-center.
+- Mandatory AI APIs:
+  - Anthropic Claude (claude-sonnet-4-20250514) for wording/reasoning tasks.
+  - OpenAI text-embedding-3-small for embeddings.
+  - MongoDB Atlas Vector Search for semantic retrieval.
+  - Google Vision OCR for Aadhaar extraction and verification.
+- Mandatory behavior:
+  - Deterministic ranking and trust engine remains source-of-truth.
+  - AI features are feature-flagged and non-blocking where possible.
+  - Queue/cron workflows for OCR, lead distribution, embeddings, demand, fraud scans.
+  - Payment/subscription activation only on verified backend confirmation.
+
+2. Assumptions and gaps
+- Existing app continues on Express (no migration to NestJS in this phase).
+- Redis/BullMQ workers are optional by env switch (`QUEUE_USE_BULLMQ=true`). Default is inline-safe fallback.
+- Atlas vector index exists or will be created using `MONGO_VECTOR_INDEX_NAME`.
+- Provider DOB field may be absent in current profile schema, so OCR decision is name-weighted by default.
+- Full multilingual NLU is staged; deterministic parser + AI fallback currently prioritizes Hindi/English mixed input.
+- Frontend currently React SPA with route-based dashboards; new AI widgets are integrated incrementally into existing pages.
+
+3. Architecture plan
+- Layer 1: Deterministic business engine
+  - Weighted provider match scoring.
+  - Rotation/load balancing for lead distribution.
+  - Trust score calculation from measurable metrics.
+  - Rule-based fraud detection.
+  - Geo radius + instant hire expansion.
+- Layer 2: AI-assisted enrichment
+  - Profile builder, JD generation, pricing reasoning, dashboard tips, chat assistant, boost copy, fraud cluster review.
+- Layer 3: Semantic intelligence
+  - Provider/recruiter embeddings.
+  - Vector similarity retrieval.
+  - Repeat match recommendations.
+  - Search intent semantic boost.
+- Async architecture
+  - Queue abstraction (`queueService`) supports BullMQ and inline fallback.
+  - Cron emits jobs for demand spikes, trust recalc, fraud review.
+  - Event and audit logging preserved via AutomationTaskLog/LeadEvent and new AuditEvent/AIUsage logs.
+
+4. Feature dependency map
+- AI Match Engine depends on:
+  - Skill synonym dictionary.
+  - Search intent parser.
+  - Provider metrics, trust score, availability, subscription boost.
+  - Optional semantic vector boost.
+- Auto lead distribution depends on:
+  - Ranked providers.
+  - Load balancing metrics.
+  - Notification and lead logs.
+- AI profile/JD/pricing/chat depends on:
+  - Anthropic wrapper + prompt templates.
+  - JSON parser + fallback strategy.
+- OCR verification depends on:
+  - Document upload + Vision OCR service + profile compare.
+- Repeat match depends on:
+  - Recruiter hire embeddings + repeat insight history.
+- Fraud pipeline depends on:
+  - Rule signals + optional Claude cluster review.
+
+5. Database/schema updates
+- Added collections/models:
+  - `ProviderAIProfile`
+  - `ProviderEmbedding`
+  - `RecruiterHireEmbedding`
+  - `RecruiterSearchLog`
+  - `AIUsageLog`
+  - `TrustScore`
+  - `DocumentVerificationResult`
+  - `LeadDistributionLog`
+  - `DemandSnapshot`
+  - `BoostSuggestion`
+  - `AIPromptTemplate`
+  - `AuditEvent`
+- Existing schema extensions used:
+  - `AdminSetting` enum extended for AI/trust/fraud/matching/search categories.
+  - Existing `FeatureFlag`, `FraudFlag`, `JobSearchIntent`, `ProviderMetrics`, `ProviderProfile`, `Lead` reused.
+
+6. Backend implementation
+- New services:
+  - `backend/services/ai/anthropicService.js`
+  - `backend/services/ai/embeddingsService.js`
+  - `backend/services/ai/vectorSearchService.js`
+  - `backend/services/ai/visionOcrService.js`
+  - `backend/services/ai/promptTemplateService.js`
+  - `backend/services/queueService.js`
+  - `backend/services/queueHandlers.js`
+  - `backend/services/trustScoreService.js`
+  - `backend/services/fraudRulesService.js`
+  - `backend/services/leadDistributionService.js`
+  - `backend/services/providerAIOrchestrationService.js`
+  - `backend/services/demandSpikeService.js`
+  - `backend/services/chatAssistantService.js`
+- Updated existing services/controllers/routes:
+  - `aiAssistService` now backed by Claude wrappers and provides pricing/insights/chat/fraud/boost helpers.
+  - `providerController`:
+    - AI pricing endpoint.
+    - AI insights in dashboard payload.
+    - document upload now queues OCR verification.
+    - profile updates enqueue embedding + trust recalc.
+  - `recruiterController`:
+    - post job now calls queue-driven top-5 lead distribution.
+    - trust recalc triggered on new review.
+  - `searchController`:
+    - semantic embedding boost in provider search.
+    - repeat recommendations endpoint.
+    - trust score endpoint.
+    - AI parse intent + auto-match preview endpoint.
+  - `server.js`:
+    - chat route mounted.
+    - queue handlers registered at boot.
+    - admin AI routes mounted.
+
+7. Frontend implementation
+- Added components:
+  - `frontend/src/components/common/AIChatWidget.jsx`
+  - `frontend/src/components/provider/PricingSuggestionCard.jsx`
+  - `frontend/src/components/provider/DocumentVerificationStatusCard.jsx`
+  - `frontend/src/components/provider/BoostSuggestionCard.jsx`
+  - `frontend/src/components/recruiter/NaturalLanguageIntentBar.jsx`
+  - `frontend/src/components/recruiter/CompareProvidersModal.jsx`
+  - `frontend/src/components/recruiter/InstantHirePanel.jsx`
+- Updated pages:
+  - `frontend/src/App.jsx`: floating AI chat widget for authenticated roles.
+  - `frontend/src/pages/provider/Profile.jsx`: pricing card + document upload verification status.
+  - `frontend/src/pages/provider/Dashboard.jsx`: AI insights + boost suggestion surface.
+  - `frontend/src/pages/recruiter/FindProviders.jsx`: intent parsing bar + instant hire + compare modal.
+  - `frontend/src/pages/recruiter/Dashboard.jsx`: repeat recommendation widget.
+- Updated API client:
+  - `frontend/src/services/api.js` now includes provider/recruiter/search/chat/admin AI endpoints.
+
+8. AI integration details
+- Anthropic wrapper
+  - Methods:
+    - `buildProviderProfile()`
+    - `generateJobDescription()`
+    - `suggestPricing()`
+    - `generateDashboardInsights()`
+    - `chatAssistant()`
+    - `fraudReview()`
+    - `boostSuggestionText()`
+  - Features:
+    - retries, timeouts, strict JSON parse, schema guards.
+    - fallback outputs on malformed/failed responses.
+    - token + estimated cost logging in `AIUsageLog`.
+- Embeddings wrapper
+  - Methods:
+    - `embedProviderProfile()`
+    - `embedRecruiterHireHistory()`
+    - `embedSearchQuery()`
+    - `embedJobIntent()`
+  - Usage logs and cost estimates saved in `AIUsageLog`.
+- Vector wrapper
+  - Methods:
+    - `upsertProviderEmbedding()`
+    - `searchProvidersBySemanticIntent()`
+    - `searchSimilarProviders()`
+    - `searchByRecruiterHistory()`
+  - Atlas `$vectorSearch` primary, cosine in-memory fallback.
+- Vision OCR wrapper
+  - Methods:
+    - `extractAadhaarFields()`
+    - `compareWithProfile()`
+    - `produceVerificationDecision()`
+    - `processProviderDocumentVerification()`
+
+9. Queue/cron/event architecture
+- Queue abstraction
+  - `queueService.enqueueJob()` with BullMQ mode and inline fallback mode.
+- Registered queue handlers
+  - provider embedding refresh
+  - provider document verify
+  - auto lead distribution
+  - fraud review batch
+  - trust score recalc (single/batch)
+  - demand spike analysis
+- Cron schedules
+  - existing renewals/cleanup retained.
+  - added:
+    - demand spike daily.
+    - fraud review every 30 mins.
+    - trust recalculation every 4 hours.
+- Event logging
+  - business actions logged with `logBusinessEvent`.
+  - lead actions logged with `logLeadEvent`.
+
+10. API documentation
+- `POST /api/provider/ai/build-profile`
+  - Purpose: Claude-assisted provider onboarding profile JSON.
+  - Auth: provider.
+  - Request:
+    - `{ "freeText": "Main electrician hu, 5 saal ka experience", "existingSkills": ["Electrician"] }`
+  - Response:
+    - `{ "headline": "...", "description": "...", "suggestedSkills": [], "suggestedPriceRange": {...}, "aiStatus": "success|fallback", "model": "..." }`
+- `GET /api/provider/ai/pricing-suggestion?skill=x&city=y`
+  - Purpose: AI pricing recommendation with deterministic market baseline.
+  - Auth: provider.
+  - Response:
+    - `{ "min": 800, "max": 1500, "avg": 1100, "reasoning": "...", "confidence": 0.71 }`
+- `POST /api/recruiter/ai/generate-jd`
+  - Purpose: AI job description JSON generation.
+  - Auth: recruiter.
+  - Request:
+    - `{ "prompt": "Maid chahiye", "city": "Noida", "budgetMin": 10000, "budgetMax": 14000 }`
+  - Response:
+    - `{ "title": "...", "fullDescription": "...", "duties": [], "suggestedBudget": {...}, "aiStatus": "success|fallback" }`
+- `POST /api/chat/ai`
+  - Purpose: role-aware assistant chat.
+  - Auth: provider/recruiter/admin.
+  - Request:
+    - `{ "message": "Best provider kaun hai?", "context": {...} }`
+  - Response:
+    - `{ "reply": "...", "followUpQuestions": [], "confidence": 0.8, "aiStatus": "success" }`
+- `GET /api/provider/dashboard`
+  - Extended response now includes:
+    - `ai_insights` (tips, summary, confidence)
+    - performance metrics (responseRate, acceptanceRate, conversionRate, missedLeads, ratingTrend, trustScore)
+- `POST /api/provider/profile/document`
+  - Extended response includes queued verification id/status.
+- Search extensions:
+  - `POST /api/search/ai/parse-intent`
+  - `POST /api/search/auto-match/preview`
+  - `GET /api/search/repeat-recommendations`
+  - `GET /api/search/trust-score/:providerId`
+- Admin AI ops:
+  - `GET/PUT /api/admin/ai/match-weights`
+  - `GET/PUT /api/admin/ai/trust-weights`
+  - `GET/POST/PUT /api/admin/ai/prompt-templates`
+  - `GET/POST/PUT/DELETE /api/admin/ai/skill-synonyms`
+  - `GET /api/admin/ai/fraud-queue`
+  - `GET/PUT /api/admin/ai/ocr-review-queue`
+  - `GET /api/admin/ai/usage-dashboard`
+  - `GET /api/admin/ai/demand-snapshots`
+
+11. Security and validation
+- AI endpoints protected by:
+  - RBAC guards (`protect`, `authorizeRoleFromActive`).
+  - feature flags (`requireFeatureFlag`).
+  - dedicated AI rate limiter (`aiRateLimiter`).
+- Input control:
+  - express-validator on critical payloads.
+  - prompt sanitization in AI utils.
+- Robustness:
+  - retries/timeouts in external API wrappers.
+  - fallback responses when AI/OCR/embeddings unavailable.
+  - server-side payment verification flow preserved.
+- Logging:
+  - AI usage/cost and interaction logs.
+  - business/automation logs for auditability.
+
+12. Testing strategy
+- Unit tests
+  - match scoring with dynamic weights.
+  - trust score computation (weights and fraud penalties).
+  - fraud rule triggers.
+  - OCR parser and profile comparison helpers.
+  - JSON parser/fallback behavior for AI wrappers.
+- Integration tests
+  - provider AI build-profile endpoint.
+  - recruiter AI JD endpoint.
+  - chat endpoint role behavior.
+  - document upload queue + OCR status pipeline.
+  - auto lead distribution top-5 and load balancing.
+- Queue tests
+  - inline mode handlers.
+  - BullMQ mode enqueue contract.
+- Contract tests
+  - Anthropic/OpenAI/Vision mock responses + malformed payload cases.
+- Frontend tests
+  - AI chat widget interactions.
+  - intent parsing bar state and chip rendering.
+  - instant hire and compare modal flows.
+
+13. Deployment and environment setup
+- Backend dependencies added:
+  - `bullmq`, `ioredis`, `@google-cloud/vision`.
+- New env template updated in `backend/.env.example`.
+- Setup steps
+  - Configure Anthropic/OpenAI keys.
+  - Configure Google Vision credentials.
+  - Configure Mongo Atlas vector index name and index creation.
+  - Configure Redis and set `QUEUE_USE_BULLMQ=true` when worker process is deployed.
+- Worker strategy
+  - Current safe default: inline fallback mode.
+  - Production recommendation: separate worker process with BullMQ enabled.
+
+14. Rollout plan
+- Phase A: Safe launch (feature flags off by default)
+  - Deploy schema/services/routes.
+  - Enable only AI profile builder and JD generation for pilot users.
+- Phase B: Matching intelligence rollout
+  - Enable semantic search boost and repeat recommendations.
+  - Monitor lead conversion and trust score distributions.
+- Phase C: Verification + fraud + demand automation
+  - Enable OCR queue and fraud periodic jobs.
+  - Enable boost suggestions after demand snapshots stabilize.
+- Phase D: Scale and hardening
+  - Enable BullMQ worker mode.
+  - Add metrics dashboards and alerting thresholds.
+
+15. Future enhancements
+- Real-time conversational memory for chat assistant per recruiter/provider thread.
+- Voice note transcription + intent extraction for low-typing users.
+- Personalized plan upsell recommender based on conversion lift predictions.
+- Hybrid ANN fallback provider support beyond Atlas Vector Search.
+- Cross-lingual embeddings and Hindi-native intent parser tuning.
+- Advanced fraud graph analysis (shared devices, payment fingerprinting, social graph).

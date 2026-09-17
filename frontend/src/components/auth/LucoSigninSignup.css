@@ -1,0 +1,1797 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --blue: #1B4FE0;
+  --violet: #5B21D6;
+  --ink-deep: #141A33;
+  --paper: #FFFFFF;
+  --ink: #181B24;
+  --muted: #767B8A;
+  --line: #E6E3F7;
+  --wash: #F0EDFC;
+  --error: #B3492F;
+
+  --bg-reg: #F6F6F3;
+  --ink-soft: #5B6168;
+  --ink-faint: #9BA0A6;
+  --line-reg: #E4E3DD;
+  --teal: #4C2FD9;
+  --teal-deep: #2A1B85;
+  --teal-wash: #ECE8FB;
+  --whatsapp: #1FA854;
+  --whatsapp-wash: #E5F5EB;
+  --amber: #C9821A;
+  --amber-wash: #FBF0DF;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+
+/* ==========================================================================
+   Base & Reset for Auth Container
+   ========================================================================== */
+.luco-auth-page {
+  background: var(--ink-deep);
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+
+.luco-auth-page *,
+.luco-registration-screen * {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Sign In Screen (Responsive Desktop & Mobile)
+   ========================================================================== */
+.luco-screen {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  background: var(--paper);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .luco-auth-page {
+    padding: 40px 24px;
+    background: radial-gradient(circle at 10% 20%, rgba(91,33,214,0.4) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(27,79,224,0.3) 0%, transparent 50%),
+                var(--ink-deep);
+  }
+
+  .luco-screen {
+    max-width: 1000px;
+    min-height: 640px;
+    border-radius: 24px;
+    display: grid;
+    grid-template-columns: 46% 54%;
+    overflow: hidden;
+    box-shadow: 0 25px 60px -15px rgba(10, 12, 30, 0.7);
+  }
+}
+
+/* Sign In Hero Header */
+header.luco-hero {
+  background:
+    radial-gradient(120% 140% at 85% 0%, rgba(91,33,214,0.45), transparent 55%),
+    linear-gradient(160deg, var(--ink-deep) 0%, #26246E 55%, var(--violet) 100%);
+  padding: 40px 28px 64px 28px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  header.luco-hero {
+    padding: 50px 40px;
+    justify-content: space-between;
+  }
+}
+
+header.luco-hero::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 220px;
+  height: 220px;
+  border: 1.5px solid rgba(200, 190, 255, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.luco-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.luco-brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.luco-brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.luco-brand-name {
+  color: #F3F1FC;
+  font-family: 'Fraunces', serif;
+  font-size: 21px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.luco-hero-content {
+  margin-top: 36px;
+}
+
+@media (min-width: 1024px) {
+  .luco-hero-content {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
+.luco-hero h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 30px;
+  line-height: 1.22;
+  color: #FBFAFF;
+  margin: 0 0 12px 0;
+  max-width: 320px;
+}
+
+@media (min-width: 1024px) {
+  .luco-hero h1 {
+    font-size: 34px;
+    max-width: 360px;
+  }
+}
+
+.luco-hero p {
+  color: #CCD0E8;
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 320px;
+}
+
+.luco-hero-perks {
+  display: none;
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(200, 190, 255, 0.15);
+}
+
+@media (min-width: 1024px) {
+  .luco-hero-perks {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.luco-hero-perk-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #E6E3F7;
+  font-size: 13.5px;
+}
+
+.luco-hero-perk-item svg {
+  color: #48BB78;
+  flex-shrink: 0;
+}
+
+/* Sign In Sheet Form */
+.luco-sheet {
+  background: var(--paper);
+  border-radius: 26px 26px 0 0;
+  margin-top: -30px;
+  position: relative;
+  z-index: 2;
+  padding: 32px 28px 36px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -12px 30px rgba(20, 26, 51, 0.06);
+}
+
+@media (min-width: 1024px) {
+  .luco-sheet {
+    margin-top: 0;
+    border-radius: 0;
+    padding: 48px 44px;
+    overflow-y: auto;
+  }
+}
+
+.luco-tabs {
+  display: flex;
+  background: var(--wash);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 26px;
+}
+
+.luco-tab {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 11px 0;
+  cursor: pointer;
+  border-radius: 9px;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+  text-align: center;
+}
+
+.luco-tab.active {
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 2px 8px rgba(20, 26, 51, 0.08);
+}
+
+.luco-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.luco-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.luco-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+.luco-input-wrap {
+  position: relative;
+}
+
+.luco-field input {
+  width: 100%;
+  border: 1.4px solid var(--line);
+  border-radius: 11px;
+  background: #FBFAFE;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: var(--ink);
+  padding: 13px 14px;
+  outline: none;
+  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.luco-field input:focus {
+  border-color: var(--blue);
+  background: var(--paper);
+  box-shadow: 0 0 0 3px rgba(27, 79, 224, 0.12);
+}
+
+.luco-field.error input {
+  border-color: var(--error);
+}
+
+.luco-field-msg {
+  font-size: 12px;
+  color: var(--error);
+  display: block;
+  margin-top: 2px;
+}
+
+.luco-pw-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--violet);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.luco-row-between {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.luco-link-quiet {
+  font-size: 13px;
+  color: var(--violet);
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.luco-link-quiet:hover {
+  text-decoration: underline;
+}
+
+.luco-submit {
+  margin-top: 6px;
+  width: 100%;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--violet) 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  padding: 15px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease;
+  box-shadow: 0 8px 20px rgba(27, 79, 224, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.luco-submit:hover:not(:disabled) {
+  box-shadow: 0 10px 24px rgba(27, 79, 224, 0.35);
+  transform: translateY(-1px);
+}
+
+.luco-submit:active {
+  transform: scale(0.98);
+}
+
+.luco-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.luco-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 0 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.luco-divider::before,
+.luco-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.luco-socials {
+  display: flex;
+  gap: 10px;
+  padding: 16px 0 0 0;
+}
+
+.luco-social-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0;
+  border: 1.4px solid var(--line);
+  background: var(--paper);
+  border-radius: 11px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.luco-social-btn:hover {
+  border-color: var(--violet);
+  box-shadow: 0 4px 12px rgba(91, 33, 214, 0.14);
+}
+
+.luco-trust {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 12px 14px;
+  background: var(--wash);
+  border-radius: 11px;
+}
+
+.luco-trust p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+footer.luco-footnote {
+  margin-top: auto;
+  padding: 26px 0 10px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+footer.luco-footnote a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--violet);
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Multi-Step Registration Modal / Screen (Fully Responsive Desktop & Mobile)
+   ========================================================================== */
+.luco-registration-screen {
+  background: var(--bg-reg);
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+  animation: lucoFadeIn .2s ease;
+}
+
+@keyframes lucoFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.luco-registration-screen.reg-hidden {
+  display: none;
+}
+
+.luco-reg-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--paper);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .luco-reg-shell {
+    max-width: 1160px;
+    background: transparent;
+    min-height: 100vh;
+  }
+}
+
+.luco-reg-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line-reg);
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-soft);
+  z-index: 20;
+  transition: background .15s ease, transform .15s ease;
+}
+
+.luco-reg-close:hover {
+  background: #F1F1EC;
+  transform: scale(1.05);
+}
+
+.luco-reg-header {
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid var(--line-reg);
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  z-index: 10;
+}
+
+@media (min-width: 1024px) {
+  .luco-reg-header {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line-reg);
+    margin: 20px 0 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  }
+}
+
+.luco-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.luco-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.luco-reg-brand {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--teal-deep);
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.luco-score-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.luco-score-ring {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: conic-gradient(var(--teal) calc(var(--pct, 9) * 1%), var(--line-reg) 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .35s ease;
+}
+
+.luco-score-ring span {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--teal-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.luco-score-txt {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.luco-score-txt b {
+  color: var(--ink);
+}
+
+.luco-steps {
+  display: flex;
+  gap: 6px;
+}
+
+.luco-step-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line-reg);
+  overflow: hidden;
+}
+
+.luco-step-track > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--teal);
+  transition: width .35s ease;
+}
+
+.luco-step-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+
+.luco-step-meta b {
+  color: var(--teal-deep);
+  font-weight: 600;
+}
+
+/* Registration Content Grid for Desktop */
+.luco-reg-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+@media (min-width: 1024px) {
+  .luco-reg-layout {
+    display: grid;
+    grid-template-columns: 1fr 390px;
+    gap: 32px;
+    align-items: start;
+    margin-top: 24px;
+    margin-bottom: 40px;
+  }
+}
+
+.luco-reg-main {
+  flex: 1;
+  padding: 26px 24px 140px;
+  background: var(--paper);
+}
+
+@media (min-width: 1024px) {
+  .luco-reg-main {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line-reg);
+    padding: 36px 36px 40px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  }
+}
+
+/* Sidebar for Desktop */
+.luco-reg-sidebar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .luco-reg-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.luco-panel {
+  display: none;
+  animation: lucoPanelFade .25s ease;
+}
+
+.luco-panel.active {
+  display: block;
+}
+
+@keyframes lucoPanelFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h1.luco-title {
+  font-family: 'Fraunces', serif;
+  font-size: 25px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+
+p.luco-sub {
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  margin: 0 0 26px;
+  line-height: 1.5;
+}
+
+.luco-reg-field {
+  margin-bottom: 20px;
+}
+
+.luco-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+  gap: 8px;
+}
+
+.luco-field-label label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.luco-pts {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-wash);
+  padding: 3px 9px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: all .2s ease;
+}
+
+.luco-pts.done {
+  background: #E5F5EB;
+  color: #1FA854;
+}
+
+.luco-reg-field .hint {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 6px;
+}
+
+.luco-reg-field input[type=text],
+.luco-reg-field input[type=tel],
+.luco-reg-field input[type=number],
+.luco-reg-field input[type=email],
+.luco-reg-field select,
+.luco-reg-field textarea {
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  padding: 13px 14px;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.luco-reg-field input:focus,
+.luco-reg-field select:focus,
+.luco-reg-field textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px var(--teal-wash);
+}
+
+.luco-reg-field textarea {
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.luco-reg-field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235B6168' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.luco-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .luco-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card Block */
+.luco-card-block {
+  background: var(--paper);
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  margin-bottom: 22px;
+}
+
+.luco-card-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.luco-card-head-row .left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.luco-smart-badge {
+  background: #F1F1EC;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.luco-mini-label {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+
+.luco-range-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.luco-range-head span {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.luco-range-val-pill {
+  background: var(--teal-wash);
+  color: var(--teal-deep);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+input[type=range] {
+  width: 100%;
+  accent-color: var(--teal);
+  height: 5px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+
+.luco-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+
+.luco-preview-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.luco-preview-line svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ink-faint);
+}
+
+.luco-preview-line b {
+  color: var(--ink);
+}
+
+/* OTP Verify Row */
+.luco-verify-row {
+  display: flex;
+  gap: 8px;
+}
+
+.luco-verify-row input {
+  flex: 1;
+}
+
+.luco-verify-btn {
+  flex-shrink: 0;
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity .15s ease;
+}
+
+.luco-verify-btn:disabled {
+  background: var(--line-reg);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+.luco-verified-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #E5F5EB;
+  color: var(--whatsapp);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #BFE6CC;
+}
+
+.luco-otp-box {
+  display: block;
+  margin-top: 12px;
+  background: #FAFAF8;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  animation: lucoPanelFade .2s ease;
+}
+
+.luco-otp-box p.lbl {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+}
+
+.luco-otp-notice {
+  font-size: 12px;
+  color: var(--teal-deep);
+  background: var(--teal-wash);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.luco-otp-inputs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.luco-otp-inputs input {
+  width: 46px !important;
+  height: 50px !important;
+  text-align: center;
+  font-size: 20px !important;
+  font-weight: 700;
+  padding: 0 !important;
+  border-radius: var(--radius-sm);
+}
+
+.luco-otp-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.luco-otp-actions button {
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.luco-otp-actions span {
+  font-size: 12px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Photo Upload */
+.luco-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.luco-photo-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 1.8px dashed var(--ink-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  font-size: 22px;
+  cursor: pointer;
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+  transition: border-color .2s ease;
+}
+
+.luco-photo-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.luco-photo-circle.done {
+  border-style: solid;
+  border-color: var(--whatsapp);
+  color: var(--whatsapp);
+  background: #E5F5EB;
+}
+
+.luco-photo-row .txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.luco-photo-row .txt p {
+  margin: 0;
+}
+
+.luco-photo-row .txt p.t1 {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.luco-photo-row .txt p.t2 {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+/* Repeatable Skill Cards */
+.luco-skill-card {
+  background: #FAFAF8;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.luco-skill-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.luco-skill-card-head select {
+  flex: 1;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 11px 12px;
+}
+
+.luco-remove-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.luco-remove-btn:hover {
+  background: var(--line-reg);
+  color: var(--ink);
+}
+
+.luco-skill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.luco-rate-input {
+  position: relative;
+}
+
+.luco-rate-input span {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-faint);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.luco-rate-input input {
+  padding-left: 28px !important;
+  background: #fff;
+}
+
+.luco-headline-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line-reg);
+}
+
+.luco-headline-row input {
+  width: 17px !important;
+  height: 17px !important;
+  accent-color: var(--teal);
+  margin-top: 2px !important;
+  flex-shrink: 0;
+}
+
+.luco-headline-row span {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.luco-headline-row span b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.luco-add-btn {
+  width: 100%;
+  padding: 13px;
+  border: 1.5px dashed var(--line-reg);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--teal-deep);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: all .2s ease;
+}
+
+.luco-add-btn:hover {
+  border-color: var(--teal);
+  background: var(--teal-wash);
+}
+
+/* Repeatable Entry Card (Edu/Work & Portfolio) */
+.luco-entry-card {
+  background: #FAFAF8;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.luco-entry-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.luco-entry-card-head select {
+  flex: 1;
+  background: #fff;
+  margin-right: 8px;
+}
+
+/* Upload Box */
+.luco-upload-box {
+  border: 1.8px dashed var(--line-reg);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--ink-faint);
+  margin-bottom: 22px;
+  cursor: pointer;
+  transition: all .2s ease;
+  background: #FBFAFE;
+}
+
+.luco-upload-box:hover {
+  border-color: var(--teal);
+  background: var(--teal-wash);
+}
+
+.luco-upload-box.done {
+  border-style: solid;
+  border-color: var(--whatsapp);
+  background: #F3FBF5;
+  color: var(--whatsapp);
+}
+
+.luco-upload-box svg {
+  margin-bottom: 8px;
+}
+
+.luco-upload-box p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.luco-upload-box p.small {
+  font-size: 11.5px;
+  margin-top: 4px;
+  color: var(--ink-faint);
+}
+
+/* Tag Box for Languages */
+.luco-lang-add-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.luco-lang-add-btn {
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.luco-tag-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-sm);
+  min-height: 48px;
+  align-items: center;
+  background: var(--paper);
+}
+
+.luco-tag {
+  background: var(--teal-wash);
+  color: var(--teal-deep);
+  font-size: 12.5px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.luco-tag button {
+  border: none;
+  background: none;
+  color: var(--teal-deep);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  line-height: 1;
+}
+
+/* Toggle Switch (iOS Style) */
+.luco-toggle-switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.luco-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.luco-toggle-switch .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--line-reg);
+  border-radius: 26px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.luco-toggle-switch .slider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+
+.luco-toggle-switch input:checked + .slider {
+  background: var(--whatsapp);
+}
+
+.luco-toggle-switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+/* Day Pills & Time Range */
+.luco-day-pills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.luco-day-pill {
+  flex: 1;
+  min-width: 38px;
+  text-align: center;
+  padding: 10px 4px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  background: #F1F1EC;
+  color: var(--ink-faint);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .15s ease;
+}
+
+.luco-day-pill.active {
+  background: var(--teal-deep);
+  color: #fff;
+}
+
+.luco-time-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.luco-time-row select {
+  flex: 1;
+}
+
+.luco-time-row .to {
+  font-size: 13px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+/* Contact Medium Chips */
+.luco-medium-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.luco-medium-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 15px;
+  border: 1.5px solid var(--line-reg);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: #fff;
+  transition: all .15s ease;
+}
+
+.luco-medium-chip.active {
+  background: var(--teal-wash);
+  border-color: var(--teal);
+  color: var(--teal-deep);
+  font-weight: 600;
+}
+
+/* Audio & Video Box */
+.luco-av-intro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 600px) {
+  .luco-av-intro-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.luco-av-intro-box {
+  background: #FAFAF8;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+}
+
+.luco-av-intro-box .av-lbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.luco-record-btn {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-sm);
+  padding: 14px 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.luco-record-btn.done {
+  border-color: var(--whatsapp);
+  color: var(--whatsapp);
+  background: #F3FBF5;
+}
+
+/* ID Verification Card */
+.luco-verify-card {
+  background: var(--teal-wash);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.luco-trust-chip {
+  background: var(--amber-wash);
+  color: var(--amber);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.luco-trust-chip.on {
+  background: #E5F5EB;
+  color: #1FA854;
+}
+
+/* Terms & Conditions Row */
+.luco-tnc-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #FAFAF8;
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.luco-tnc-row input {
+  width: 18px !important;
+  height: 18px !important;
+  accent-color: var(--teal);
+  margin-top: 2px !important;
+  flex-shrink: 0;
+}
+
+.luco-tnc-row p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.luco-tnc-row a {
+  color: var(--teal-deep);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Live Profile Cards */
+.luco-profile-score {
+  background: var(--teal-deep);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.luco-score-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.luco-score-top b {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+}
+
+.luco-score-bar-track {
+  height: 6px;
+  background: rgba(255,255,255,.2);
+  border-radius: 6px;
+  margin: 12px 0 8px;
+  overflow: hidden;
+}
+
+.luco-score-bar-track span {
+  display: block;
+  height: 100%;
+  background: #fff;
+  border-radius: 6px;
+  transition: width .35s ease;
+}
+
+.luco-preview-card {
+  background: var(--paper);
+  border: 1px solid var(--line-reg);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+}
+
+.luco-pv-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.luco-pv-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--teal-wash);
+  color: var(--teal-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.luco-pv-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.luco-pv-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.luco-pv-title {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 2px 0 0 0;
+}
+
+.luco-pv-loc {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.luco-pv-skill-row {
+  background: #FAFAF8;
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.luco-pv-skill-row p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.luco-pv-skill-row .r {
+  font-weight: 700;
+  color: var(--teal-deep);
+}
+
+/* WhatsApp Summary Card */
+.luco-wa-summary-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid #BFE6CC;
+  margin-top: 18px;
+}
+
+.luco-wa-summary-head {
+  background: var(--whatsapp);
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.luco-wa-summary-body {
+  background: #F8FFFA;
+  padding: 16px;
+}
+
+.luco-wa-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dashed #D6EEDD;
+  font-size: 13px;
+}
+
+.luco-wa-summary-row:last-child {
+  border-bottom: none;
+}
+
+.luco-wa-summary-row .k {
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.luco-wa-summary-row .v {
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Sticky Footer Navigation */
+.luco-reg-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--paper);
+  border-top: 1px solid var(--line-reg);
+  padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 10px;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  z-index: 15;
+}
+
+@media (min-width: 1024px) {
+  .luco-reg-footer {
+    max-width: 1160px;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background: var(--paper);
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.03);
+  }
+}
+
+.luco-reg-footer button {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  cursor: pointer;
+  border: none;
+  transition: all .2s ease;
+}
+
+#lucoBackBtn {
+  background: var(--paper);
+  border: 1px solid var(--line-reg);
+  color: var(--ink-soft);
+  flex: 0 0 96px;
+}
+
+#lucoBackBtn:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#lucoNextBtn {
+  flex: 1;
+  background: var(--teal);
+  color: #fff;
+}
+
+#lucoNextBtn:disabled {
+  background: var(--line-reg);
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+#lucoNextBtn.final:not(:disabled) {
+  background: var(--whatsapp);
+}
+
+/* Floating Score Toast */
+.luco-score-toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-18px);
+  background: var(--teal-deep);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 1100;
+  box-shadow: 0 10px 24px -6px rgba(20,20,20,.4);
+  white-space: nowrap;
+}
+
+.luco-score-toast.show {
+  opacity: .96;
+  transform: translateX(-50%) translateY(0);
+}

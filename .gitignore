@@ -1,0 +1,55 @@
+# Root .gitignore for Lucohire Project
+
+# Environment variables – NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build and distribution outputs
+dist/
+dist-ssr/
+build/
+.next/
+out/
+coverage/
+
+# Logs & temporary files
+*.log
+logs/
+scratch/
+test/
+tmp/
+temp/
+*.bak
+*.old
+*.tmp
+*.swp
+*.suo
+
+# Service Account Keys & Certificates
+service-account*.json
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sln
+
+# Loose local development & testing scripts at root
+generate-flow.js
+testAi.js
+test_google_native.js
+
+# Requirements & SOW internal documents
+client_requirements/

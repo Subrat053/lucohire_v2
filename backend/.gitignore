@@ -1,0 +1,13 @@
+node_modules
+# uploads/*
+uploads
+scratch
+
+# Environment variables – never commit these
+.env
+.env.local
+# .env.example is safe to commit
+scratch_test_mongodb.js
+scratch_test_rules_saving.js
+# Service Account Keys
+service-account*.json

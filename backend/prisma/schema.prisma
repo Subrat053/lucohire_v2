@@ -1,0 +1,3441 @@
+// Generated from the legacy Mongoose schemas by scripts/generatePrismaSchema.js.
+// Review relation candidates in prisma/RELATION_MIGRATION.md before adding foreign keys.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  email String @unique
+  isActive Boolean @default(true)
+  lastLogin DateTime?
+  name String @default("")
+  password String
+  role String @default("admin")
+  updatedAt DateTime @updatedAt
+  partnerBankAccount_verifiedByLinks PartnerBankAccount[] @relation("Rel_PartnerBankAccount_verifiedBy_Admin")
+  payoutRequest_processedByLinks PayoutRequest[] @relation("Rel_PayoutRequest_processedBy_Admin")
+  @@map("admins")
+}
+
+model AdminCommissionSetting {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  description String @default("")
+  key String @unique
+  updatedAt DateTime @updatedAt
+  value Float
+  @@map("admincommissionsettings")
+}
+
+model AdminSetting {
+  id String @id @default(cuid())
+  category String @default("general")
+  createdAt DateTime @default(now())
+  description String @default("")
+  key String @unique
+  updatedAt DateTime @updatedAt
+  value Json
+  @@map("adminsettings")
+}
+
+model AiAnalysisResult {
+  id String @id @default(cuid())
+  confidence_score Float @default(0)
+  created_at DateTime?
+  error_message String @default("")
+  estimated_cost Float @default(0)
+  feature_name String
+  input_hash String
+  input_snapshot Json?
+  model_name String
+  needs_review Boolean @default(false)
+  parsed_json Json?
+  prompt_version Float @default(1)
+  raw_response String @default("")
+  status String @default("success")
+  token_usage Json?
+  updated_at DateTime?
+  user_id String?
+  user_idRecord User? @relation("Rel_AiAnalysisResult_user_id_User", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([user_id])
+  @@index([feature_name])
+  @@index([input_hash])
+  @@index([status])
+  @@index([input_hash, status])
+  @@map("ai_analysis_results")
+}
+
+model AIChatCache {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  detectedIntent String @default("")
+  extracted Json?
+  message String @unique
+  model String @default("openai")
+  reply String
+  suggestions String[] @default([])
+  updatedAt DateTime @updatedAt
+  @@map("aichatcaches")
+}
+
+model AiEvaluation {
+  id String @id @default(cuid())
+  candidateId String
+  createdAt DateTime @default(now())
+  jobId String
+  reasoning String @default("")
+  score Float @default(0)
+  updatedAt DateTime @updatedAt
+  jobIdRecord JobPost @relation("Rel_AiEvaluation_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  candidateIdRecord ProviderProfile @relation("Rel_AiEvaluation_candidateId_ProviderProfile", fields: [candidateId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([jobId, candidateId])
+  @@map("aievaluations")
+}
+
+model AiFeatureCache {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  featureName String
+  fileHash String
+  reportData Json
+
+  @@index([fileHash])
+  @@index([featureName])
+  @@index([createdAt])
+  @@unique([fileHash, featureName])
+  @@map("aifeaturecaches")
+}
+
+model AiFeatureControl {
+  id String @id @default(cuid())
+  audience String
+  createdAt DateTime @default(now())
+  defaultModel String @default("gpt-4o-mini")
+  featureKey String @unique
+  featureName String
+  lastUpdatedBy String @default("admin")
+  status String @default("active")
+  unitCostInr Float @default(0.15)
+  updatedAt DateTime @updatedAt
+
+  @@index([audience])
+  @@map("aifeaturecontrols")
+}
+
+model AIInteractionLog {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  feature String
+  input Json?
+  model String @default("rule-only")
+  output Json?
+  promptType String @default("")
+  role String @default("system")
+  status String @default("success")
+  updatedAt DateTime @updatedAt
+  userId String?
+  userIdRecord User? @relation("Rel_AIInteractionLog_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([role])
+  @@index([feature])
+  @@index([status])
+  @@index([createdAt])
+  @@index([feature, createdAt])
+  @@map("aiinteractionlogs")
+}
+
+model AIPromptTemplate {
+  id String @id @default(cuid())
+  created_at DateTime?
+  description String @default("")
+  feature_name String @unique
+  isActive Boolean @default(true)
+  is_active Boolean @default(true)
+  key String?
+  maxTokens Float @default(800)
+  model_name String @default("gemini-1.5-flash")
+  outputSchema Json?
+  prompt_template String
+  role String @default("system")
+  temperature Float @default(0.2)
+  template String?
+  updated_at DateTime?
+  updated_by String?
+  version Float @default(1)
+  updated_byRecord User? @relation("Rel_AIPromptTemplate_updated_by_User", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([key])
+  @@index([role])
+  @@index([isActive])
+  @@index([is_active])
+  @@index([key, isActive])
+  @@index([feature_name, is_active])
+  @@map("ai_prompt_templates")
+}
+
+model AiUsageLog {
+  id String @id @default(cuid())
+  costEstimate Float @default(0)
+  createdAt DateTime @default(now())
+  errorMessage String @default("")
+  estimatedCostUsd Float @default(0)
+  feature String?
+  featureKey String?
+  featureName String?
+  inputTokens Float @default(0)
+  latencyMs Float @default(0)
+  metadata Json?
+  model String
+  outputTokens Float @default(0)
+  provider String
+  role String @default("system")
+  status String @default("success")
+  totalTokens Float @default(0)
+  userId String?
+  userIdRecord User? @relation("Rel_AiUsageLog_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([feature])
+  @@index([featureKey])
+  @@index([featureName])
+  @@map("aiusagelogs")
+}
+
+model Application {
+  id String @id @default(cuid())
+  appliedAt DateTime @default(now())
+  coverLetter String @default("")
+  createdAt DateTime @default(now())
+  jobPost String
+  provider String
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  jobPostRecord JobPost @relation("Rel_Application_jobPost_JobPost", fields: [jobPost], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerRecord User @relation("Rel_Application_provider_User", fields: [provider], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([jobPost, provider])
+  @@index([provider, createdAt])
+  @@index([jobPost, status])
+  @@map("applications")
+}
+
+model ApprovalLog {
+  id String @id @default(cuid())
+  action String
+  actorId String
+  actorName String @default("")
+  actorRole String
+  createdAt DateTime @default(now())
+  note String @default("")
+  targetName String @default("")
+  targetProfileId String
+  targetType String
+  targetUserId String
+  updatedAt DateTime @updatedAt
+  targetUserIdRecord User @relation("Rel_ApprovalLog_targetUserId_User", fields: [targetUserId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  actorIdRecord User @relation("Rel_ApprovalLog_actorId_User", fields: [actorId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([targetType, createdAt])
+  @@index([actorId, createdAt])
+  @@map("approvallogs")
+}
+
+model AuditEvent {
+  id String @id @default(cuid())
+  actorId String?
+  actorRole String @default("system")
+  createdAt DateTime @default(now())
+  entityId String
+  entityType String
+  eventType String
+  payload Json?
+  piiSafe Boolean @default(true)
+  updatedAt DateTime @updatedAt
+  actorIdRecord User? @relation("Rel_AuditEvent_actorId_User", fields: [actorId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([eventType])
+  @@index([actorId])
+  @@index([actorRole])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([eventType, createdAt])
+  @@map("auditevents")
+}
+
+model AutomationTaskLog {
+  id String @id @default(cuid())
+  attemptCount Float @default(0)
+  createdAt DateTime @default(now())
+  error String @default("")
+  executedAt DateTime?
+  idempotencyKey String @default("")
+  payload Json?
+  relatedEntityId String @default("")
+  relatedEntityType String @default("")
+  result Json?
+  status String @default("queued")
+  taskType String
+  updatedAt DateTime @updatedAt
+
+  @@index([taskType])
+  @@index([relatedEntityType])
+  @@index([relatedEntityId])
+  @@index([status])
+  @@index([executedAt])
+  @@index([idempotencyKey])
+  @@index([taskType, relatedEntityType, relatedEntityId, createdAt])
+  @@map("automationtasklogs")
+}
+
+model BillingRule {
+  id String @id @default(cuid())
+  cashbackEnabled Boolean @default(false)
+  cashbackMaxCap Float @default(0)
+  cashbackMinTransactionAmount Float @default(0)
+  cashbackType String @default("percentage")
+  cashbackValue Float @default(0)
+  changeReason String @default("")
+  countryGst Json?
+  createdAt DateTime @default(now())
+  effectiveFrom DateTime @default(now())
+  fixedWithdrawalFee Float @default(0)
+  isActive Boolean @default(true)
+  legacyUserReferralCommissionPercentage Float?
+  minPayoutThreshold Float @default(500)
+  platformCommissionPercentage Float @default(30)
+  referralCommissionType String @default("percentage")
+  referralCommissionValue Float @default(0)
+  referralEnabled Boolean @default(false)
+  referralMaxCap Float @default(0)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+  version Float @default(1)
+  updatedByRecord User? @relation("Rel_BillingRule_updatedBy_User", fields: [updatedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([isActive])
+  @@index([isActive, version])
+  @@index([effectiveFrom])
+  @@map("billingrules")
+}
+
+model BoostSuggestion {
+  id String @id @default(cuid())
+  city String
+  createdAt DateTime @default(now())
+  deliveryMeta Json?
+  message String
+  providerId String
+  scheduledFor DateTime @default(now())
+  sentAt DateTime?
+  skill String
+  status String @default("queued")
+  updatedAt DateTime @updatedAt
+  providerIdRecord User @relation("Rel_BoostSuggestion_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([providerId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([providerId, status, createdAt])
+  @@map("boostsuggestions")
+}
+
+model CandidateActivityLog {
+  id String @id @default(cuid())
+  candidateId String
+  createdAt DateTime @default(now())
+  eventType String
+  metadataJson Json?
+  source String @default("System")
+  updatedAt DateTime @updatedAt
+  candidateIdRecord StagingCandidate @relation("Rel_CandidateActivityLog_candidateId_StagingCandidate", fields: [candidateId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("candidateactivitylogs")
+}
+
+model CandidateCareerVersion {
+  id String @id @default(cuid())
+  providerId String
+  reasonForVersion String @default("Routine Scan")
+  snapshotData Json
+  source String @default("System")
+  userId String?
+  versionDate DateTime @default(now())
+  providerIdRecord ProviderProfile @relation("Rel_CandidateCareerVersion_providerId_ProviderProfile", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  userIdRecord User? @relation("Rel_CandidateCareerVersion_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([providerId])
+  @@index([userId])
+  @@index([versionDate])
+  @@map("candidatecareerversions")
+}
+
+model CandidateDigestLog {
+  id String @id @default(cuid())
+  candidate String
+  channels String[] @default([])
+  createdAt DateTime @default(now())
+  date String
+  emailStatus String @default("none")
+  error String @default("")
+  jobsMatched String[] @default([])
+  sentAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  whatsappStatus String @default("none")
+  candidateRecord User @relation("Rel_CandidateDigestLog_candidate_User", fields: [candidate], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([candidate])
+  @@index([date])
+  @@unique([candidate, date])
+  @@map("candidatedigestlogs")
+}
+
+model CandidateJobMatch {
+  id String @id @default(cuid())
+  appliedAt DateTime?
+  createdAt DateTime @default(now())
+  experienceScore Float @default(0)
+  isNotified Boolean @default(false)
+  jobCollection String
+  jobId String
+  jobTypeScore Float @default(0)
+  locationScore Float @default(0)
+  matchScore Float @default(0)
+  reason String @default("")
+  salaryScore Float @default(0)
+  savedAt DateTime?
+  skillScore Float @default(0)
+  updatedAt DateTime @updatedAt
+  userId String
+  viewedAt DateTime?
+  userIdRecord User @relation("Rel_CandidateJobMatch_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([jobId])
+  @@index([matchScore])
+  @@unique([userId, jobId])
+  @@map("candidatejobmatches")
+}
+
+model CareerHealthCache {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  fileHash String @unique
+  reportData Json
+
+  @@index([createdAt])
+  @@map("careerhealthcaches")
+}
+
+model CategorySuggestion {
+  id String @id @default(cuid())
+  approvedBy String?
+  createdAt DateTime @default(now())
+  matchedKeywords String[] @default([])
+  occurrenceCount Float @default(1)
+  sampleJobIds String[] @default([])
+  status String @default("pending")
+  suggestedName String
+  updatedAt DateTime @updatedAt
+  approvedByRecord User? @relation("Rel_CategorySuggestion_approvedBy_User", fields: [approvedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("categorysuggestions")
+}
+
+model ChatConversation {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  lastMessageAt DateTime @default(now())
+  metadata Json?
+  role String @default("recruiter")
+  status String @default("active")
+  title String @default("New Conversation")
+  updatedAt DateTime @updatedAt
+  userId String
+  userIdRecord User @relation("Rel_ChatConversation_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  chatMessage_conversationIdLinks ChatMessage[] @relation("Rel_ChatMessage_conversationId_ChatConversation")
+
+  @@index([userId])
+  @@index([role])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@index([userId, role, lastMessageAt])
+  @@map("chatconversations")
+}
+
+model ChatMessage {
+  id String @id @default(cuid())
+  author String
+  clientMessageId String?
+  content String
+  conversationId String
+  createdAt DateTime @default(now())
+  metadata Json?
+  parentMessageId String?
+  role String @default("recruiter")
+  status String @default("sent")
+  updatedAt DateTime @updatedAt
+  userId String
+  conversationIdRecord ChatConversation @relation("Rel_ChatMessage_conversationId_ChatConversation", fields: [conversationId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  userIdRecord User @relation("Rel_ChatMessage_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  parentMessageIdRecord ChatMessage? @relation("Rel_ChatMessage_parentMessageId_ChatMessage", fields: [parentMessageId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  chatMessage_parentMessageIdLinks ChatMessage[] @relation("Rel_ChatMessage_parentMessageId_ChatMessage")
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([role])
+  @@index([author])
+  @@index([status])
+  @@index([clientMessageId])
+  @@index([parentMessageId])
+  @@unique([conversationId, clientMessageId])
+  @@map("chatmessages")
+}
+
+model CityGeo {
+  id String @id @default(cuid())
+  cityName String
+  countryCode String
+  createdAt DateTime @default(now())
+  location Json?
+  updatedAt DateTime @updatedAt
+
+  @@unique([cityName, countryCode])
+  @@map("citygeos")
+}
+
+model CommissionTransaction {
+  id String @id @default(cuid())
+  commissionAmount Float
+  commissionRate Float
+  createdAt DateTime @default(now())
+  partnerId String
+  paymentId String?
+  planAmount Float
+  referralId String
+  referredUserId String
+  remarks String @default("")
+  status String @default("earned")
+  subscriptionId String?
+  type String @default("first_subscription_commission")
+  updatedAt DateTime @updatedAt
+  partnerIdRecord User @relation("Rel_CommissionTransaction_partnerId_User", fields: [partnerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  referralIdRecord Referral @relation("Rel_CommissionTransaction_referralId_Referral", fields: [referralId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  referredUserIdRecord User @relation("Rel_CommissionTransaction_referredUserId_User", fields: [referredUserId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  subscriptionIdRecord UserSubscription? @relation("Rel_CommissionTransaction_subscriptionId_UserSubscription", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  paymentIdRecord Payment? @relation("Rel_CommissionTransaction_paymentId_Payment", fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([referralId, type])
+  @@map("commissiontransactions")
+}
+
+model CompanyAliasSuggestion {
+  id String @id @default(cuid())
+  confidenceScore Float @default(0)
+  createdAt DateTime @default(now())
+  rawCompanyName String
+  sampleJobIds String[] @default([])
+  status String @default("pending")
+  suggestedCompanyId String?
+  updatedAt DateTime @updatedAt
+  suggestedCompanyIdRecord PipelineCompanyMaster? @relation("Rel_CompanyAliasSuggestion_suggestedCompanyId_PipelineCompanyMaster", fields: [suggestedCompanyId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("companyaliassuggestions")
+}
+
+model CompanyContact {
+  id String @id @default(cuid())
+  companyDomain String
+  companyId String
+  confidenceScore Float @default(50)
+  createdAt DateTime @default(now())
+  email String
+  isActive Boolean @default(true)
+  lastVerifiedAt DateTime @default(now())
+  source String
+  sourcePage String @default("")
+  updatedAt DateTime @updatedAt
+  companyIdRecord CompanyMaster @relation("Rel_CompanyContact_companyId_CompanyMaster", fields: [companyId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([companyId, email])
+  @@map("companycontacts")
+}
+
+model CompanyMaster {
+  id String @id @default(cuid())
+  companyDomain String @default("")
+  companyName String
+  countryCode String
+  createdAt DateTime @default(now())
+  employeeCount Float @default(0)
+  externalId String
+  industry String @default("")
+  isActive Boolean @default(true)
+  lastSyncedAt DateTime @default(now())
+  source String
+  status String
+  updatedAt DateTime @updatedAt
+  companyContact_companyIdLinks CompanyContact[] @relation("Rel_CompanyContact_companyId_CompanyMaster")
+  pipelineJob_companyIdLinks PipelineJob[] @relation("Rel_PipelineJob_companyId_CompanyMaster")
+
+  @@unique([externalId, source])
+  @@index([companyName])
+  @@index([countryCode])
+  @@map("companymasters")
+}
+
+model CompanySource {
+  id String @id @default(cuid())
+  activeJobCount Float @default(0)
+  atsIdentifier String @default("")
+  atsType String @default("unknown")
+  careerUrl String @default("")
+  companyDomain String
+  companyName String
+  countryCode String
+  createdAt DateTime @default(now())
+  failureCount Float @default(0)
+  hiringLevel String @default("normal")
+  lastCheckedAt DateTime?
+  lastError String @default("")
+  lastSyncedAt DateTime?
+  source String @default("manual")
+  status String @default("active")
+  successCount Float @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyDomain, countryCode])
+  @@index([status])
+  @@index([atsType])
+  @@map("companysources")
+}
+
+model ContactClickLog {
+  id String @id @default(cuid())
+  actionType String
+  createdAt DateTime @default(now())
+  provider String
+  updatedAt DateTime @updatedAt
+  user String
+  providerRecord ProviderProfile @relation("Rel_ContactClickLog_provider_ProviderProfile", fields: [provider], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  userRecord User @relation("Rel_ContactClickLog_user_User", fields: [user], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([provider, createdAt])
+  @@index([user, createdAt])
+  @@map("contactclicklogs")
+}
+
+model CountryConfig {
+  id String @id @default(cuid())
+  allowedLanguages String[] @default([])
+  categories String[] @default([])
+  countryCode String @unique
+  countryName String
+  createdAt DateTime @default(now())
+  createdBy String?
+  currency String
+  currencySymbol String
+  defaultLanguage String @default("en")
+  defaultTaxName String @default("GST")
+  defaultTaxPercent Float @default(0)
+  isActive Boolean @default(false)
+  isJobSyncEnabled Boolean @default(false)
+  isNotificationEnabled Boolean @default(false)
+  isPricingEnabled Boolean @default(false)
+  isSeoEnabled Boolean @default(false)
+  jobTypes String[] @default([])
+  notificationRules Json?
+  phoneCode String?
+  pricingRules Json?
+  salaryFormat Json?
+  seoRules Json?
+  skills String[] @default([])
+  slug String?
+  supportedAtsSources String[] @default([])
+  supportedJobSources String[] @default([])
+  syncRules Json?
+  timezone String?
+  updatedAt DateTime @updatedAt
+  validationStatus String @default("setup_incomplete")
+  createdByRecord User? @relation("Rel_CountryConfig_createdBy_User", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("countryconfigs")
+}
+
+model CountryPipelineConfig {
+  id String @id @default(cuid())
+  countryCode String @unique
+  countryName String
+  createdAt DateTime @default(now())
+  dailyQueryLimit Float @default(50)
+  defaultLanguage String @default("en")
+  defaultLocations String[] @default([])
+  isEnabled Boolean @default(false)
+  scheduleCron String @default("0 1 * * *")
+  scheduleEnabled Boolean @default(true)
+  seedQueries Json?
+  updatedAt DateTime @updatedAt
+  @@map("countrypipelineconfigs")
+}
+
+model CrawlerBatch {
+  id String @id @default(cuid())
+  companies Json?
+  createdAt DateTime @default(now())
+  error String?
+  name String
+  processedCount Float @default(0)
+  status String @default("pending")
+  totalCount Float @default(0)
+  updatedAt DateTime @updatedAt
+  @@map("crawlerbatches")
+}
+
+model CustomPlanRequest {
+  id String @id @default(cuid())
+  boostDays Float @default(0)
+  boostJobs Float @default(0)
+  campaigns Float @default(0)
+  createdAt DateTime @default(now())
+  durationMonths Float
+  estimatedPrice Float @default(0)
+  jobsPerMonth Float @default(0)
+  notes String?
+  offerDetails Json?
+  profileUnlocks Float @default(0)
+  recruiterId String
+  selectedFeatures String[] @default([])
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  recruiterIdRecord User @relation("Rel_CustomPlanRequest_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("customplanrequests")
+}
+
+model CustomVisibilityPlan {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  discountAmount Float @default(0)
+  endDate DateTime?
+  gstAmount Float @default(0)
+  gstPercent Float @default(0)
+  items Json?
+  paymentId String @default("")
+  planType String @default("custom")
+  providerId String
+  selectedGoals String[] @default([])
+  startDate DateTime?
+  status String @default("pending")
+  subscriptionId String?
+  subtotal Float @default(0)
+  totalAmount Float @default(0)
+  updatedAt DateTime @updatedAt
+  providerIdRecord User @relation("Rel_CustomVisibilityPlan_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  subscriptionIdRecord ProviderSubscription? @relation("Rel_CustomVisibilityPlan_subscriptionId_ProviderSubscription", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([providerId, status])
+  @@index([subscriptionId])
+  @@map("customvisibilityplans")
+}
+
+model DataSourceConfig {
+  id String @id @default(cuid())
+  actorInputSchema String @default("")
+  aiPromptTemplate String
+  apiHeaders String @default("")
+  apiKey String @default("")
+  apiMethod String @default("GET")
+  costPerRecord Float @default(0)
+  country String
+  createdAt DateTime @default(now())
+  endpointOrActorId String @default("")
+  failureCount Float @default(0)
+  isActive Boolean @default(true)
+  lastSuccess DateTime?
+  name String
+  sourceKey String @default("")
+  status String @default("Ready / Free")
+  type String
+  updatedAt DateTime @updatedAt
+  pipelineAutomation_configIdLinks PipelineAutomation[] @relation("Rel_PipelineAutomation_configId_DataSourceConfig")
+  @@map("datasourceconfigs")
+}
+
+model DemandSnapshot {
+  id String @id @default(cuid())
+  city String
+  confidence Float @default(0)
+  createdAt DateTime @default(now())
+  demandCount Float @default(0)
+  skill String
+  snapshotDate DateTime
+  supplyCount Float @default(0)
+  unmetDemandScore Float @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([skill])
+  @@index([city])
+  @@index([snapshotDate])
+  @@unique([skill, city, snapshotDate])
+  @@map("demandsnapshots")
+}
+
+model DocumentVerificationResult {
+  id String @id @default(cuid())
+  confidence Float @default(0)
+  createdAt DateTime @default(now())
+  documentType String @default("aadhaar")
+  documentUrl String
+  extractedFields Json?
+  profileComparison Json?
+  providerId String
+  rawOcrText String @default("")
+  reasons String[] @default([])
+  reviewedAt DateTime?
+  reviewedBy String?
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  providerIdRecord User @relation("Rel_DocumentVerificationResult_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  reviewedByRecord User? @relation("Rel_DocumentVerificationResult_reviewedBy_User", fields: [reviewedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([providerId])
+  @@index([documentType])
+  @@index([status])
+  @@index([providerId, status, createdAt])
+  @@map("documentverificationresults")
+}
+
+model DuplicateGroup {
+  id String @id @default(cuid())
+  canonicalJobId String
+  createdAt DateTime @default(now())
+  duplicateJobIds String[] @default([])
+  duplicateSourceVersionIds String[] @default([])
+  matchingRule String
+  similarityScore Float @default(100)
+  updatedAt DateTime @updatedAt
+  canonicalJobIdRecord JobPost @relation("Rel_DuplicateGroup_canonicalJobId_JobPost", fields: [canonicalJobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobSourceVersion_duplicateGroupIdLinks JobSourceVersion[] @relation("Rel_JobSourceVersion_duplicateGroupId_DuplicateGroup")
+  pipelineJob_duplicateGroupIdLinks PipelineJob[] @relation("Rel_PipelineJob_duplicateGroupId_DuplicateGroup")
+  @@map("duplicategroups")
+}
+
+model Enquiry {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  email String
+  message String
+  name String
+  phone String?
+  status String @default("new")
+  subject String?
+  updatedAt DateTime @updatedAt
+  @@map("enquiries")
+}
+
+model ExternalJob {
+  id String @id @default(cuid())
+  applyMode String @default("external_redirect")
+  applyUrl String
+  category String @default("")
+  city String @default("")
+  companyDomain String @default("")
+  companyName String
+  countryCode String
+  createdAt DateTime @default(now())
+  currency String @default("USD")
+  description String
+  duplicateHash String? @unique
+  experienceRequired String @default("")
+  externalJobId String
+  firstSeenAt DateTime @default(now())
+  isActive Boolean @default(true)
+  jobOrigin String
+  jobType String @default("full_time")
+  lastSeenAt DateTime @default(now())
+  lastSyncedAt DateTime @default(now())
+  locationText String @default("")
+  salaryMax Float?
+  salaryMin Float?
+  salaryPeriod String @default("yearly")
+  seoSlug String? @unique
+  skillsTags String[] @default([])
+  source String
+  sourceJobUrl String @default("")
+  sourceType String
+  state String @default("")
+  title String
+  updatedAt DateTime @updatedAt
+  savedJob_externalJobLinks SavedJob[] @relation("Rel_SavedJob_externalJob_ExternalJob")
+
+  @@unique([source, externalJobId])
+  @@index([countryCode, category, city])
+  @@index([isActive])
+  @@map("externaljobs")
+}
+
+model Faq {
+  id String @id @default(cuid())
+  answer String
+  category String @default("")
+  createdAt DateTime @default(now())
+  isActive Boolean @default(true)
+  question String
+  updatedAt DateTime @updatedAt
+  @@map("faqs")
+}
+
+model FeatureFlag {
+  id String @id @default(cuid())
+  config Json?
+  createdAt DateTime @default(now())
+  enabled Boolean @default(false)
+  key String @unique
+  scope String @default("global")
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled])
+  @@index([scope])
+  @@map("featureflags")
+}
+
+model FraudFlag {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  meta Json?
+  reason String
+  severity String @default("medium")
+  source String @default("rule_engine")
+  status String @default("open")
+  updatedAt DateTime @updatedAt
+  userId String
+  userIdRecord User @relation("Rel_FraudFlag_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([severity])
+  @@index([source])
+  @@index([status])
+  @@index([userId, status, createdAt])
+  @@map("fraudflags")
+}
+
+model FreelancerContactConsentRequest {
+  id String @id @default(cuid())
+  auditLogId String?
+  channel String @default("whatsapp")
+  createdAt DateTime @default(now())
+  freelancerId String
+  requestMessage String?
+  requestedAt DateTime @default(now())
+  requesterId String
+  respondedAt DateTime?
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  freelancerIdRecord User @relation("Rel_FreelancerContactConsentRequest_freelancerId_User", fields: [freelancerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  requesterIdRecord User @relation("Rel_FreelancerContactConsentRequest_requesterId_User", fields: [requesterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  auditLogIdRecord PipelineAuditLog? @relation("Rel_FreelancerContactConsentRequest_auditLogId_PipelineAuditLog", fields: [auditLogId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("freelancercontactconsentrequests")
+}
+
+model GeoNamesCity {
+  id String @id @default(cuid())
+  admin1Code String?
+  admin1Name String?
+  admin2Code String?
+  alternateNames String[] @default([])
+  asciiName String?
+  countryCode String
+  createdAt DateTime @default(now())
+  geonameId Float @unique
+  latitude Float
+  location Json?
+  longitude Float
+  name String
+  population Float @default(0)
+  searchText String?
+  timezone String?
+  updatedAt DateTime @updatedAt
+
+  @@index([countryCode])
+  @@index([admin1Name])
+  @@index([name])
+  @@index([countryCode, name])
+  @@map("geonamescities")
+}
+
+model ImportBatch {
+  id String @id @default(cuid())
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  createdBy String?
+  csvData String?
+  errors Json?
+  failedCount Float @default(0)
+  fileName String
+  originalSize Float @default(0)
+  processedRows Float @default(0)
+  startedAt DateTime?
+  status String @default("pending")
+  successCount Float @default(0)
+  totalRows Float @default(0)
+  updatedAt DateTime @updatedAt
+  createdByRecord User? @relation("Rel_ImportBatch_createdBy_User", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("importbatches")
+}
+
+model IncomePathCache {
+  id String @id @default(cuid())
+  cacheKey String @unique
+  candidateSummary Json?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  generatedAt DateTime @default(now())
+  profileVersion Float @default(1)
+  result Json
+  updatedAt DateTime @updatedAt
+  userId String
+  weekKey String
+  userIdRecord User @relation("Rel_IncomePathCache_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([expiresAt])
+  @@index([userId, weekKey, profileVersion])
+  @@map("income_path_caches")
+}
+
+model IngestionSettings {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  dailyRecordsUsed Float @default(0)
+  dailySpendUsed Float @default(0)
+  lastResetDate DateTime @default(now())
+  maxRecordsPerDay Float @default(3000)
+  maxRecordsPerMonth Float @default(90000)
+  maxSpendPerDay Float @default(5000)
+  maxSpendPerMonth Float @default(150000)
+  monthlyRecordsUsed Float @default(0)
+  monthlySpendUsed Float @default(0)
+  updatedAt DateTime @updatedAt
+  @@map("ingestionsettings")
+}
+
+model JobAnalyticsEvent {
+  id String @id @default(cuid())
+  city String?
+  country String?
+  createdAt DateTime @default(now())
+  device String?
+  eventType String
+  jobId String
+  sessionId String?
+  userId String?
+  jobIdRecord JobPost @relation("Rel_JobAnalyticsEvent_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  userIdRecord User? @relation("Rel_JobAnalyticsEvent_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("jobanalyticsevents")
+}
+
+model JobAnalyticsMetric {
+  id String @id @default(cuid())
+  activeViewerCount Float @default(0)
+  applyClicks Float @default(0)
+  calculatedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  impressions Float @default(0)
+  jobId String @unique
+  trendingScore Float @default(0)
+  updatedAt DateTime @updatedAt
+  views Float @default(0)
+  jobIdRecord JobPost @relation("Rel_JobAnalyticsMetric_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("jobanalyticsmetrics")
+}
+
+model JobMatch {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  dispatchedAt DateTime?
+  jobId String
+  matchScore Float @default(0)
+  providerId String
+  responseAt DateTime?
+  responseStatus String @default("pending")
+  scoreBreakdown Json?
+  updatedAt DateTime @updatedAt
+  jobIdRecord JobPost @relation("Rel_JobMatch_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerIdRecord User @relation("Rel_JobMatch_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([jobId])
+  @@index([providerId])
+  @@index([matchScore])
+  @@index([responseStatus])
+  @@unique([jobId, providerId])
+  @@map("jobmatches")
+}
+
+model JobPost {
+  id String @id @default(cuid())
+  aiGenerated Json?
+  applicants String[] @default([])
+  applyMode String @default("internal_apply")
+  applyUrl String @default("")
+  boostExpiresAt DateTime?
+  boostedAt DateTime?
+  budget Json?
+  budgetMax Float @default(0)
+  budgetMin Float @default(0)
+  budgetType String @default("negotiable")
+  candidates Json?
+  category String @default("")
+  city String @default("")
+  cityName String?
+  companyDomain String @default("")
+  companyInfo String @default("")
+  companyName String @default("")
+  countryCode String?
+  createdAt DateTime @default(now())
+  currency String @default("INR")
+  description String
+  duplicateHash String?
+  embedding Json?
+  embeddingText String @default("")
+  experienceRequired String @default("")
+  expiresAt DateTime?
+  externalJobId String?
+  externalUrl String?
+  firstSeenAt DateTime @default(now())
+  geoPoint Json?
+  isActive Boolean @default(true)
+  isBoosted Boolean @default(false)
+  isExternal Boolean @default(false)
+  jobLocationData Json?
+  jobOrigin String @default("internal")
+  jobType String @default("full_time")
+  lastSeenAt DateTime @default(now())
+  lastSyncedAt DateTime @default(now())
+  latitude Float?
+  locality String @default("")
+  location Json?
+  locationData Json?
+  locationText String @default("")
+  longitude Float?
+  matchRadiusUsed Float @default(0)
+  matchedProviders String[] @default([])
+  maxBudget Float?
+  minBudget Float?
+  nativeLanguage String @default("en")
+  pricingType String?
+  recruiter String?
+  relocationSupport Boolean @default(false)
+  requiredSkillLevel String @default("semi-skilled")
+  requirements String[] @default([])
+  salaryPeriod String @default("yearly")
+  scheduleType String @default("flexible")
+  seoSlug String?
+  skill String @default("")
+  skillsTags String[] @default([])
+  source String @default("internal")
+  sourceJobUrl String @default("")
+  sourceType String @default("internal")
+  speciality String @default("")
+  status String @default("active")
+  timeOfDay String @default("any")
+  title String
+  updatedAt DateTime @updatedAt
+  urgency String @default("normal")
+  workMode String @default("onsite")
+  aiEvaluation_jobIdLinks AiEvaluation[] @relation("Rel_AiEvaluation_jobId_JobPost")
+  application_jobPostLinks Application[] @relation("Rel_Application_jobPost_JobPost")
+  duplicateGroup_canonicalJobIdLinks DuplicateGroup[] @relation("Rel_DuplicateGroup_canonicalJobId_JobPost")
+  jobAnalyticsEvent_jobIdLinks JobAnalyticsEvent[] @relation("Rel_JobAnalyticsEvent_jobId_JobPost")
+  jobAnalyticsMetric_jobIdLinks JobAnalyticsMetric[] @relation("Rel_JobAnalyticsMetric_jobId_JobPost")
+  jobMatch_jobIdLinks JobMatch[] @relation("Rel_JobMatch_jobId_JobPost")
+  recruiterRecord User? @relation("Rel_JobPost_recruiter_User", fields: [recruiter], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobSourceVersion_jobIdLinks JobSourceVersion[] @relation("Rel_JobSourceVersion_jobId_JobPost")
+  lead_jobPostLinks Lead[] @relation("Rel_Lead_jobPost_JobPost")
+  leadDistributionLog_jobIdLinks LeadDistributionLog[] @relation("Rel_LeadDistributionLog_jobId_JobPost")
+  matchLog_jobIdLinks MatchLog[] @relation("Rel_MatchLog_jobId_JobPost")
+  outreachCampaign_jobIdLinks OutreachCampaign[] @relation("Rel_OutreachCampaign_jobId_JobPost")
+  profileUnlock_jobIdLinks ProfileUnlock[] @relation("Rel_ProfileUnlock_jobId_JobPost")
+  review_jobPostLinks Review[] @relation("Rel_Review_jobPost_JobPost")
+  savedJob_jobPostLinks SavedJob[] @relation("Rel_SavedJob_jobPost_JobPost")
+  task_jobIdLinks Task[] @relation("Rel_Task_jobId_JobPost")
+  walletTransaction_sourceJobIdLinks WalletTransaction[] @relation("Rel_WalletTransaction_sourceJobId_JobPost")
+
+  @@index([urgency])
+  @@index([duplicateHash])
+  @@index([seoSlug])
+  @@index([skill, city])
+  @@index([recruiter])
+  @@unique([externalUrl])
+  @@index([source, externalJobId])
+  @@index([countryCode, category, city])
+  @@map("jobposts")
+}
+
+model JobRole {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  isActive Boolean @default(true)
+  roleName String @unique
+  updatedAt DateTime @updatedAt
+  @@map("jobroles")
+}
+
+model JobSearchIntent {
+  id String @id @default(cuid())
+  confidence Float @default(0)
+  createdAt DateTime @default(now())
+  extractedBudgetMax Float?
+  extractedBudgetMin Float?
+  extractedCity String @default("")
+  extractedLocality String @default("")
+  extractedShiftType String @default("")
+  extractedSkill String @default("")
+  extractedTimeOfDay String @default("")
+  extractedUrgency String @default("")
+  locationData Json?
+  normalizedQuery String @default("")
+  rawQuery String @default("All Providers")
+  sourceUserId String?
+  updatedAt DateTime @updatedAt
+  sourceUserIdRecord User? @relation("Rel_JobSearchIntent_sourceUserId_User", fields: [sourceUserId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  leadDistributionLog_intentIdLinks LeadDistributionLog[] @relation("Rel_LeadDistributionLog_intentId_JobSearchIntent")
+
+  @@index([normalizedQuery])
+  @@index([extractedSkill])
+  @@index([extractedCity])
+  @@index([confidence])
+  @@index([sourceUserId])
+  @@index([extractedSkill, extractedCity, createdAt])
+  @@map("jobsearchintents")
+}
+
+model JobSourceConfig {
+  id String @id @default(cuid())
+  apiBaseUrl String @default("")
+  apiCredentialsRef String @default("")
+  authType String @default("No auth")
+  createdAt DateTime @default(now())
+  failureCount Float @default(0)
+  inputSchemaJson Json?
+  isActive Boolean @default(false)
+  isZeroCode Boolean @default(false)
+  lastError String @default("")
+  lastSyncAt DateTime?
+  outputMappingJson Json?
+  rateLimit Json?
+  requiresApiKey Boolean @default(false)
+  sourceName String @unique
+  sourceType String
+  status String @default("paused")
+  supportedCountries String[] @default([])
+  syncRules Json?
+  updatedAt DateTime @updatedAt
+  webhookUrl String @default("")
+  @@map("jobsourceconfigs")
+}
+
+model JobSourceVersion {
+  id String @id @default(cuid())
+  applyUrl String
+  completenessScore Float @default(0)
+  createdAt DateTime @default(now())
+  duplicateGroupId String?
+  firstSeenAt DateTime @default(now())
+  freshnessScore Float @default(0)
+  isCanonical Boolean @default(false)
+  jobId String
+  lastSeenAt DateTime @default(now())
+  rawPayload Json?
+  requisitionId String?
+  sourceConfidenceScore Float @default(0)
+  sourceJobId String?
+  sourceName String
+  sourceType String
+  updatedAt DateTime @updatedAt
+  jobIdRecord JobPost @relation("Rel_JobSourceVersion_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  duplicateGroupIdRecord DuplicateGroup? @relation("Rel_JobSourceVersion_duplicateGroupId_DuplicateGroup", fields: [duplicateGroupId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  pipelineJob_canonicalSourceVersionIdLinks PipelineJob[] @relation("Rel_PipelineJob_canonicalSourceVersionId_JobSourceVersion")
+  @@map("jobsourceversions")
+}
+
+model JSearchScanRun {
+  id String @id @default(cuid())
+  countryCode String
+  createdAt DateTime @default(now())
+  errorMessage String?
+  finishedAt DateTime?
+  location String
+  query String
+  rawMeta Json?
+  retryCount Float @default(0)
+  scanType String
+  startedAt DateTime @default(now())
+  status String @default("pending")
+  totalFailed Float @default(0)
+  totalFetched Float @default(0)
+  totalPublished Float @default(0)
+  totalSavedRaw Float @default(0)
+  totalValidated Float @default(0)
+  triggeredBy String?
+  updatedAt DateTime @updatedAt
+  triggeredByRecord User? @relation("Rel_JSearchScanRun_triggeredBy_User", fields: [triggeredBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  rawJobImport_scanRunIdLinks RawJobImport[] @relation("Rel_RawJobImport_scanRunId_JSearchScanRun")
+  @@map("jsearchscanruns")
+}
+
+model Lead {
+  id String @id @default(cuid())
+  assignedByEngine Boolean @default(false)
+  confirmationStatus String @default("pending")
+  createdAt DateTime @default(now())
+  isUnlocked Boolean @default(false)
+  jobPost String?
+  message String @default("")
+  notes Json?
+  notifiedViaWhatsapp Boolean @default(false)
+  priorityScore Float @default(0)
+  provider String
+  recruiter String
+  sourceType String @default("manual")
+  status String @default("new")
+  tags String[] @default([])
+  type String
+  unlockPaymentId String @default("")
+  updatedAt DateTime @updatedAt
+  providerRecord User @relation("Rel_Lead_provider_User", fields: [provider], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  recruiterRecord User @relation("Rel_Lead_recruiter_User", fields: [recruiter], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobPostRecord JobPost? @relation("Rel_Lead_jobPost_JobPost", fields: [jobPost], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  leadEvent_leadIdLinks LeadEvent[] @relation("Rel_LeadEvent_leadId_Lead")
+  review_leadIdLinks Review[] @relation("Rel_Review_leadId_Lead")
+
+  @@index([sourceType])
+  @@index([assignedByEngine])
+  @@index([confirmationStatus])
+  @@index([provider, status])
+  @@index([recruiter])
+  @@unique([provider, recruiter, jobPost])
+  @@map("leads")
+}
+
+model LeadDistributionLog {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  distributionBatchId String
+  intentId String?
+  jobId String?
+  matchScore Float @default(0)
+  position Float @default(0)
+  providerId String
+  reason String[] @default([])
+  recruiterId String?
+  status String @default("queued")
+  updatedAt DateTime @updatedAt
+  jobIdRecord JobPost? @relation("Rel_LeadDistributionLog_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  recruiterIdRecord User? @relation("Rel_LeadDistributionLog_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  intentIdRecord JobSearchIntent? @relation("Rel_LeadDistributionLog_intentId_JobSearchIntent", fields: [intentId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerIdRecord User @relation("Rel_LeadDistributionLog_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([distributionBatchId])
+  @@index([jobId])
+  @@index([recruiterId])
+  @@index([intentId])
+  @@index([providerId])
+  @@index([status])
+  @@unique([distributionBatchId, providerId])
+  @@map("leaddistributionlogs")
+}
+
+model LeadEvent {
+  id String @id @default(cuid())
+  actorId String?
+  actorType String @default("system")
+  createdAt DateTime @default(now())
+  eventType String
+  leadId String
+  payload Json?
+  timestamp DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  leadIdRecord Lead @relation("Rel_LeadEvent_leadId_Lead", fields: [leadId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  actorIdRecord User? @relation("Rel_LeadEvent_actorId_User", fields: [actorId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([leadId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([leadId, eventType, timestamp])
+  @@map("leadevents")
+}
+
+model LearnedSelector {
+  id String @id @default(cuid())
+  confidence Float @default(100)
+  createdAt DateTime @default(now())
+  domain String
+  field String
+  selector String
+  updatedAt DateTime @updatedAt
+
+  @@index([domain])
+  @@unique([domain, field])
+  @@map("learnedselectors")
+}
+
+model Location {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  latitude Float
+  longitude Float
+  name String
+  type String @default("place")
+
+  @@index([latitude, longitude])
+  @@map("locations")
+}
+
+model MatchLog {
+  id String @id @default(cuid())
+  alertType String @default("email")
+  createdAt DateTime @default(now())
+  jobId String
+  providerId String
+  recruiterId String
+  sentAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  jobIdRecord JobPost @relation("Rel_MatchLog_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerIdRecord User @relation("Rel_MatchLog_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  recruiterIdRecord User @relation("Rel_MatchLog_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([jobId])
+  @@index([providerId])
+  @@index([recruiterId])
+  @@index([alertType])
+  @@unique([jobId, providerId, alertType])
+  @@map("matchlogs")
+}
+
+model NewsletterSubscriber {
+  id String @id @default(cuid())
+  email String @unique
+  isActive Boolean @default(true)
+  subscribedAt DateTime @default(now())
+  @@map("newslettersubscribers")
+}
+
+model Notification {
+  id String @id @default(cuid())
+  automationSource String @default("")
+  createdAt DateTime @default(now())
+  data Json?
+  isRead Boolean @default(false)
+  message String
+  sourceTag String @default("")
+  title String
+  type String
+  user Json?
+  userId String
+  userIdRecord User @relation("Rel_Notification_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([automationSource])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+model Otp {
+  id String @id @default(cuid())
+  attempts Float @default(0)
+  blockedUntil DateTime?
+  channel String
+  countryCode String @default("")
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  ipAddress String @default("")
+  otpHash String
+  providerUsed String @default("")
+  purpose String
+  resendCount Float @default(0)
+  resendWindowStart DateTime?
+  target String
+  updatedAt DateTime @updatedAt
+  userAgent String @default("")
+  userId String?
+  verifiedAt DateTime?
+  userIdRecord User? @relation("Rel_Otp_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@index([userId, purpose])
+  @@index([target, purpose])
+  @@map("otps")
+}
+
+model OutreachCampaign {
+  id String @id @default(cuid())
+  candidates Json?
+  candidatesContacted Float @default(0)
+  createdAt DateTime @default(now())
+  jobId String
+  jobTitle String
+  recruiterId String
+  runDate DateTime @default(now())
+  status String @default("running")
+  updatedAt DateTime @updatedAt
+  recruiterIdRecord User @relation("Rel_OutreachCampaign_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobIdRecord JobPost @relation("Rel_OutreachCampaign_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("outreachcampaigns")
+}
+
+model PartnerBankAccount {
+  id String @id @default(cuid())
+  accountHolderName String
+  accountNumber String
+  accountType String @default("Savings")
+  bankName String
+  branchName String?
+  createdAt DateTime @default(now())
+  ifscCode String
+  isPrimary Boolean @default(true)
+  isVerified Boolean @default(false)
+  partnerId String @unique
+  rejectionReason String?
+  updatedAt DateTime @updatedAt
+  upiId String?
+  verificationStatus String @default("pending")
+  verifiedAt DateTime?
+  verifiedBy String?
+  partnerIdRecord User @relation("Rel_PartnerBankAccount_partnerId_User", fields: [partnerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  verifiedByRecord Admin? @relation("Rel_PartnerBankAccount_verifiedBy_Admin", fields: [verifiedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("partnerbankaccounts")
+}
+
+model PartnerProfile {
+  id String @id @default(cuid())
+  activityLogs Json?
+  approvalSections Json?
+  availableCommission Float @default(0)
+  commissionRate Float @default(40)
+  createdAt DateTime @default(now())
+  createdBy String?
+  createdByModel String @default("Admin")
+  deletedAt DateTime?
+  deletedBy String?
+  isDeleted Boolean @default(false)
+  level Float @default(1)
+  pendingPayout Float @default(0)
+  referralCode String @unique
+  referralLink String @default("")
+  status String @default("active")
+  tier String @default("Gold")
+  totalCommissionEarned Float @default(0)
+  totalRevenueCollected Float @default(0)
+  updatedAt DateTime @updatedAt
+  userId String @unique
+  withdrawnCommission Float @default(0)
+  userIdRecord User @relation("Rel_PartnerProfile_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  deletedByRecord User? @relation("Rel_PartnerProfile_deletedBy_User", fields: [deletedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  payoutRequest_partnerProfileIdLinks PayoutRequest[] @relation("Rel_PayoutRequest_partnerProfileId_PartnerProfile")
+  referral_partnerProfileIdLinks Referral[] @relation("Rel_Referral_partnerProfileId_PartnerProfile")
+  @@map("partnerprofiles")
+}
+
+model PartnerReward {
+  id String @id @default(cuid())
+  amount Float @default(0)
+  createdAt DateTime @default(now())
+  month Float?
+  paidAt DateTime?
+  partner String
+  referral String?
+  referredUser String?
+  remarks String @default("")
+  sourceType String
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  year Float?
+  partnerRecord User @relation("Rel_PartnerReward_partner_User", fields: [partner], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  referralRecord Referral? @relation("Rel_PartnerReward_referral_Referral", fields: [referral], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  referredUserRecord User? @relation("Rel_PartnerReward_referredUser_User", fields: [referredUser], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([partner, status])
+  @@index([referral])
+  @@index([month, year])
+  @@map("partnerrewards")
+}
+
+model Payment {
+  id String @id @default(cuid())
+  amount Float
+  billingRuleSnapshot Json?
+  cashbackAmount Float @default(0)
+  createdAt DateTime @default(now())
+  currency String @default("INR")
+  isSimulated Boolean @default(false)
+  metadata Json?
+  netPlatformRevenue Float @default(0)
+  paymentMethod String @default("")
+  plan String?
+  platformCommissionAmount Float @default(0)
+  priceSnapshot Json?
+  providerShareAmount Float @default(0)
+  referralCommissionAmount Float @default(0)
+  status String @default("created")
+  stripePaymentIntentId String @default("")
+  stripeSessionId String? @unique
+  transactionId String @default("")
+  type String
+  updatedAt DateTime @updatedAt
+  user String
+  commissionTransaction_paymentIdLinks CommissionTransaction[] @relation("Rel_CommissionTransaction_paymentId_Payment")
+  userRecord User @relation("Rel_Payment_user_User", fields: [user], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  planRecord Plan? @relation("Rel_Payment_plan_Plan", fields: [plan], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  referral_firstPaymentIdLinks Referral[] @relation("Rel_Referral_firstPaymentId_Payment")
+  walletTransaction_sourcePaymentIdLinks WalletTransaction[] @relation("Rel_WalletTransaction_sourcePaymentId_Payment")
+
+  @@index([user])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model PayoutMethod {
+  id String @id @default(cuid())
+  bankDetails Json?
+  createdAt DateTime @default(now())
+  isDefault Boolean @default(false)
+  providerName String @default("")
+  qrCodeImage String @default("")
+  type String
+  updatedAt DateTime @updatedAt
+  upiId String @default("")
+  userId String
+  userIdRecord User @relation("Rel_PayoutMethod_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerWithdrawal_payoutMethodIdLinks ProviderWithdrawal[] @relation("Rel_ProviderWithdrawal_payoutMethodId_PayoutMethod")
+
+  @@index([userId])
+  @@map("payoutmethods")
+}
+
+model PayoutRequest {
+  id String @id @default(cuid())
+  adminRemarks String @default("")
+  amount Float
+  createdAt DateTime @default(now())
+  partnerId String
+  partnerProfileId String
+  paymentDetails Json?
+  paymentMethod String @default("")
+  processedAt DateTime?
+  processedBy String?
+  requestedAt DateTime @default(now())
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  partnerIdRecord User @relation("Rel_PayoutRequest_partnerId_User", fields: [partnerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  partnerProfileIdRecord PartnerProfile @relation("Rel_PayoutRequest_partnerProfileId_PartnerProfile", fields: [partnerProfileId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  processedByRecord Admin? @relation("Rel_PayoutRequest_processedBy_Admin", fields: [processedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([partnerId, status])
+  @@map("payoutrequests")
+}
+
+model PipelineAuditLog {
+  id String @id @default(cuid())
+  actionType String
+  adminUserId String?
+  afterState Json?
+  beforeState Json?
+  createdAt DateTime @default(now())
+  entityId String
+  entityType String
+  metadata Json?
+  reason String?
+  timestamp DateTime @default(now())
+  triggerSource String
+  updatedAt DateTime @updatedAt
+  freelancerContactConsentRequest_auditLogIdLinks FreelancerContactConsentRequest[] @relation("Rel_FreelancerContactConsentRequest_auditLogId_PipelineAuditLog")
+  adminUserIdRecord User? @relation("Rel_PipelineAuditLog_adminUserId_User", fields: [adminUserId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("pipelineauditlogs")
+}
+
+model PipelineAutomation {
+  id String @id @default(cuid())
+  activeFilters Json?
+  autoSendClaimLink Boolean @default(true)
+  configId String
+  createdAt DateTime @default(now())
+  experienceMax Float @default(50)
+  experienceMin Float @default(0)
+  failureCount Float @default(0)
+  frequency String @default("daily")
+  jobType String @default("")
+  lastRunAt DateTime?
+  location String @default("")
+  maxRecordsPerRun Float @default(100)
+  maxSpendPerRun Float @default(10)
+  name String
+  nextRunAt DateTime?
+  outreachChannels String[] @default([])
+  searchQuery String
+  status String @default("active")
+  updatedAt DateTime @updatedAt
+  configIdRecord DataSourceConfig @relation("Rel_PipelineAutomation_configId_DataSourceConfig", fields: [configId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("pipelineautomations")
+}
+
+model PipelineCategory {
+  id String @id @default(cuid())
+  approvedBy String?
+  createdAt DateTime @default(now())
+  isActive Boolean @default(true)
+  isSystemDefault Boolean @default(false)
+  keywords String[] @default([])
+  name String @unique
+  updatedAt DateTime @updatedAt
+  approvedByRecord User? @relation("Rel_PipelineCategory_approvedBy_User", fields: [approvedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("pipelinecategories")
+}
+
+model PipelineCompanyMaster {
+  id String @id @default(cuid())
+  aliases String[] @default([])
+  canonicalName String @unique
+  companyDomain String?
+  confidenceScore Float @default(100)
+  createdAt DateTime @default(now())
+  status String @default("active")
+  updatedAt DateTime @updatedAt
+  companyAliasSuggestion_suggestedCompanyIdLinks CompanyAliasSuggestion[] @relation("Rel_CompanyAliasSuggestion_suggestedCompanyId_PipelineCompanyMaster")
+  @@map("pipelinecompanymasters")
+}
+
+model PipelineJob {
+  id String @id @default(cuid())
+  applyUrl String
+  canonicalLocationId String?
+  canonicalSourceVersionId String?
+  categoryId String?
+  categoryName String?
+  city String?
+  companyDomain String?
+  companyId String?
+  companyName String
+  compositeKey String?
+  contentFingerprint String?
+  country String?
+  createdAt DateTime @default(now())
+  description String?
+  duplicateGroupId String?
+  employmentType String?
+  expiryReason String?
+  firstSeenAt DateTime @default(now())
+  jobType String?
+  lastSeenAt DateTime @default(now())
+  locationText String
+  missingSuccessfulScanCount Float @default(0)
+  postedDate DateTime?
+  requisitionId String?
+  salaryCurrency String?
+  salaryMax Float?
+  salaryMin Float?
+  salaryNormalizedAnnual Float?
+  salaryRaw String?
+  salaryUnit String?
+  sourceApplyUrl String?
+  sourceConfidenceScore Float @default(0)
+  sourceJobId String?
+  sourceName String?
+  sourceType String?
+  state String?
+  status String @default("active")
+  title String
+  updatedAt DateTime @updatedAt
+  validThrough DateTime?
+  validationErrors String[] @default([])
+  validationStatus String @default("needs_review")
+  companyIdRecord CompanyMaster? @relation("Rel_PipelineJob_companyId_CompanyMaster", fields: [companyId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  canonicalSourceVersionIdRecord JobSourceVersion? @relation("Rel_PipelineJob_canonicalSourceVersionId_JobSourceVersion", fields: [canonicalSourceVersionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  duplicateGroupIdRecord DuplicateGroup? @relation("Rel_PipelineJob_duplicateGroupId_DuplicateGroup", fields: [duplicateGroupId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("pipelinejobs")
+}
+
+model PipelineLocationMaster {
+  id String @id @default(cuid())
+  aliases String[] @default([])
+  canonicalName String @unique
+  city String?
+  country String?
+  createdAt DateTime @default(now())
+  normalizedKey String @unique
+  state String?
+  updatedAt DateTime @updatedAt
+  @@map("pipelinelocationmasters")
+}
+
+model Plan {
+  id String @id @default(cuid())
+  aiLimits Json?
+  allowedCities Json?
+  allowedPincodes Json?
+  allowedSkills Json?
+  audience String?
+  availableCountries String[] @default([])
+  billingCycle String @default("monthly")
+  boostWeight Float @default(0)
+  code String? @unique
+  contactLimit Float @default(0)
+  country String @default("IN")
+  countryPricing Json?
+  coverageType String @default("pincode")
+  createdAt DateTime @default(now())
+  currency String @default("INR")
+  customConfig Json?
+  description String @default("")
+  discountedPrice Float @default(0)
+  duration Float @default(365)
+  features String[] @default([])
+  gstPercent Float @default(0)
+  isActive Boolean @default(true)
+  isCustomisable Boolean @default(false)
+  isDefaultFree Boolean @default(false)
+  isPopular Boolean @default(false)
+  isProviderDefault Boolean @default(false)
+  isRotationEligible Boolean @default(false)
+  maxCities Float @default(1)
+  maxJobApplications Float @default(0)
+  maxPincodes Float @default(1)
+  maxSkills Float @default(4)
+  metadata Json?
+  name String
+  planBenefits Json?
+  planCategory String @default("general")
+  planType String @default("paid")
+  price Float
+  priceAED Float @default(0)
+  priceMonthly Float @default(0)
+  priceUSD Float @default(0)
+  priorityWeight Float @default(0)
+  showOnLandingPage Boolean @default(false)
+  slug String
+  sortOrder Float @default(0)
+  status String @default("active")
+  supportsPerformanceInsights Boolean @default(false)
+  supportsSmsAlerts Boolean @default(false)
+  supportsWhatsappAlerts Boolean @default(false)
+  type String
+  unlockCredits Float @default(0)
+  updatedAt DateTime @updatedAt
+  usageResetCycle String @default("monthly")
+  visibilityLevel String @default("basic")
+  payment_planLinks Payment[] @relation("Rel_Payment_plan_Plan")
+  profileUnlock_planIdLinks ProfileUnlock[] @relation("Rel_ProfileUnlock_planId_Plan")
+  profileUnlock_sourcePlanIdLinks ProfileUnlock[] @relation("Rel_ProfileUnlock_sourcePlanId_Plan")
+  providerProfile_activePlanIdLinks ProviderProfile[] @relation("Rel_ProviderProfile_activePlanId_Plan")
+  providerSubscription_planIdLinks ProviderSubscription[] @relation("Rel_ProviderSubscription_planId_Plan")
+  recruiterSubscription_planIdLinks RecruiterSubscription[] @relation("Rel_RecruiterSubscription_planId_Plan")
+  referral_selectedPlanIdLinks Referral[] @relation("Rel_Referral_selectedPlanId_Plan")
+  refundRequest_planIdLinks RefundRequest[] @relation("Rel_RefundRequest_planId_Plan")
+  userSubscription_planIdLinks UserSubscription[] @relation("Rel_UserSubscription_planId_Plan")
+
+  @@unique([type, slug, duration])
+  @@unique([type, slug, duration, country, billingCycle])
+  @@index([type, isProviderDefault, status])
+  @@map("plans")
+}
+
+model ProfileShareToken {
+  id String @id @default(cuid())
+  accessCount Float @default(0)
+  candidateId String
+  createdAt DateTime @default(now())
+  createdByRole String
+  createdByUserId String
+  expiresAt DateTime
+  isRevoked Boolean @default(false)
+  lastAccessedAt DateTime?
+  token String @unique
+  updatedAt DateTime @updatedAt
+  candidateIdRecord User @relation("Rel_ProfileShareToken_candidateId_User", fields: [candidateId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  createdByUserIdRecord User @relation("Rel_ProfileShareToken_createdByUserId_User", fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([candidateId])
+  @@index([isRevoked])
+  @@map("profilesharetokens")
+}
+
+model ProfileUnlock {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+  ipAddress String @default("")
+  jobId String?
+  otpVerified Boolean @default(false)
+  planId String?
+  providerId String
+  purpose String @default("full_profile")
+  recruiterId String
+  sourcePlanId String?
+  subscriptionId String?
+  unlockedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userAgent String @default("")
+  recruiterIdRecord User @relation("Rel_ProfileUnlock_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerIdRecord User @relation("Rel_ProfileUnlock_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobIdRecord JobPost? @relation("Rel_ProfileUnlock_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  planIdRecord Plan? @relation("Rel_ProfileUnlock_planId_Plan", fields: [planId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  sourcePlanIdRecord Plan? @relation("Rel_ProfileUnlock_sourcePlanId_Plan", fields: [sourcePlanId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  subscriptionIdRecord UserSubscription? @relation("Rel_ProfileUnlock_subscriptionId_UserSubscription", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([recruiterId, providerId])
+  @@index([recruiterId])
+  @@index([providerId])
+  @@map("profileunlocks")
+}
+
+model ProviderAIProfile {
+  id String @id @default(cuid())
+  confidence Float @default(0)
+  createdAt DateTime @default(now())
+  generatedProfile Json?
+  model String @default("")
+  providerId String @unique
+  rawInput String @default("")
+  source String @default("fallback")
+  status String @default("success")
+  updatedAt DateTime @updatedAt
+  version Float @default(1)
+  providerIdRecord User @relation("Rel_ProviderAIProfile_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([status])
+  @@map("provideraiprofiles")
+}
+
+model ProviderAiUsage {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  periodEnd DateTime
+  periodStart DateTime
+  providerId String
+  subscriptionId String
+  updatedAt DateTime @updatedAt
+  usage Json?
+  providerIdRecord User @relation("Rel_ProviderAiUsage_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  subscriptionIdRecord ProviderSubscription @relation("Rel_ProviderAiUsage_subscriptionId_ProviderSubscription", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([providerId, subscriptionId, periodStart, periodEnd])
+  @@map("provideraiusages")
+}
+
+model ProviderAvailability {
+  id String @id @default(cuid())
+  availableSlots Json?
+  createdAt DateTime @default(now())
+  isAvailableNow Boolean @default(true)
+  providerId String @unique
+  updatedAt DateTime @updatedAt
+  workingDays String[] @default([])
+  workingHours Json?
+  providerIdRecord User @relation("Rel_ProviderAvailability_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([isAvailableNow])
+  @@index([isAvailableNow, updatedAt])
+  @@map("provideravailabilities")
+}
+
+model ProviderEmbedding {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  dimensions Float @default(1536)
+  metadata Json?
+  model String @default("text-embedding-3-small")
+  providerId String @unique
+  textSnapshot String @default("")
+  updatedAt DateTime @updatedAt
+  updatedAtSource DateTime @default(now())
+  vector Float[] @default([])
+  providerIdRecord User @relation("Rel_ProviderEmbedding_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([providerId, updatedAt])
+  @@map("providerembeddings")
+}
+
+model ProviderMetrics {
+  id String @id @default(cuid())
+  acceptanceRate Float @default(0)
+  avgResponseSeconds Float @default(0)
+  createdAt DateTime @default(now())
+  hireConversionRate Float @default(0)
+  lastLeadAssignedAt DateTime?
+  profileCompletionScore Float @default(0)
+  providerId String @unique
+  rankingScore Float @default(0)
+  rejectionRate Float @default(0)
+  totalAcceptedLeads Float @default(0)
+  totalAssignedLeads Float @default(0)
+  totalCompletedDeals Float @default(0)
+  trustScore Float @default(0)
+  updatedAt DateTime @updatedAt
+  providerIdRecord User @relation("Rel_ProviderMetrics_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([providerId, rankingScore])
+  @@map("providermetrics")
+}
+
+model ProviderProfile {
+  id String @id @default(cuid())
+  activePlanId String?
+  activeSubscriptionId String?
+  activityLogs Json?
+  aiGeneratedDraft Json?
+  aiSuggestions Json?
+  allowedCitiesCount Float @default(1)
+  allowedPincodesCount Float @default(1)
+  allowedSkillsCount Float @default(1)
+  approvalAction String @default("pending")
+  approvalNote String @default("")
+  approvalSections Json?
+  approvedAt DateTime?
+  approvedBy String?
+  approvedByRole String?
+  availability String @default("")
+  availabilitySummary Json?
+  boostWeight Float @default(0)
+  boostedUntil DateTime?
+  category String @default("")
+  city String @default("")
+  company String @default("")
+  contactVisibility String @default("both")
+  contactsUnlocked Float @default(0)
+  createdAt DateTime @default(now())
+  currentCtc String @default("")
+  currentPlan String @default("free")
+  customConfig Json?
+  description String @default("")
+  designation String @default("")
+  documents String[] @default([])
+  education Json?
+  embedding Json?
+  embeddingText String @default("")
+  expandedSkills String[] @default([])
+  expectedCtc String @default("")
+  experience String @default("")
+  finalBio String @default("")
+  followBackRequest Json?
+  freelancerAnalytics Json?
+  geoPoint Json?
+  inRotationPool Boolean @default(false)
+  isActiveSubscription Boolean @default(false)
+  isApproved Boolean @default(false)
+  isPublicProfile Boolean @default(false)
+  isResumeAutoGenerated Boolean @default(false)
+  isTopCity Boolean @default(false)
+  isTopInCity Boolean @default(false)
+  isTopInCountry Boolean @default(false)
+  isTopInPincode Boolean @default(false)
+  isVerified Boolean @default(false)
+  jobType String[] @default([])
+  languageEntries Json?
+  languages String[] @default([])
+  lastAnalyzedHash String?
+  lastShownAt DateTime?
+  latitude Float?
+  leadsReceived Float @default(0)
+  location Json?
+  locationData Json?
+  locationUpdatedAt DateTime?
+  locations String[] @default([])
+  longitude Float?
+  nearestLocation String @default("")
+  noticePeriod String @default("")
+  originalBio String @default("")
+  originalPortfolioLinks Json?
+  originalSkills String[] @default([])
+  parsedResumeData Json?
+  photo String @default("")
+  planBenefitsSnapshot Json?
+  planCoverageType String @default("pincode")
+  planExpiresAt DateTime?
+  portfolioLinks Json?
+  preferredCountries String[] @default([])
+  previousExperience Json?
+  pricing String @default("")
+  pricingEntries Json?
+  pricingType String @default("")
+  priorityWeight Float @default(0)
+  profileCompletion Float @default(0)
+  profileExpiresAt DateTime?
+  profileName String @default("")
+  profilePhoto String @default("")
+  profilePhotoApproval Json?
+  profileStatus String @default("draft")
+  profileViews Float @default(0)
+  professionalTitle String @default("")
+  headlineSkill String @default("")
+  keyAchievement String @default("")
+  preferredProjectDuration String @default("")
+  workHours Json?
+  whatsappAvailability Json?
+  contactConsent Boolean @default(false)
+  contactMediums String[] @default([])
+  voiceIntroUrl String @default("")
+  videoIntroUrl String @default("")
+  idVerification Json?
+  projects Json?
+  rankingScore Float @default(0)
+  rating Float @default(0)
+  relocationAvailable Boolean @default(false)
+  remoteAvailable Boolean @default(false)
+  renewalReminderSent Boolean @default(false)
+  resumeApproval Json?
+  resumeParsing Json?
+  resumeUrl String @default("")
+  roles String[] @default([])
+  serviceLocationData Json?
+  serviceLocations Json?
+  skillLevel String @default("unskilled")
+  skills String[] @default([])
+  specialities Json?
+  state String @default("")
+  subscriptionEndDate DateTime?
+  subscriptionPlan String @default("free")
+  subscriptionStartDate DateTime?
+  tier String @default("unskilled")
+  totalReviews Float @default(0)
+  trustScore Float @default(0)
+  updatedAt DateTime @updatedAt
+  uploadedAssets Json?
+  user String @unique
+  visibility String @default("public")
+  visibilityLevel String @default("basic")
+  whatsappAlerts Boolean @default(true)
+  whatsappConsent Boolean @default(false)
+  whatsappFreelancePlanActive Boolean @default(false)
+  whatsappFreelancePlanExpiry DateTime?
+  whatsappFreelancePlanSubscriptionId String?
+  willingToTravelKm Float @default(0)
+  workMode String[] @default([])
+  aiEvaluation_candidateIdLinks AiEvaluation[] @relation("Rel_AiEvaluation_candidateId_ProviderProfile")
+  candidateCareerVersion_providerIdLinks CandidateCareerVersion[] @relation("Rel_CandidateCareerVersion_providerId_ProviderProfile")
+  contactClickLog_providerLinks ContactClickLog[] @relation("Rel_ContactClickLog_provider_ProviderProfile")
+  userRecord User @relation("Rel_ProviderProfile_user_User", fields: [user], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  approvedByRecord User? @relation("Rel_ProviderProfile_approvedBy_User", fields: [approvedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  activePlanIdRecord Plan? @relation("Rel_ProviderProfile_activePlanId_Plan", fields: [activePlanId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  activeSubscriptionIdRecord ProviderSubscription? @relation("Rel_ProviderProfile_activeSubscriptionId_ProviderSubscription", fields: [activeSubscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  recruiterCvViewTracker_candidateIdLinks RecruiterCvViewTracker[] @relation("Rel_RecruiterCvViewTracker_candidateId_ProviderProfile")
+  recruiterLeadTracker_candidateIdLinks RecruiterLeadTracker[] @relation("Rel_RecruiterLeadTracker_candidateId_ProviderProfile")
+  user_providerProfileIdLinks User[] @relation("Rel_User_providerProfileId_ProviderProfile")
+  visitHistory_visitedProfileLinks VisitHistory[] @relation("Rel_VisitHistory_visitedProfile_ProviderProfile")
+
+  @@index([city])
+  @@index([tier])
+  @@index([boostWeight])
+  @@index([latitude, longitude])
+  @@index([user, rankingScore])
+  @@map("providerprofiles")
+}
+
+model ProviderServiceArea {
+  id String @id @default(cuid())
+  city String
+  createdAt DateTime @default(now())
+  geoPoint Json?
+  locality String @default("")
+  providerId String
+  radiusKm Float @default(15)
+  updatedAt DateTime @updatedAt
+  providerIdRecord User @relation("Rel_ProviderServiceArea_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([providerId])
+  @@index([city])
+  @@index([locality])
+  @@index([providerId, city, locality])
+  @@map("providerserviceareas")
+}
+
+model ProviderSubscription {
+  id String @id @default(cuid())
+  benefits Json?
+  coverageLabel String @default("")
+  createdAt DateTime @default(now())
+  currency String @default("INR")
+  customConfig Json?
+  customLimits Json?
+  durationMonths Float
+  endDate DateTime?
+  finalAmount Float @default(0)
+  gstAmount Float @default(0)
+  gstPercent Float @default(0)
+  isAutoRenew Boolean @default(false)
+  maxJobApplications Float @default(0)
+  orderId String @default("")
+  paymentId String @default("")
+  paymentProvider String @default("")
+  paymentStatus String @default("pending")
+  planCategory String @default("general")
+  planId String
+  planSnapshot Json?
+  priceSnapshot Json?
+  priorityWeight Float @default(0)
+  providerId String
+  remainingDurationMs Float @default(0)
+  selectedAddons Json?
+  selectedCities String[] @default([])
+  selectedPincodes String[] @default([])
+  selectedSkills String[] @default([])
+  startDate DateTime?
+  stripeSubscriptionId String?
+  subscriptionStatus String @default("pending")
+  subtotal Float @default(0)
+  totalAmount Float @default(0)
+  updatedAt DateTime @updatedAt
+  usageResetCycle String @default("monthly")
+  visibilityLevel String @default("")
+  customVisibilityPlan_subscriptionIdLinks CustomVisibilityPlan[] @relation("Rel_CustomVisibilityPlan_subscriptionId_ProviderSubscription")
+  providerAiUsage_subscriptionIdLinks ProviderAiUsage[] @relation("Rel_ProviderAiUsage_subscriptionId_ProviderSubscription")
+  providerProfile_activeSubscriptionIdLinks ProviderProfile[] @relation("Rel_ProviderProfile_activeSubscriptionId_ProviderSubscription")
+  providerIdRecord User @relation("Rel_ProviderSubscription_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  planIdRecord Plan @relation("Rel_ProviderSubscription_planId_Plan", fields: [planId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerUsage_subscriptionIdLinks ProviderUsage[] @relation("Rel_ProviderUsage_subscriptionId_ProviderSubscription")
+  refundRequest_subscriptionIdLinks RefundRequest[] @relation("Rel_RefundRequest_subscriptionId_ProviderSubscription")
+
+  @@index([providerId, subscriptionStatus, endDate])
+  @@index([paymentStatus, createdAt])
+  @@index([planId, createdAt])
+  @@map("providersubscriptions")
+}
+
+model ProviderUsage {
+  id String @id @default(cuid())
+  cityCoverageUsed Float @default(0)
+  createdAt DateTime @default(now())
+  jobApplicationsUsed Float @default(0)
+  locationsUsed Float @default(0)
+  metadata Json?
+  periodEnd DateTime
+  periodStart DateTime
+  pincodeCoverageUsed Float @default(0)
+  providerId String
+  skillsUsed Float @default(0)
+  subscriptionId String
+  updatedAt DateTime @updatedAt
+  providerIdRecord User @relation("Rel_ProviderUsage_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  subscriptionIdRecord ProviderSubscription @relation("Rel_ProviderUsage_subscriptionId_ProviderSubscription", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([providerId, subscriptionId, periodStart, periodEnd])
+  @@map("providerusages")
+}
+
+model ProviderWallet {
+  id String @id @default(cuid())
+  availableBalance Float @default(0)
+  commissionDeducted Float @default(0)
+  createdAt DateTime @default(now())
+  pendingBalance Float @default(0)
+  totalEarnings Float @default(0)
+  updatedAt DateTime @updatedAt
+  userId String @unique
+  withdrawnAmount Float @default(0)
+  userIdRecord User @relation("Rel_ProviderWallet_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerWalletTransaction_walletIdLinks ProviderWalletTransaction[] @relation("Rel_ProviderWalletTransaction_walletId_ProviderWallet")
+  @@map("providerwallets")
+}
+
+model ProviderWalletTransaction {
+  id String @id @default(cuid())
+  amount Float
+  createdAt DateTime @default(now())
+  description String @default("")
+  referenceId String?
+  status String
+  type String
+  updatedAt DateTime @updatedAt
+  userId String
+  walletId String
+  walletIdRecord ProviderWallet @relation("Rel_ProviderWalletTransaction_walletId_ProviderWallet", fields: [walletId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  userIdRecord User @relation("Rel_ProviderWalletTransaction_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("providerwallettransactions")
+}
+
+model ProviderWithdrawal {
+  id String @id @default(cuid())
+  adminNotes String @default("")
+  amount Float
+  createdAt DateTime @default(now())
+  payoutMethodId String
+  payoutMethodSnapshot Json
+  processedAt DateTime?
+  processedBy String?
+  status String @default("pending")
+  transactionId String @default("")
+  updatedAt DateTime @updatedAt
+  userId String
+  userIdRecord User @relation("Rel_ProviderWithdrawal_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  payoutMethodIdRecord PayoutMethod @relation("Rel_ProviderWithdrawal_payoutMethodId_PayoutMethod", fields: [payoutMethodId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  processedByRecord User? @relation("Rel_ProviderWithdrawal_processedBy_User", fields: [processedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("providerwithdrawals")
+}
+
+model QuerySeedHistory {
+  id String @id @default(cuid())
+  countryCode String
+  createdAt DateTime @default(now())
+  failureReason String?
+  lastUsedAt DateTime?
+  location String
+  normalizedQuery String
+  rawTerm String
+  sourceType String
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  @@map("queryseedhistories")
+}
+
+model RawJobImport {
+  id String @id @default(cuid())
+  applyUrl String?
+  countryCode String
+  createdAt DateTime @default(now())
+  firstFetchedAt DateTime @default(now())
+  jsearchJobId String
+  lastFetchedAt DateTime @default(now())
+  location String
+  processingStatus String @default("raw")
+  query String
+  rawCompanyName String?
+  rawDescription String?
+  rawEmploymentType String?
+  rawJobType String?
+  rawLocation String?
+  rawPayload Json?
+  rawPostedDate DateTime?
+  rawSalary String?
+  rawTitle String?
+  requisitionId String?
+  scanRunId String
+  sourceApplyUrl String?
+  sourceConfidenceScore Float @default(90)
+  sourceJobId String?
+  sourceName String @default("JSearch")
+  sourceType String @default("aggregated")
+  updatedAt DateTime @updatedAt
+  validationErrors String[] @default([])
+  scanRunIdRecord JSearchScanRun @relation("Rel_RawJobImport_scanRunId_JSearchScanRun", fields: [scanRunId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("rawjobimports")
+}
+
+model RecruiterAiUsage {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  periodEnd DateTime
+  periodStart DateTime
+  recruiterId String
+  subscriptionId String
+  updatedAt DateTime @updatedAt
+  usage Json?
+  recruiterIdRecord User @relation("Rel_RecruiterAiUsage_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  subscriptionIdRecord UserSubscription @relation("Rel_RecruiterAiUsage_subscriptionId_UserSubscription", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([recruiterId, subscriptionId, periodStart, periodEnd])
+  @@map("recruiteraiusages")
+}
+
+model RecruiterCvViewTracker {
+  id String @id @default(cuid())
+  candidateId String
+  createdAt DateTime @default(now())
+  recruiterId String
+  updatedAt DateTime @updatedAt
+  viewedAt DateTime @default(now())
+  recruiterIdRecord User @relation("Rel_RecruiterCvViewTracker_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  candidateIdRecord ProviderProfile @relation("Rel_RecruiterCvViewTracker_candidateId_ProviderProfile", fields: [candidateId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId])
+  @@unique([recruiterId, candidateId])
+  @@map("recruitercvviewtrackers")
+}
+
+model RecruiterHireEmbedding {
+  id String @id @default(cuid())
+  city String @default("")
+  createdAt DateTime @default(now())
+  dimensions Float @default(1536)
+  model String @default("text-embedding-3-small")
+  recruiterId String
+  referenceId String @default("")
+  skill String @default("")
+  sourceType String @default("hire_history")
+  successSignals Json?
+  updatedAt DateTime @updatedAt
+  vector Float[] @default([])
+  recruiterIdRecord User @relation("Rel_RecruiterHireEmbedding_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId])
+  @@index([sourceType])
+  @@index([recruiterId, sourceType, createdAt])
+  @@map("recruiterhireembeddings")
+}
+
+model RecruiterLead {
+  id String @id @default(cuid())
+  activeJobCount Float @default(0)
+  atsUsed String @default("")
+  careersEmail String @default("")
+  companyDomain String
+  companyName String
+  contactPageUrl String @default("")
+  countryCode String
+  createdAt DateTime @default(now())
+  hiringLevel String @default("normal")
+  linkedInCompanyUrl String @default("")
+  publicHrEmail String @default("")
+  source String @default("ats_sync")
+  status String @default("new")
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyDomain, countryCode])
+  @@index([status])
+  @@index([hiringLevel])
+  @@map("recruiterleads")
+}
+
+model RecruiterLeadTracker {
+  id String @id @default(cuid())
+  candidateId String
+  createdAt DateTime @default(now())
+  recruiterId String
+  updatedAt DateTime @updatedAt
+  viewedAt DateTime @default(now())
+  recruiterIdRecord User @relation("Rel_RecruiterLeadTracker_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  candidateIdRecord ProviderProfile @relation("Rel_RecruiterLeadTracker_candidateId_ProviderProfile", fields: [candidateId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId])
+  @@unique([recruiterId, candidateId])
+  @@map("recruiterleadtrackers")
+}
+
+model RecruiterProfile {
+  id String @id @default(cuid())
+  activityLogs Json?
+  aiCopilotRemaining Float @default(0)
+  aiJdGeneratorRemaining Float @default(0)
+  aiJdParsingRemaining Float @default(0)
+  approvalAction String @default("pending")
+  approvalNote String @default("")
+  approvalSections Json?
+  approvedAt DateTime?
+  approvedBy String?
+  approvedByRole String?
+  avgRating Float @default(0)
+  bio String @default("")
+  boostDaysRemaining Float @default(0)
+  boostJobsRemaining Float @default(0)
+  businessType String @default("")
+  careerPageSettings Json?
+  city String @default("")
+  companyLogo String @default("")
+  companyName String @default("")
+  companySize String @default("")
+  companyType String @default("individual")
+  companyWebsite String @default("")
+  contactPersonName String @default("")
+  countryCode String @default("")
+  createdAt DateTime @default(now())
+  currentPlan String @default("free")
+  customReportsRemaining Float @default(0)
+  description String @default("")
+  designation String @default("")
+  directMessagingRemaining Float @default(0)
+  foundedYear String @default("")
+  freeProfileViews Float @default(0)
+  freeUnlockResetAt DateTime?
+  freeViewResetAt DateTime?
+  geoPoint Json?
+  gstNumber String @default("")
+  hiringLocation String @default("")
+  hiringPreferences Json?
+  industry String @default("")
+  interviewKitsRemaining Float @default(0)
+  isApproved Boolean @default(false)
+  isVerified Boolean @default(false)
+  jobPostLimitRemaining Float @default(0)
+  latitude Float?
+  location Json?
+  locationData Json?
+  locationUpdatedAt DateTime?
+  longitude Float?
+  nearestLocation String @default("")
+  outreachCampaignsRemaining Float @default(0)
+  planExpiresAt DateTime?
+  profileExpiresAt DateTime?
+  profileName String @default("")
+  profilePhoto String @default("")
+  profilePhotoApproval Json?
+  renewalReminderSent Boolean @default(false)
+  skillsNeeded String[] @default([])
+  state String @default("")
+  timezone String @default("")
+  totalHires Float @default(0)
+  totalJobsPosted Float @default(0)
+  totalReviews Float @default(0)
+  totalUnlocks Float @default(0)
+  unlockPackSize Float @default(0)
+  unlocksRemaining Float @default(0)
+  updatedAt DateTime @updatedAt
+  user String @unique
+  whatsappAlerts Boolean @default(true)
+  userRecord User @relation("Rel_RecruiterProfile_user_User", fields: [user], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  approvedByRecord User? @relation("Rel_RecruiterProfile_approvedBy_User", fields: [approvedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  user_recruiterProfileIdLinks User[] @relation("Rel_User_recruiterProfileId_RecruiterProfile")
+  @@map("recruiterprofiles")
+}
+
+model RecruiterSearchLog {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  hiredProviderId String?
+  parsedIntent Json?
+  query String
+  recruiterId String
+  resultCount Float @default(0)
+  semanticEmbeddingModel String @default("text-embedding-3-small")
+  updatedAt DateTime @updatedAt
+  wasSuccessful Boolean @default(false)
+  recruiterIdRecord User @relation("Rel_RecruiterSearchLog_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  hiredProviderIdRecord User? @relation("Rel_RecruiterSearchLog_hiredProviderId_User", fields: [hiredProviderId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId])
+  @@index([hiredProviderId])
+  @@index([wasSuccessful])
+  @@index([recruiterId, createdAt])
+  @@map("recruitersearchlogs")
+}
+
+model RecruiterSubscription {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  currency String @default("INR")
+  durationMonths Float
+  endDate DateTime?
+  finalAmount Float @default(0)
+  gstAmount Float @default(0)
+  gstPercent Float @default(0)
+  isAutoRenew Boolean @default(false)
+  lastUsageResetAt DateTime?
+  orderId String @default("")
+  paymentId String @default("")
+  paymentProvider String @default("razorpay")
+  paymentStatus String @default("pending")
+  planId String
+  planSnapshot Json?
+  priceSnapshot Json?
+  razorpaySubscriptionId String?
+  recruiterId String
+  startDate DateTime?
+  subscriptionStatus String @default("pending")
+  subtotal Float @default(0)
+  totalAmount Float @default(0)
+  updatedAt DateTime @updatedAt
+  usageResetCycle String @default("monthly")
+  recruiterIdRecord User @relation("Rel_RecruiterSubscription_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  planIdRecord Plan @relation("Rel_RecruiterSubscription_planId_Plan", fields: [planId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId, subscriptionStatus, endDate])
+  @@index([paymentStatus, createdAt])
+  @@index([planId, createdAt])
+  @@map("recruitersubscriptions")
+}
+
+model Referral {
+  id String @id @default(cuid())
+  activatedAt DateTime?
+  commissionAmount Float @default(0)
+  commissionPercentage Float @default(0)
+  commissionRate Float @default(40)
+  commissionStatus String @default("pending")
+  createdAt DateTime @default(now())
+  firstPaymentId String?
+  firstPlanAmount Float @default(0)
+  firstSubscriptionId String?
+  jobsCompleted Float @default(0)
+  jobsCreated Float @default(0)
+  paidAt DateTime?
+  partnerProfileId String?
+  referralCode String @default("")
+  referredRole String
+  referredUserId String
+  referrerId String
+  referrerType String
+  registrationSource String @default("referral_link")
+  rewardAmount Float @default(0)
+  rewardEligible Boolean @default(false)
+  rewardStatus String @default("pending")
+  selectedPlanId String?
+  status String @default("registered")
+  subscriptionAmount Float @default(0)
+  updatedAt DateTime @updatedAt
+  commissionTransaction_referralIdLinks CommissionTransaction[] @relation("Rel_CommissionTransaction_referralId_Referral")
+  partnerReward_referralLinks PartnerReward[] @relation("Rel_PartnerReward_referral_Referral")
+  referrerIdRecord User @relation("Rel_Referral_referrerId_User", fields: [referrerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  partnerProfileIdRecord PartnerProfile? @relation("Rel_Referral_partnerProfileId_PartnerProfile", fields: [partnerProfileId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  referredUserIdRecord User @relation("Rel_Referral_referredUserId_User", fields: [referredUserId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  selectedPlanIdRecord Plan? @relation("Rel_Referral_selectedPlanId_Plan", fields: [selectedPlanId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  firstSubscriptionIdRecord UserSubscription? @relation("Rel_Referral_firstSubscriptionId_UserSubscription", fields: [firstSubscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  firstPaymentIdRecord Payment? @relation("Rel_Referral_firstPaymentId_Payment", fields: [firstPaymentId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  walletTransaction_sourceReferralIdLinks WalletTransaction[] @relation("Rel_WalletTransaction_sourceReferralId_Referral")
+
+  @@unique([referredUserId, referrerId])
+  @@index([referrerId, status])
+  @@map("referrals")
+}
+
+model RefundRequest {
+  id String @id @default(cuid())
+  adminReason String @default("")
+  bankDetails Json?
+  cancellationDate DateTime @default(now())
+  completionDate DateTime?
+  createdAt DateTime @default(now())
+  planId String
+  planPrice Float
+  purchaseDate DateTime
+  refundAmount Float @default(0)
+  remainingCredits Float @default(0)
+  status String @default("Refund Requested")
+  subscriptionId String
+  totalCredits Float @default(0)
+  transactionId String @default("")
+  updatedAt DateTime @updatedAt
+  usedCredits Float @default(0)
+  userId String
+  userIdRecord User @relation("Rel_RefundRequest_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  subscriptionIdRecord ProviderSubscription @relation("Rel_RefundRequest_subscriptionId_ProviderSubscription", fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  planIdRecord Plan @relation("Rel_RefundRequest_planId_Plan", fields: [planId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("refundrequests")
+}
+
+model RepeatHireInsight {
+  id String @id @default(cuid())
+  city String @default("")
+  createdAt DateTime @default(now())
+  hireCount Float @default(0)
+  lastHiredAt DateTime?
+  providerId String
+  recruiterId String
+  skillId String?
+  updatedAt DateTime @updatedAt
+  recruiterIdRecord User @relation("Rel_RepeatHireInsight_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerIdRecord User @relation("Rel_RepeatHireInsight_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  skillIdRecord SkillCategory? @relation("Rel_RepeatHireInsight_skillId_SkillCategory", fields: [skillId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId])
+  @@index([providerId])
+  @@index([skillId])
+  @@index([city])
+  @@unique([recruiterId, providerId])
+  @@map("repeathireinsights")
+}
+
+model ResumeAccessLog {
+  id String @id @default(cuid())
+  candidateId String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  ipAddress String @default("")
+  recruiterId String
+  resumeObjectKey String
+  userAgent String @default("")
+  recruiterIdRecord User @relation("Rel_ResumeAccessLog_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  candidateIdRecord User @relation("Rel_ResumeAccessLog_candidateId_User", fields: [candidateId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId])
+  @@index([candidateId])
+  @@map("resumeaccesslogs")
+}
+
+model ResumeFileCache {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  fileHash String @unique
+  parsedResult Json
+  resumeUrl String
+
+  @@index([createdAt])
+  @@map("resumefilecaches")
+}
+
+model Review {
+  id String @id @default(cuid())
+  comment String @default("")
+  createdAt DateTime @default(now())
+  jobPost String?
+  leadId String?
+  provider String
+  rating Float
+  recruiter String
+  revieweeId String
+  reviewerId String
+  updatedAt DateTime @updatedAt
+  reviewerIdRecord User @relation("Rel_Review_reviewerId_User", fields: [reviewerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  revieweeIdRecord User @relation("Rel_Review_revieweeId_User", fields: [revieweeId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  leadIdRecord Lead? @relation("Rel_Review_leadId_Lead", fields: [leadId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  providerRecord User @relation("Rel_Review_provider_User", fields: [provider], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  recruiterRecord User @relation("Rel_Review_recruiter_User", fields: [recruiter], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobPostRecord JobPost? @relation("Rel_Review_jobPost_JobPost", fields: [jobPost], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([reviewerId])
+  @@index([revieweeId])
+  @@index([provider])
+  @@index([revieweeId, createdAt])
+  @@unique([reviewerId, revieweeId, leadId])
+  @@map("reviews")
+}
+
+model RotationPool {
+  id String @id @default(cuid())
+  city String
+  createdAt DateTime @default(now())
+  currentIndex Float @default(0)
+  history Json?
+  maxPoolSize Float @default(5)
+  providers Json?
+  rotationInterval Float @default(60)
+  rotationStrategy String @default("round_robin")
+  skill String
+  status String @default("running")
+  updatedAt DateTime @updatedAt
+
+  @@unique([skill, city])
+  @@map("rotationpools")
+}
+
+model SavedJob {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  externalJob String?
+  isExternal Boolean @default(false)
+  jobPost String?
+  provider String
+  updatedAt DateTime @updatedAt
+  providerRecord User @relation("Rel_SavedJob_provider_User", fields: [provider], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobPostRecord JobPost? @relation("Rel_SavedJob_jobPost_JobPost", fields: [jobPost], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  externalJobRecord ExternalJob? @relation("Rel_SavedJob_externalJob_ExternalJob", fields: [externalJob], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@unique([provider, jobPost, externalJob])
+  @@map("savedjobs")
+}
+
+model ScraperCache {
+  id String @id @default(cuid())
+  confidence Float @default(0)
+  createdAt DateTime @default(now())
+  data Json
+  extractionMethod String?
+  htmlHash String
+  updatedAt DateTime @updatedAt
+  url String @unique
+
+  @@index([createdAt])
+  @@map("scrapercaches")
+}
+
+model SeoMeta {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  description String
+  keywords String[] @default([])
+  page_slug String @unique
+  schema_enabled Boolean @default(true)
+  title String
+  updatedAt DateTime @updatedAt
+  @@map("seometas")
+}
+
+model SeoPage {
+  id String @id @default(cuid())
+  city String
+  createdAt DateTime @default(now())
+  generated_at DateTime @default(now())
+  is_active Boolean @default(true)
+  job_count Float @default(0)
+  keyword String
+  last_updated DateTime @default(now())
+  slug String @unique
+  type String @default("job_listing")
+  updatedAt DateTime @updatedAt
+
+  @@index([city])
+  @@index([keyword])
+  @@map("seopages")
+}
+
+model SkillCategory {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  deactivatedAt DateTime?
+  deactivatedBy String?
+  deactivationReason String @default("")
+  icon String @default("🔧")
+  isActive Boolean @default(true)
+  name String
+  reactivatedAt DateTime?
+  reactivatedBy String?
+  skills Json?
+  slug String
+  sortOrder Float @default(0)
+  tier String
+  type String @default("unskilled")
+  updatedAt DateTime @updatedAt
+  repeatHireInsight_skillIdLinks RepeatHireInsight[] @relation("Rel_RepeatHireInsight_skillId_SkillCategory")
+  deactivatedByRecord User? @relation("Rel_SkillCategory_deactivatedBy_User", fields: [deactivatedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  reactivatedByRecord User? @relation("Rel_SkillCategory_reactivatedBy_User", fields: [reactivatedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  skillSynonym_canonicalSkillIdLinks SkillSynonym[] @relation("Rel_SkillSynonym_canonicalSkillId_SkillCategory")
+
+  @@unique([tier, slug])
+  @@map("skillcategories")
+}
+
+model SkillGapReport {
+  id String @id @default(cuid())
+  aiProvider String @default("claude-sonnet")
+  candidateId String
+  candidateSkills String[] @default([])
+  confidence String @default("medium")
+  createdAt DateTime @default(now())
+  detailedAnalysis String @default("")
+  matchedJobIds String[] @default([])
+  missingSkills String[] @default([])
+  rawAiResponse Json?
+  recommendedSkills String[] @default([])
+  reportDate String
+  reportSummary String @default("")
+  updatedAt DateTime @updatedAt
+  candidateIdRecord User @relation("Rel_SkillGapReport_candidateId_User", fields: [candidateId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([candidateId])
+  @@unique([candidateId, reportDate])
+  @@map("skillgapreports")
+}
+
+model SkillSynonym {
+  id String @id @default(cuid())
+  canonicalSkillId String
+  createdAt DateTime @default(now())
+  label String
+  locale String @default("en")
+  normalizedLabel String
+  status String @default("active")
+  updatedAt DateTime @updatedAt
+  canonicalSkillIdRecord SkillCategory @relation("Rel_SkillSynonym_canonicalSkillId_SkillCategory", fields: [canonicalSkillId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([canonicalSkillId])
+  @@index([normalizedLabel])
+  @@index([locale])
+  @@index([status])
+  @@unique([canonicalSkillId, normalizedLabel, locale])
+  @@map("skillsynonyms")
+}
+
+model SourceConfidence {
+  id String @id @default(cuid())
+  confidenceScore Float @default(50)
+  createdAt DateTime @default(now())
+  isActive Boolean @default(true)
+  sourceName String
+  sourceType String
+  updatedAt DateTime @updatedAt
+  @@map("sourceconfidences")
+}
+
+model SourceConnector {
+  id String @id @default(cuid())
+  activeSignalMappingJson Json?
+  actorId String @default("")
+  apiBaseUrl String @default("")
+  authType String @default("No auth")
+  countriesSupported String[] @default([])
+  createdAt DateTime @default(now())
+  createdBy String?
+  dailyBudget Float @default(0)
+  dailyQuota Float @default(0)
+  dedupeRulesJson Json?
+  encryptedSecretReference String @default("")
+  formId String @default("")
+  inputSchemaJson Json?
+  monthlyBudget Float @default(0)
+  monthlyQuota Float @default(0)
+  outputMappingJson Json?
+  riskLevel String @default("Low")
+  sourceName String
+  sourceType String
+  status String @default("Ready to Run")
+  updatedAt DateTime @updatedAt
+  webhookUrl String @default("")
+  createdByRecord User? @relation("Rel_SourceConnector_createdBy_User", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  sourceRunLog_sourceIdLinks SourceRunLog[] @relation("Rel_SourceRunLog_sourceId_SourceConnector")
+  @@map("sourceconnectors")
+}
+
+model SourceRunLog {
+  id String @id @default(cuid())
+  activeLeadsFound Float @default(0)
+  adminId String?
+  completedAt DateTime?
+  costUsed Float @default(0)
+  country String @default("")
+  createdAt DateTime @default(now())
+  duplicateRecords Float @default(0)
+  errorMessage String @default("")
+  expectedRecords Float @default(0)
+  filtersJson Json?
+  importedRecords Float @default(0)
+  keyword String @default("")
+  location String @default("")
+  sourceId String?
+  startedAt DateTime @default(now())
+  status String @default("Success")
+  updatedAt DateTime @updatedAt
+  sourceIdRecord SourceConnector? @relation("Rel_SourceRunLog_sourceId_SourceConnector", fields: [sourceId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  adminIdRecord User? @relation("Rel_SourceRunLog_adminId_User", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("sourcerunlogs")
+}
+
+model StagingCandidate {
+  id String @id @default(cuid())
+  activeScore Float @default(0)
+  apifyRunId String @default("")
+  appliedToJob Boolean @default(false)
+  careerHistory Json?
+  claimExpiresAt DateTime
+  claimLinkClicked Boolean @default(false)
+  claimToken String @unique
+  consentAccepted Boolean @default(false)
+  createdAt DateTime @default(now())
+  email String
+  emailSentAt DateTime?
+  emailToggle Boolean @default(true)
+  emailVerified Boolean @default(false)
+  jobTitle String @default("")
+  lastImportedAt DateTime @default(now())
+  leadStatus String @default("Raw Lead")
+  location String @default("")
+  name String
+  noticePeriodAvailable Boolean @default(false)
+  openToWork Boolean @default(false)
+  phone String @default("")
+  phoneVerified Boolean @default(false)
+  preferredJobTypeAvailable Boolean @default(false)
+  profileCompleted Boolean @default(false)
+  publicProfileUrl String @default("")
+  recentlyActive Boolean @default(false)
+  resumeUpdatedAt DateTime?
+  resumeUploaded Boolean @default(false)
+  skills String[] @default([])
+  smsSentAt DateTime?
+  smsToggle Boolean @default(false)
+  sourceQuery String @default("")
+  status String @default("staged")
+  updatedAt DateTime @updatedAt
+  whatsappSentAt DateTime?
+  whatsappToggle Boolean @default(true)
+  candidateActivityLog_candidateIdLinks CandidateActivityLog[] @relation("Rel_CandidateActivityLog_candidateId_StagingCandidate")
+
+  @@index([claimExpiresAt])
+  @@map("stagingcandidates")
+}
+
+model SupportTicket {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  message String
+  status String @default("open")
+  type String
+  updatedAt DateTime @updatedAt
+  user String
+  userRecord User @relation("Rel_SupportTicket_user_User", fields: [user], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("supporttickets")
+}
+
+model SyncLog {
+  id String @id @default(cuid())
+  companiesAdded Float @default(0)
+  companiesChecked Float @default(0)
+  completedAt DateTime?
+  countryCode String?
+  createdAt DateTime @default(now())
+  duplicatesSkipped Float @default(0)
+  errorDetails Json?
+  errorMessage String @default("")
+  jobsDeactivated Float @default(0)
+  jobsFetched Float @default(0)
+  jobsInserted Float @default(0)
+  jobsUpdated Float @default(0)
+  source String
+  startedAt DateTime
+  status String
+  syncType String
+  updatedAt DateTime @updatedAt
+
+  @@index([startedAt])
+  @@index([source, status])
+  @@map("synclogs")
+}
+
+model SystemCostLog {
+  id String @id @default(cuid())
+  computeUnits Float @default(0)
+  costInUsd Float @default(0)
+  description String?
+  serviceName String
+  timestamp DateTime @default(now())
+  tokensUsed Float @default(0)
+
+  @@index([timestamp])
+  @@map("systemcostlogs")
+}
+
+model Task {
+  id String @id @default(cuid())
+  aiSuggested Boolean @default(false)
+  attachments Float @default(0)
+  candidateName String @default("")
+  candidateRole String @default("")
+  comments Float @default(0)
+  createdAt DateTime @default(now())
+  dueDate String @default("No date")
+  jobId String?
+  order Float @default(0)
+  priority String @default("Medium")
+  recruiterId String
+  status String @default("todo")
+  title String
+  updatedAt DateTime @updatedAt
+  recruiterIdRecord User @relation("Rel_Task_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  jobIdRecord JobPost? @relation("Rel_Task_jobId_JobPost", fields: [jobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("tasks")
+}
+
+model TranslationCache {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  originalText String
+  targetLanguage String
+  translatedText String
+  updatedAt DateTime @updatedAt
+
+  @@index([targetLanguage])
+  @@unique([originalText, targetLanguage])
+  @@map("translationcaches")
+}
+
+model TrustScore {
+  id String @id @default(cuid())
+  breakdown Json?
+  computedAt DateTime @default(now())
+  configVersion Float @default(1)
+  createdAt DateTime @default(now())
+  providerId String @unique
+  reasons String[] @default([])
+  score Float
+  updatedAt DateTime @updatedAt
+  providerIdRecord User @relation("Rel_TrustScore_providerId_User", fields: [providerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([score])
+  @@index([computedAt])
+  @@map("trustscores")
+}
+
+model User {
+  id String @id @default(cuid())
+  field_enc_bankDetails Json? @map("__enc_bankDetails")
+  accountExpiresAt DateTime?
+  activePanel String?
+  activeRole String?
+  approvalStatus String @default("approved")
+  approvedAt DateTime?
+  approvedBy String?
+  authProvider String @default("email")
+  avatar String @default("")
+  bankDetails Json?
+  cityName String?
+  claimToken String?
+  commissionBalance Float @default(0)
+  country String @default("")
+  countryCode String @default("")
+  createdAt DateTime @default(now())
+  createdByPartnerId String?
+  currency String @default("")
+  deviceInfo String @default("")
+  email String? @unique
+  emailOtp String @default("")
+  emailOtpExpires DateTime?
+  email_hash String?
+  firebaseUid String? @unique
+  firstRegisteredRole String?
+  firstSubscriptionCompleted Boolean @default(false)
+  fullPhone String @default("")
+  googleId String? @unique
+  hasPassword Boolean @default(false)
+  ipAddress String @default("")
+  isActive Boolean @default(true)
+  isBlocked Boolean @default(false)
+  isEmailVerified Boolean @default(false)
+  isPhoneVerified Boolean @default(false)
+  isPublicProfile Boolean @default(false)
+  isVerified Boolean @default(false)
+  isWhatsappSameAsMobile Boolean @default(true)
+  lastLogin DateTime?
+  latitude Float?
+  locale String @default("en")
+  location Json?
+  longitude Float?
+  magicLinkExpires DateTime?
+  magicLinkToken String?
+  name String @default("")
+  nationalNumber String @default("")
+  panelAccess Json?
+  partnerStatus String @default("active")
+  password String?
+  passwordChangedAt DateTime?
+  passwordResetExpires DateTime?
+  passwordResetToken String?
+  phone String? @unique
+  phoneHistory Json?
+  phoneVerification Json?
+  phone_hash String?
+  preferredLanguage String @default("en")
+  profilePhoto String @default("")
+  profilePhotoApproval Json?
+  providerProfileId String?
+  recruiterProfileId String?
+  referralCode String? @unique
+  referralCodeUsed String @default("")
+  referralWalletBalance Float @default(0)
+  referredBy String?
+  referredByCode String @default("")
+  referredByPartnerId String?
+  referredUsersCount Float @default(0)
+  referrerType String?
+  rejectionReason String @default("")
+  renewalReminder2Sent Boolean @default(false)
+  renewalReminderSent Boolean @default(false)
+  resumeApproval Json?
+  role String?
+  roleIntent String @default("provider")
+  roles String[] @default([])
+  signupCashbackCredited Boolean @default(false)
+  signupCashbackCreditedAt DateTime?
+  source String @default("direct")
+  source_profile_url String?
+  status String @default("active")
+  subscriptionBadge String @default("")
+  termsAccepted Boolean @default(false)
+  timezone String?
+  totalReferralCommission Float @default(0)
+  totalReferrals Float @default(0)
+  unlockOtp String @default("")
+  unlockOtpExpires DateTime?
+  updatedAt DateTime @updatedAt
+  whatsappAlerts Boolean @default(true)
+  whatsappConsent Boolean @default(false)
+  whatsappNumber String @default("")
+  aiAnalysisResult_user_idLinks AiAnalysisResult[] @relation("Rel_AiAnalysisResult_user_id_User")
+  aIInteractionLog_userIdLinks AIInteractionLog[] @relation("Rel_AIInteractionLog_userId_User")
+  aIPromptTemplate_updated_byLinks AIPromptTemplate[] @relation("Rel_AIPromptTemplate_updated_by_User")
+  aiUsageLog_userIdLinks AiUsageLog[] @relation("Rel_AiUsageLog_userId_User")
+  application_providerLinks Application[] @relation("Rel_Application_provider_User")
+  approvalLog_targetUserIdLinks ApprovalLog[] @relation("Rel_ApprovalLog_targetUserId_User")
+  approvalLog_actorIdLinks ApprovalLog[] @relation("Rel_ApprovalLog_actorId_User")
+  auditEvent_actorIdLinks AuditEvent[] @relation("Rel_AuditEvent_actorId_User")
+  billingRule_updatedByLinks BillingRule[] @relation("Rel_BillingRule_updatedBy_User")
+  boostSuggestion_providerIdLinks BoostSuggestion[] @relation("Rel_BoostSuggestion_providerId_User")
+  candidateCareerVersion_userIdLinks CandidateCareerVersion[] @relation("Rel_CandidateCareerVersion_userId_User")
+  candidateDigestLog_candidateLinks CandidateDigestLog[] @relation("Rel_CandidateDigestLog_candidate_User")
+  candidateJobMatch_userIdLinks CandidateJobMatch[] @relation("Rel_CandidateJobMatch_userId_User")
+  categorySuggestion_approvedByLinks CategorySuggestion[] @relation("Rel_CategorySuggestion_approvedBy_User")
+  chatConversation_userIdLinks ChatConversation[] @relation("Rel_ChatConversation_userId_User")
+  chatMessage_userIdLinks ChatMessage[] @relation("Rel_ChatMessage_userId_User")
+  commissionTransaction_partnerIdLinks CommissionTransaction[] @relation("Rel_CommissionTransaction_partnerId_User")
+  commissionTransaction_referredUserIdLinks CommissionTransaction[] @relation("Rel_CommissionTransaction_referredUserId_User")
+  contactClickLog_userLinks ContactClickLog[] @relation("Rel_ContactClickLog_user_User")
+  countryConfig_createdByLinks CountryConfig[] @relation("Rel_CountryConfig_createdBy_User")
+  customPlanRequest_recruiterIdLinks CustomPlanRequest[] @relation("Rel_CustomPlanRequest_recruiterId_User")
+  customVisibilityPlan_providerIdLinks CustomVisibilityPlan[] @relation("Rel_CustomVisibilityPlan_providerId_User")
+  documentVerificationResult_providerIdLinks DocumentVerificationResult[] @relation("Rel_DocumentVerificationResult_providerId_User")
+  documentVerificationResult_reviewedByLinks DocumentVerificationResult[] @relation("Rel_DocumentVerificationResult_reviewedBy_User")
+  fraudFlag_userIdLinks FraudFlag[] @relation("Rel_FraudFlag_userId_User")
+  freelancerContactConsentRequest_freelancerIdLinks FreelancerContactConsentRequest[] @relation("Rel_FreelancerContactConsentRequest_freelancerId_User")
+  freelancerContactConsentRequest_requesterIdLinks FreelancerContactConsentRequest[] @relation("Rel_FreelancerContactConsentRequest_requesterId_User")
+  importBatch_createdByLinks ImportBatch[] @relation("Rel_ImportBatch_createdBy_User")
+  incomePathCache_userIdLinks IncomePathCache[] @relation("Rel_IncomePathCache_userId_User")
+  jobAnalyticsEvent_userIdLinks JobAnalyticsEvent[] @relation("Rel_JobAnalyticsEvent_userId_User")
+  jobMatch_providerIdLinks JobMatch[] @relation("Rel_JobMatch_providerId_User")
+  jobPost_recruiterLinks JobPost[] @relation("Rel_JobPost_recruiter_User")
+  jobSearchIntent_sourceUserIdLinks JobSearchIntent[] @relation("Rel_JobSearchIntent_sourceUserId_User")
+  jSearchScanRun_triggeredByLinks JSearchScanRun[] @relation("Rel_JSearchScanRun_triggeredBy_User")
+  lead_providerLinks Lead[] @relation("Rel_Lead_provider_User")
+  lead_recruiterLinks Lead[] @relation("Rel_Lead_recruiter_User")
+  leadDistributionLog_recruiterIdLinks LeadDistributionLog[] @relation("Rel_LeadDistributionLog_recruiterId_User")
+  leadDistributionLog_providerIdLinks LeadDistributionLog[] @relation("Rel_LeadDistributionLog_providerId_User")
+  leadEvent_actorIdLinks LeadEvent[] @relation("Rel_LeadEvent_actorId_User")
+  matchLog_providerIdLinks MatchLog[] @relation("Rel_MatchLog_providerId_User")
+  matchLog_recruiterIdLinks MatchLog[] @relation("Rel_MatchLog_recruiterId_User")
+  notification_userIdLinks Notification[] @relation("Rel_Notification_userId_User")
+  otp_userIdLinks Otp[] @relation("Rel_Otp_userId_User")
+  outreachCampaign_recruiterIdLinks OutreachCampaign[] @relation("Rel_OutreachCampaign_recruiterId_User")
+  partnerBankAccount_partnerIdLinks PartnerBankAccount[] @relation("Rel_PartnerBankAccount_partnerId_User")
+  partnerProfile_userIdLinks PartnerProfile[] @relation("Rel_PartnerProfile_userId_User")
+  partnerProfile_deletedByLinks PartnerProfile[] @relation("Rel_PartnerProfile_deletedBy_User")
+  partnerReward_partnerLinks PartnerReward[] @relation("Rel_PartnerReward_partner_User")
+  partnerReward_referredUserLinks PartnerReward[] @relation("Rel_PartnerReward_referredUser_User")
+  payment_userLinks Payment[] @relation("Rel_Payment_user_User")
+  payoutMethod_userIdLinks PayoutMethod[] @relation("Rel_PayoutMethod_userId_User")
+  payoutRequest_partnerIdLinks PayoutRequest[] @relation("Rel_PayoutRequest_partnerId_User")
+  pipelineAuditLog_adminUserIdLinks PipelineAuditLog[] @relation("Rel_PipelineAuditLog_adminUserId_User")
+  pipelineCategory_approvedByLinks PipelineCategory[] @relation("Rel_PipelineCategory_approvedBy_User")
+  profileShareToken_candidateIdLinks ProfileShareToken[] @relation("Rel_ProfileShareToken_candidateId_User")
+  profileShareToken_createdByUserIdLinks ProfileShareToken[] @relation("Rel_ProfileShareToken_createdByUserId_User")
+  profileUnlock_recruiterIdLinks ProfileUnlock[] @relation("Rel_ProfileUnlock_recruiterId_User")
+  profileUnlock_providerIdLinks ProfileUnlock[] @relation("Rel_ProfileUnlock_providerId_User")
+  providerAIProfile_providerIdLinks ProviderAIProfile[] @relation("Rel_ProviderAIProfile_providerId_User")
+  providerAiUsage_providerIdLinks ProviderAiUsage[] @relation("Rel_ProviderAiUsage_providerId_User")
+  providerAvailability_providerIdLinks ProviderAvailability[] @relation("Rel_ProviderAvailability_providerId_User")
+  providerEmbedding_providerIdLinks ProviderEmbedding[] @relation("Rel_ProviderEmbedding_providerId_User")
+  providerMetrics_providerIdLinks ProviderMetrics[] @relation("Rel_ProviderMetrics_providerId_User")
+  providerProfile_userLinks ProviderProfile[] @relation("Rel_ProviderProfile_user_User")
+  providerProfile_approvedByLinks ProviderProfile[] @relation("Rel_ProviderProfile_approvedBy_User")
+  providerServiceArea_providerIdLinks ProviderServiceArea[] @relation("Rel_ProviderServiceArea_providerId_User")
+  providerSubscription_providerIdLinks ProviderSubscription[] @relation("Rel_ProviderSubscription_providerId_User")
+  providerUsage_providerIdLinks ProviderUsage[] @relation("Rel_ProviderUsage_providerId_User")
+  providerWallet_userIdLinks ProviderWallet[] @relation("Rel_ProviderWallet_userId_User")
+  providerWalletTransaction_userIdLinks ProviderWalletTransaction[] @relation("Rel_ProviderWalletTransaction_userId_User")
+  providerWithdrawal_userIdLinks ProviderWithdrawal[] @relation("Rel_ProviderWithdrawal_userId_User")
+  providerWithdrawal_processedByLinks ProviderWithdrawal[] @relation("Rel_ProviderWithdrawal_processedBy_User")
+  recruiterAiUsage_recruiterIdLinks RecruiterAiUsage[] @relation("Rel_RecruiterAiUsage_recruiterId_User")
+  recruiterCvViewTracker_recruiterIdLinks RecruiterCvViewTracker[] @relation("Rel_RecruiterCvViewTracker_recruiterId_User")
+  recruiterHireEmbedding_recruiterIdLinks RecruiterHireEmbedding[] @relation("Rel_RecruiterHireEmbedding_recruiterId_User")
+  recruiterLeadTracker_recruiterIdLinks RecruiterLeadTracker[] @relation("Rel_RecruiterLeadTracker_recruiterId_User")
+  recruiterProfile_userLinks RecruiterProfile[] @relation("Rel_RecruiterProfile_user_User")
+  recruiterProfile_approvedByLinks RecruiterProfile[] @relation("Rel_RecruiterProfile_approvedBy_User")
+  recruiterSearchLog_recruiterIdLinks RecruiterSearchLog[] @relation("Rel_RecruiterSearchLog_recruiterId_User")
+  recruiterSearchLog_hiredProviderIdLinks RecruiterSearchLog[] @relation("Rel_RecruiterSearchLog_hiredProviderId_User")
+  recruiterSubscription_recruiterIdLinks RecruiterSubscription[] @relation("Rel_RecruiterSubscription_recruiterId_User")
+  referral_referrerIdLinks Referral[] @relation("Rel_Referral_referrerId_User")
+  referral_referredUserIdLinks Referral[] @relation("Rel_Referral_referredUserId_User")
+  refundRequest_userIdLinks RefundRequest[] @relation("Rel_RefundRequest_userId_User")
+  repeatHireInsight_recruiterIdLinks RepeatHireInsight[] @relation("Rel_RepeatHireInsight_recruiterId_User")
+  repeatHireInsight_providerIdLinks RepeatHireInsight[] @relation("Rel_RepeatHireInsight_providerId_User")
+  resumeAccessLog_recruiterIdLinks ResumeAccessLog[] @relation("Rel_ResumeAccessLog_recruiterId_User")
+  resumeAccessLog_candidateIdLinks ResumeAccessLog[] @relation("Rel_ResumeAccessLog_candidateId_User")
+  review_reviewerIdLinks Review[] @relation("Rel_Review_reviewerId_User")
+  review_revieweeIdLinks Review[] @relation("Rel_Review_revieweeId_User")
+  review_providerLinks Review[] @relation("Rel_Review_provider_User")
+  review_recruiterLinks Review[] @relation("Rel_Review_recruiter_User")
+  savedJob_providerLinks SavedJob[] @relation("Rel_SavedJob_provider_User")
+  skillCategory_deactivatedByLinks SkillCategory[] @relation("Rel_SkillCategory_deactivatedBy_User")
+  skillCategory_reactivatedByLinks SkillCategory[] @relation("Rel_SkillCategory_reactivatedBy_User")
+  skillGapReport_candidateIdLinks SkillGapReport[] @relation("Rel_SkillGapReport_candidateId_User")
+  sourceConnector_createdByLinks SourceConnector[] @relation("Rel_SourceConnector_createdBy_User")
+  sourceRunLog_adminIdLinks SourceRunLog[] @relation("Rel_SourceRunLog_adminId_User")
+  supportTicket_userLinks SupportTicket[] @relation("Rel_SupportTicket_user_User")
+  task_recruiterIdLinks Task[] @relation("Rel_Task_recruiterId_User")
+  trustScore_providerIdLinks TrustScore[] @relation("Rel_TrustScore_providerId_User")
+  referredByPartnerIdRecord User? @relation("Rel_User_referredByPartnerId_User", fields: [referredByPartnerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  user_referredByPartnerIdLinks User[] @relation("Rel_User_referredByPartnerId_User")
+  createdByPartnerIdRecord User? @relation("Rel_User_createdByPartnerId_User", fields: [createdByPartnerId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  user_createdByPartnerIdLinks User[] @relation("Rel_User_createdByPartnerId_User")
+  approvedByRecord User? @relation("Rel_User_approvedBy_User", fields: [approvedBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  user_approvedByLinks User[] @relation("Rel_User_approvedBy_User")
+  referredByRecord User? @relation("Rel_User_referredBy_User", fields: [referredBy], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  user_referredByLinks User[] @relation("Rel_User_referredBy_User")
+  providerProfileIdRecord ProviderProfile? @relation("Rel_User_providerProfileId_ProviderProfile", fields: [providerProfileId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  recruiterProfileIdRecord RecruiterProfile? @relation("Rel_User_recruiterProfileId_RecruiterProfile", fields: [recruiterProfileId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  userSubscription_userIdLinks UserSubscription[] @relation("Rel_UserSubscription_userId_User")
+  visitHistory_userLinks VisitHistory[] @relation("Rel_VisitHistory_user_User")
+  visitHistory_visitedUserLinks VisitHistory[] @relation("Rel_VisitHistory_visitedUser_User")
+  walletTransaction_userIdLinks WalletTransaction[] @relation("Rel_WalletTransaction_userId_User")
+  walletTransaction_sourceUserIdLinks WalletTransaction[] @relation("Rel_WalletTransaction_sourceUserId_User")
+  whatsappLog_userLinks WhatsappLog[] @relation("Rel_WhatsappLog_user_User")
+  withdrawalRequest_userIdLinks WithdrawalRequest[] @relation("Rel_WithdrawalRequest_userId_User")
+  workspaceChat_recruiterIdLinks WorkspaceChat[] @relation("Rel_WorkspaceChat_recruiterId_User")
+
+  @@index([phone_hash])
+  @@index([email_hash])
+  @@index([source_profile_url])
+  @@index([claimToken])
+  @@index([activeRole])
+  @@index([status])
+  @@index([approvalStatus])
+  @@unique([phone_hash, source_profile_url])
+  @@map("users")
+}
+
+model UserSubscription {
+  id String @id @default(cuid())
+  amount Float @default(0)
+  audience String?
+  autoRenew Boolean @default(false)
+  billingCycle String @default("")
+  billingRuleSnapshot Json?
+  boostMeta Json?
+  cashbackAmount Float @default(0)
+  createdAt DateTime @default(now())
+  currency String @default("INR")
+  discountPercent Float @default(0)
+  durationMonths Float @default(1)
+  endDate DateTime
+  expiresAt DateTime?
+  expiryDate DateTime?
+  finalAmount Float @default(0)
+  gstAmount Float @default(0)
+  isDefault Boolean @default(false)
+  monthlyPrice Float @default(0)
+  netPlatformRevenue Float @default(0)
+  paymentId String @default("")
+  paymentStatus String @default("")
+  planCode String @default("")
+  planId String?
+  platformCommissionAmount Float @default(0)
+  priceSnapshot Json?
+  priorityWeight Float @default(0)
+  providerShareAmount Float @default(0)
+  referralCommissionAmount Float @default(0)
+  role String
+  startDate DateTime @default(now())
+  startedAt DateTime?
+  status String @default("active")
+  totalAmount Float @default(0)
+  unlockCreditsRemaining Float @default(0)
+  unlockCreditsTotal Float @default(0)
+  unlockCreditsUsed Float @default(0)
+  updatedAt DateTime @updatedAt
+  usage Json?
+  userId String
+  commissionTransaction_subscriptionIdLinks CommissionTransaction[] @relation("Rel_CommissionTransaction_subscriptionId_UserSubscription")
+  profileUnlock_subscriptionIdLinks ProfileUnlock[] @relation("Rel_ProfileUnlock_subscriptionId_UserSubscription")
+  recruiterAiUsage_subscriptionIdLinks RecruiterAiUsage[] @relation("Rel_RecruiterAiUsage_subscriptionId_UserSubscription")
+  referral_firstSubscriptionIdLinks Referral[] @relation("Rel_Referral_firstSubscriptionId_UserSubscription")
+  userIdRecord User @relation("Rel_UserSubscription_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  planIdRecord Plan? @relation("Rel_UserSubscription_planId_Plan", fields: [planId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  walletTransaction_sourceSubscriptionIdLinks WalletTransaction[] @relation("Rel_WalletTransaction_sourceSubscriptionId_UserSubscription")
+
+  @@index([userId, role, status])
+  @@index([userId, role, createdAt])
+  @@index([endDate, status])
+  @@map("usersubscriptions")
+}
+
+model VisitHistory {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  metadata Json?
+  searchCity String @default("")
+  searchQuery String @default("")
+  searchSkill String @default("")
+  type String
+  updatedAt DateTime @updatedAt
+  user String
+  visitedProfile String?
+  visitedUser String?
+  userRecord User @relation("Rel_VisitHistory_user_User", fields: [user], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  visitedUserRecord User? @relation("Rel_VisitHistory_visitedUser_User", fields: [visitedUser], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  visitedProfileRecord ProviderProfile? @relation("Rel_VisitHistory_visitedProfile_ProviderProfile", fields: [visitedProfile], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([user, createdAt])
+  @@index([visitedUser, createdAt])
+  @@map("visithistories")
+}
+
+model WageEstimateCache {
+  id String @id @default(cuid())
+  cityName String
+  createdAt DateTime @default(now())
+  estimate Json?
+  expiresAt DateTime
+  pricingType String
+  skill String
+  updatedAt DateTime @updatedAt
+
+  @@unique([cityName, pricingType, skill])
+  @@index([expiresAt])
+  @@map("wageestimatecaches")
+}
+
+model WalletTransaction {
+  id String @id @default(cuid())
+  amount Float
+  balanceAfter Float @default(0)
+  createdAt DateTime @default(now())
+  description String @default("")
+  direction String @default("credit")
+  sourceJobId String?
+  sourcePaymentId String?
+  sourceReferralId String?
+  sourceSubscriptionId String?
+  sourceUserId String?
+  status String @default("credited")
+  type String
+  updatedAt DateTime @updatedAt
+  userId String
+  userIdRecord User @relation("Rel_WalletTransaction_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  sourceUserIdRecord User? @relation("Rel_WalletTransaction_sourceUserId_User", fields: [sourceUserId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  sourceSubscriptionIdRecord UserSubscription? @relation("Rel_WalletTransaction_sourceSubscriptionId_UserSubscription", fields: [sourceSubscriptionId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  sourcePaymentIdRecord Payment? @relation("Rel_WalletTransaction_sourcePaymentId_Payment", fields: [sourcePaymentId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  sourceReferralIdRecord Referral? @relation("Rel_WalletTransaction_sourceReferralId_Referral", fields: [sourceReferralId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  sourceJobIdRecord JobPost? @relation("Rel_WalletTransaction_sourceJobId_JobPost", fields: [sourceJobId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("wallettransactions")
+}
+
+model WhatsappLog {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  message String @default("")
+  metadata Json?
+  phone String
+  status String @default("sent")
+  templateName String
+  triggerEvent String @default("")
+  updatedAt DateTime @updatedAt
+  user String?
+  userRecord User? @relation("Rel_WhatsappLog_user_User", fields: [user], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("whatsapplogs")
+}
+
+model WithdrawalRequest {
+  id String @id @default(cuid())
+  amount Float
+  createdAt DateTime @default(now())
+  method String
+  status String @default("pending")
+  updatedAt DateTime @updatedAt
+  userId String
+  userIdRecord User @relation("Rel_WithdrawalRequest_userId_User", fields: [userId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+  @@map("withdrawalrequests")
+}
+
+model WorkspaceChat {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  messages Json?
+  recruiterId String
+  title String
+  updatedAt DateTime @updatedAt
+  recruiterIdRecord User @relation("Rel_WorkspaceChat_recruiterId_User", fields: [recruiterId], references: [id], onDelete: NoAction, onUpdate: Cascade)
+
+  @@index([recruiterId, updatedAt])
+  @@map("workspacechats")
+}

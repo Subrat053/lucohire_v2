@@ -1,0 +1,3541 @@
+{
+  "Admin": {
+    "collectionName": "admins",
+    "references": {},
+    "hiddenFields": [
+      "password"
+    ],
+    "defaults": {
+      "name": "",
+      "role": "admin",
+      "isActive": true,
+      "lastLogin": null
+    }
+  },
+  "AdminCommissionSetting": {
+    "collectionName": "admincommissionsettings",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "description": ""
+    }
+  },
+  "AdminSetting": {
+    "collectionName": "adminsettings",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "description": "",
+      "category": "general"
+    }
+  },
+  "AiAnalysisResult": {
+    "collectionName": "ai_analysis_results",
+    "references": {
+      "user_id": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "token_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0
+      },
+      "prompt_version": 1,
+      "raw_response": "",
+      "confidence_score": 0,
+      "needs_review": false,
+      "estimated_cost": 0,
+      "status": "success",
+      "error_message": "",
+      "input_snapshot": {},
+      "parsed_json": {}
+    }
+  },
+  "AIChatCache": {
+    "collectionName": "aichatcaches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "detectedIntent": "",
+      "suggestions": [],
+      "model": "openai",
+      "extracted": {}
+    }
+  },
+  "AiEvaluation": {
+    "collectionName": "aievaluations",
+    "references": {
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "candidateId": {
+        "model": "ProviderProfile",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "score": 0,
+      "reasoning": ""
+    }
+  },
+  "AiFeatureCache": {
+    "collectionName": "aifeaturecaches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "createdAt": "2026-08-28T14:33:26.120Z"
+    }
+  },
+  "AiFeatureControl": {
+    "collectionName": "aifeaturecontrols",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "defaultModel": "gpt-4o-mini",
+      "status": "active",
+      "unitCostInr": 0.15,
+      "lastUpdatedBy": "admin"
+    }
+  },
+  "AIInteractionLog": {
+    "collectionName": "aiinteractionlogs",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "userId": null,
+      "role": "system",
+      "promptType": "",
+      "model": "rule-only",
+      "status": "success",
+      "input": {},
+      "output": {},
+      "createdAt": "2026-08-28T14:33:26.088Z"
+    }
+  },
+  "AIPromptTemplate": {
+    "collectionName": "ai_prompt_templates",
+    "references": {
+      "updated_by": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "description": "",
+      "role": "system",
+      "temperature": 0.2,
+      "maxTokens": 800,
+      "isActive": true,
+      "is_active": true,
+      "model_name": "gemini-1.5-flash",
+      "version": 1,
+      "updated_by": null,
+      "outputSchema": {}
+    }
+  },
+  "AiUsageLog": {
+    "collectionName": "aiusagelogs",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "role": "system",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "estimatedCostUsd": 0,
+      "costEstimate": 0,
+      "latencyMs": 0,
+      "status": "success",
+      "errorMessage": "",
+      "metadata": {}
+    }
+  },
+  "Application": {
+    "collectionName": "applications",
+    "references": {
+      "jobPost": {
+        "model": "JobPost",
+        "many": false
+      },
+      "provider": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "status": "pending",
+      "coverLetter": "",
+      "appliedAt": "2026-08-28T14:33:26.128Z"
+    }
+  },
+  "ApprovalLog": {
+    "collectionName": "approvallogs",
+    "references": {
+      "targetUserId": {
+        "model": "User",
+        "many": false
+      },
+      "actorId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "targetName": "",
+      "note": "",
+      "actorName": ""
+    }
+  },
+  "AuditEvent": {
+    "collectionName": "auditevents",
+    "references": {
+      "actorId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "actorId": null,
+      "actorRole": "system",
+      "piiSafe": true,
+      "payload": {}
+    }
+  },
+  "AutomationTaskLog": {
+    "collectionName": "automationtasklogs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "relatedEntityType": "",
+      "relatedEntityId": "",
+      "status": "queued",
+      "attemptCount": 0,
+      "error": "",
+      "executedAt": null,
+      "idempotencyKey": "",
+      "payload": {},
+      "result": {}
+    }
+  },
+  "BillingRule": {
+    "collectionName": "billingrules",
+    "references": {
+      "updatedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "platformCommissionPercentage": 30,
+      "referralEnabled": false,
+      "referralCommissionType": "percentage",
+      "referralCommissionValue": 0,
+      "referralMaxCap": 0,
+      "cashbackEnabled": false,
+      "cashbackType": "percentage",
+      "cashbackValue": 0,
+      "cashbackMaxCap": 0,
+      "cashbackMinTransactionAmount": 0,
+      "minPayoutThreshold": 500,
+      "fixedWithdrawalFee": 0,
+      "version": 1,
+      "isActive": true,
+      "updatedBy": null,
+      "changeReason": "",
+      "legacyUserReferralCommissionPercentage": null,
+      "effectiveFrom": "2026-08-28T14:33:26.153Z",
+      "countryGst": []
+    }
+  },
+  "BoostSuggestion": {
+    "collectionName": "boostsuggestions",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "status": "queued",
+      "sentAt": null,
+      "scheduledFor": "2026-08-28T14:33:26.160Z",
+      "deliveryMeta": {}
+    }
+  },
+  "CandidateActivityLog": {
+    "collectionName": "candidateactivitylogs",
+    "references": {
+      "candidateId": {
+        "model": "StagingCandidate",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "source": "System",
+      "metadataJson": {}
+    }
+  },
+  "CandidateCareerVersion": {
+    "collectionName": "candidatecareerversions",
+    "references": {
+      "providerId": {
+        "model": "ProviderProfile",
+        "many": false
+      },
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "source": "System",
+      "reasonForVersion": "Routine Scan",
+      "versionDate": "2026-08-28T14:33:26.173Z"
+    }
+  },
+  "CandidateDigestLog": {
+    "collectionName": "candidatedigestlogs",
+    "references": {
+      "candidate": {
+        "model": "User",
+        "many": false
+      },
+      "jobsMatched": {
+        "model": "JobPost",
+        "many": true
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "jobsMatched": [],
+      "channels": [],
+      "emailStatus": "none",
+      "whatsappStatus": "none",
+      "error": "",
+      "sentAt": "2026-08-28T14:33:26.177Z"
+    }
+  },
+  "CandidateJobMatch": {
+    "collectionName": "candidatejobmatches",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "matchScore": 0,
+      "skillScore": 0,
+      "locationScore": 0,
+      "experienceScore": 0,
+      "salaryScore": 0,
+      "jobTypeScore": 0,
+      "reason": "",
+      "isNotified": false,
+      "viewedAt": null,
+      "savedAt": null,
+      "appliedAt": null
+    }
+  },
+  "CareerHealthCache": {
+    "collectionName": "careerhealthcaches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "createdAt": "2026-08-28T14:33:26.181Z"
+    }
+  },
+  "CategorySuggestion": {
+    "collectionName": "categorysuggestions",
+    "references": {
+      "sampleJobIds": {
+        "model": "JobPost",
+        "many": true
+      },
+      "approvedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "matchedKeywords": [],
+      "occurrenceCount": 1,
+      "sampleJobIds": [],
+      "status": "pending",
+      "approvedBy": null
+    }
+  },
+  "ChatConversation": {
+    "collectionName": "chatconversations",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "role": "recruiter",
+      "title": "New Conversation",
+      "status": "active",
+      "lastMessageAt": "2026-08-28T14:33:26.183Z",
+      "metadata": {}
+    }
+  },
+  "ChatMessage": {
+    "collectionName": "chatmessages",
+    "references": {
+      "conversationId": {
+        "model": "ChatConversation",
+        "many": false
+      },
+      "userId": {
+        "model": "User",
+        "many": false
+      },
+      "parentMessageId": {
+        "model": "ChatMessage",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "role": "recruiter",
+      "status": "sent",
+      "clientMessageId": "",
+      "parentMessageId": null,
+      "metadata": {}
+    }
+  },
+  "CityGeo": {
+    "collectionName": "citygeos",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "location": {
+        "type": "Point"
+      }
+    }
+  },
+  "CommissionTransaction": {
+    "collectionName": "commissiontransactions",
+    "references": {
+      "partnerId": {
+        "model": "User",
+        "many": false
+      },
+      "referralId": {
+        "model": "Referral",
+        "many": false
+      },
+      "referredUserId": {
+        "model": "User",
+        "many": false
+      },
+      "subscriptionId": {
+        "model": "UserSubscription",
+        "many": false
+      },
+      "paymentId": {
+        "model": "Payment",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "subscriptionId": null,
+      "paymentId": null,
+      "type": "first_subscription_commission",
+      "status": "earned",
+      "remarks": ""
+    }
+  },
+  "CompanyAliasSuggestion": {
+    "collectionName": "companyaliassuggestions",
+    "references": {
+      "suggestedCompanyId": {
+        "model": "PipelineCompanyMaster",
+        "many": false
+      },
+      "sampleJobIds": {
+        "model": "JobPost",
+        "many": true
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "suggestedCompanyId": null,
+      "confidenceScore": 0,
+      "status": "pending",
+      "sampleJobIds": []
+    }
+  },
+  "CompanyContact": {
+    "collectionName": "companycontacts",
+    "references": {
+      "companyId": {
+        "model": "CompanyMaster",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "sourcePage": "",
+      "confidenceScore": 50,
+      "isActive": true,
+      "lastVerifiedAt": "2026-08-28T14:33:26.199Z"
+    }
+  },
+  "CompanyMaster": {
+    "collectionName": "companymasters",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "companyDomain": "",
+      "industry": "",
+      "employeeCount": 0,
+      "isActive": true,
+      "lastSyncedAt": "2026-08-28T14:33:26.205Z"
+    }
+  },
+  "CompanySource": {
+    "collectionName": "companysources",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "careerUrl": "",
+      "atsType": "unknown",
+      "atsIdentifier": "",
+      "source": "manual",
+      "status": "active",
+      "failureCount": 0,
+      "successCount": 0,
+      "lastCheckedAt": null,
+      "lastSyncedAt": null,
+      "lastError": "",
+      "activeJobCount": 0,
+      "hiringLevel": "normal"
+    }
+  },
+  "ContactClickLog": {
+    "collectionName": "contactclicklogs",
+    "references": {
+      "provider": {
+        "model": "ProviderProfile",
+        "many": false
+      },
+      "user": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {}
+  },
+  "CountryConfig": {
+    "collectionName": "countryconfigs",
+    "references": {
+      "createdBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "salaryFormat": {
+        "type": "monthly",
+        "minSalary": 0,
+        "maxSalary": 0
+      },
+      "seoRules": {
+        "generateCountryPages": false,
+        "generateCityPages": false,
+        "generateSkillPages": false,
+        "generateCategoryPages": false,
+        "minimumJobsForSeoPage": 10
+      },
+      "notificationRules": {
+        "dailyDigestEnabled": false,
+        "jobAlertEnabled": false,
+        "whatsappEnabled": false,
+        "smsEnabled": false,
+        "emailEnabled": false
+      },
+      "pricingRules": {
+        "providerPlansEnabled": false,
+        "recruiterPlansEnabled": false,
+        "defaultCurrency": "USD",
+        "taxName": "GST",
+        "taxPercentage": 0
+      },
+      "syncRules": {
+        "dailySyncEnabled": false,
+        "syncState": "stopped",
+        "syncFrequencyHours": 24,
+        "maxJobsPerSource": 500,
+        "maxPagesPerSource": 5,
+        "inactiveJobRetentionDays": 30
+      },
+      "defaultTaxName": "GST",
+      "defaultTaxPercent": 0,
+      "isActive": false,
+      "isJobSyncEnabled": false,
+      "isSeoEnabled": false,
+      "isNotificationEnabled": false,
+      "isPricingEnabled": false,
+      "supportedJobSources": [],
+      "supportedAtsSources": [],
+      "defaultLanguage": "en",
+      "allowedLanguages": [],
+      "jobTypes": [],
+      "categories": [],
+      "skills": [],
+      "validationStatus": "setup_incomplete"
+    }
+  },
+  "CountryPipelineConfig": {
+    "collectionName": "countrypipelineconfigs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "isEnabled": false,
+      "defaultLanguage": "en",
+      "defaultLocations": [],
+      "dailyQueryLimit": 50,
+      "scheduleEnabled": true,
+      "scheduleCron": "0 1 * * *",
+      "seedQueries": []
+    }
+  },
+  "CrawlerBatch": {
+    "collectionName": "crawlerbatches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "status": "pending",
+      "totalCount": 0,
+      "processedCount": 0,
+      "companies": []
+    }
+  },
+  "CustomPlanRequest": {
+    "collectionName": "customplanrequests",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "offerDetails.planId": {
+        "model": "Plan",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "offerDetails": {
+        "features": [],
+        "status": "pending"
+      },
+      "selectedFeatures": [],
+      "status": "pending",
+      "jobsPerMonth": 0,
+      "profileUnlocks": 0,
+      "campaigns": 0,
+      "boostJobs": 0,
+      "boostDays": 0,
+      "estimatedPrice": 0
+    }
+  },
+  "CustomVisibilityPlan": {
+    "collectionName": "customvisibilityplans",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "subscriptionId": {
+        "model": "ProviderSubscription",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "subscriptionId": null,
+      "paymentId": "",
+      "planType": "custom",
+      "status": "pending",
+      "selectedGoals": [],
+      "subtotal": 0,
+      "gstPercent": 0,
+      "gstAmount": 0,
+      "discountAmount": 0,
+      "totalAmount": 0,
+      "startDate": null,
+      "endDate": null,
+      "items": []
+    }
+  },
+  "DataSourceConfig": {
+    "collectionName": "datasourceconfigs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "sourceKey": "",
+      "endpointOrActorId": "",
+      "apiMethod": "GET",
+      "apiHeaders": "",
+      "apiKey": "",
+      "actorInputSchema": "",
+      "status": "Ready / Free",
+      "isActive": true,
+      "failureCount": 0,
+      "costPerRecord": 0
+    }
+  },
+  "DemandSnapshot": {
+    "collectionName": "demandsnapshots",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "demandCount": 0,
+      "supplyCount": 0,
+      "unmetDemandScore": 0,
+      "confidence": 0
+    }
+  },
+  "DocumentVerificationResult": {
+    "collectionName": "documentverificationresults",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "reviewedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "extractedFields": {
+        "name": "",
+        "dob": "",
+        "aadhaarMasked": ""
+      },
+      "profileComparison": {
+        "nameMatch": false,
+        "dobMatch": false,
+        "overallMatch": false
+      },
+      "documentType": "aadhaar",
+      "status": "pending",
+      "confidence": 0,
+      "reasons": [],
+      "rawOcrText": "",
+      "reviewedBy": null,
+      "reviewedAt": null
+    }
+  },
+  "DuplicateGroup": {
+    "collectionName": "duplicategroups",
+    "references": {
+      "canonicalJobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "duplicateJobIds": {
+        "model": "JobPost",
+        "many": true
+      },
+      "duplicateSourceVersionIds": {
+        "model": "JobSourceVersion",
+        "many": true
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "duplicateJobIds": [],
+      "duplicateSourceVersionIds": [],
+      "similarityScore": 100
+    }
+  },
+  "Enquiry": {
+    "collectionName": "enquiries",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "status": "new"
+    }
+  },
+  "ExternalJob": {
+    "collectionName": "externaljobs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "applyMode": "external_redirect",
+      "companyDomain": "",
+      "category": "",
+      "locationText": "",
+      "city": "",
+      "state": "",
+      "salaryMin": null,
+      "salaryMax": null,
+      "currency": "USD",
+      "salaryPeriod": "yearly",
+      "experienceRequired": "",
+      "jobType": "full_time",
+      "skillsTags": [],
+      "sourceJobUrl": "",
+      "isActive": true,
+      "firstSeenAt": "2026-08-28T14:33:26.268Z",
+      "lastSeenAt": "2026-08-28T14:33:26.268Z",
+      "lastSyncedAt": "2026-08-28T14:33:26.268Z"
+    }
+  },
+  "Faq": {
+    "collectionName": "faqs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "category": "",
+      "isActive": true
+    }
+  },
+  "FeatureFlag": {
+    "collectionName": "featureflags",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "enabled": false,
+      "scope": "global",
+      "config": {}
+    }
+  },
+  "FraudFlag": {
+    "collectionName": "fraudflags",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "severity": "medium",
+      "source": "rule_engine",
+      "status": "open",
+      "meta": {}
+    }
+  },
+  "FreelancerContactConsentRequest": {
+    "collectionName": "freelancercontactconsentrequests",
+    "references": {
+      "freelancerId": {
+        "model": "User",
+        "many": false
+      },
+      "requesterId": {
+        "model": "User",
+        "many": false
+      },
+      "auditLogId": {
+        "model": "PipelineAuditLog",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "requestMessage": null,
+      "status": "pending",
+      "channel": "whatsapp",
+      "respondedAt": null,
+      "auditLogId": null,
+      "requestedAt": "2026-08-28T14:33:26.679Z"
+    }
+  },
+  "GeoNamesCity": {
+    "collectionName": "geonamescities",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "location": {},
+      "alternateNames": [],
+      "population": 0
+    }
+  },
+  "ImportBatch": {
+    "collectionName": "importbatches",
+    "references": {
+      "createdBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [
+      "csvData"
+    ],
+    "defaults": {
+      "originalSize": 0,
+      "status": "pending",
+      "totalRows": 0,
+      "processedRows": 0,
+      "successCount": 0,
+      "failedCount": 0,
+      "errors": []
+    }
+  },
+  "IncomePathCache": {
+    "collectionName": "income_path_caches",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "profileVersion": 1,
+      "candidateSummary": {},
+      "generatedAt": "2026-08-28T14:33:26.284Z"
+    }
+  },
+  "IngestionSettings": {
+    "collectionName": "ingestionsettings",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "maxRecordsPerDay": 3000,
+      "maxRecordsPerMonth": 90000,
+      "maxSpendPerDay": 5000,
+      "maxSpendPerMonth": 150000,
+      "dailyRecordsUsed": 0,
+      "monthlyRecordsUsed": 0,
+      "dailySpendUsed": 0,
+      "monthlySpendUsed": 0,
+      "lastResetDate": "2026-08-28T14:33:26.287Z"
+    }
+  },
+  "JobAnalyticsEvent": {
+    "collectionName": "jobanalyticsevents",
+    "references": {
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "userId": null,
+      "sessionId": null,
+      "country": null,
+      "city": null,
+      "device": null,
+      "createdAt": "2026-08-28T14:33:26.686Z"
+    }
+  },
+  "JobAnalyticsMetric": {
+    "collectionName": "jobanalyticsmetrics",
+    "references": {
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "impressions": 0,
+      "views": 0,
+      "applyClicks": 0,
+      "trendingScore": 0,
+      "activeViewerCount": 0,
+      "calculatedAt": "2026-08-28T14:33:26.690Z"
+    }
+  },
+  "JobMatch": {
+    "collectionName": "jobmatches",
+    "references": {
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "matchScore": 0,
+      "dispatchedAt": null,
+      "responseStatus": "pending",
+      "responseAt": null,
+      "scoreBreakdown": {}
+    }
+  },
+  "JobPost": {
+    "collectionName": "jobposts",
+    "references": {
+      "recruiter": {
+        "model": "User",
+        "many": false
+      },
+      "applicants": {
+        "model": "User",
+        "many": true
+      },
+      "matchedProviders": {
+        "model": "ProviderProfile",
+        "many": true
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "budget": {
+        "perHour": 0,
+        "perDay": 0,
+        "perMonth": 0,
+        "currency": "INR",
+        "source": "manual"
+      },
+      "geoPoint": {},
+      "location": {
+        "placeId": "",
+        "name": "",
+        "formattedAddress": "",
+        "city": "",
+        "state": "",
+        "country": "",
+        "postalCode": "",
+        "latitude": null,
+        "longitude": null,
+        "source": "google_places"
+      },
+      "aiGenerated": {
+        "isGenerated": false,
+        "source": "",
+        "model": "",
+        "generatedAt": null,
+        "confidence": 0
+      },
+      "isExternal": false,
+      "source": "internal",
+      "sourceType": "internal",
+      "jobOrigin": "internal",
+      "applyMode": "internal_apply",
+      "applyUrl": "",
+      "sourceJobUrl": "",
+      "nativeLanguage": "en",
+      "skill": "",
+      "category": "",
+      "experienceRequired": "",
+      "requiredSkillLevel": "semi-skilled",
+      "speciality": "",
+      "city": "",
+      "locationText": "",
+      "locality": "",
+      "workMode": "onsite",
+      "jobType": "full_time",
+      "relocationSupport": false,
+      "urgency": "normal",
+      "scheduleType": "flexible",
+      "timeOfDay": "any",
+      "locationData": null,
+      "jobLocationData": null,
+      "budgetMin": 0,
+      "budgetMax": 0,
+      "budgetType": "negotiable",
+      "salaryPeriod": "yearly",
+      "currency": "INR",
+      "companyName": "",
+      "companyDomain": "",
+      "companyInfo": "",
+      "requirements": [],
+      "skillsTags": [],
+      "status": "active",
+      "embedding": null,
+      "embeddingText": "",
+      "matchRadiusUsed": 0,
+      "applicants": [],
+      "matchedProviders": [],
+      "isActive": true,
+      "isBoosted": false,
+      "boostedAt": null,
+      "boostExpiresAt": null,
+      "candidates": [],
+      "firstSeenAt": "2026-08-28T14:33:26.310Z",
+      "lastSeenAt": "2026-08-28T14:33:26.311Z",
+      "lastSyncedAt": "2026-08-28T14:33:26.311Z"
+    }
+  },
+  "JobRole": {
+    "collectionName": "jobroles",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "isActive": true
+    }
+  },
+  "JobSearchIntent": {
+    "collectionName": "jobsearchintents",
+    "references": {
+      "sourceUserId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "locationData": {
+        "label": "",
+        "city": "",
+        "locality": "",
+        "state": "",
+        "country": "",
+        "latitude": null,
+        "longitude": null
+      },
+      "rawQuery": "All Providers",
+      "normalizedQuery": "",
+      "extractedSkill": "",
+      "extractedCity": "",
+      "extractedLocality": "",
+      "extractedUrgency": "",
+      "extractedBudgetMin": null,
+      "extractedBudgetMax": null,
+      "extractedShiftType": "",
+      "extractedTimeOfDay": "",
+      "confidence": 0,
+      "sourceUserId": null
+    }
+  },
+  "JobSourceConfig": {
+    "collectionName": "jobsourceconfigs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "rateLimit": {
+        "delayMs": 1000,
+        "maxRequestsPerHour": 100
+      },
+      "syncRules": {
+        "enabled": true,
+        "frequencyHours": 24,
+        "maxPages": 5,
+        "maxJobs": 100
+      },
+      "isActive": false,
+      "supportedCountries": [],
+      "requiresApiKey": false,
+      "apiCredentialsRef": "",
+      "isZeroCode": false,
+      "apiBaseUrl": "",
+      "authType": "No auth",
+      "webhookUrl": "",
+      "lastSyncAt": null,
+      "lastError": "",
+      "failureCount": 0,
+      "status": "paused",
+      "inputSchemaJson": {},
+      "outputMappingJson": {}
+    }
+  },
+  "JobSourceVersion": {
+    "collectionName": "jobsourceversions",
+    "references": {
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "duplicateGroupId": {
+        "model": "DuplicateGroup",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "duplicateGroupId": null,
+      "sourceConfidenceScore": 0,
+      "sourceJobId": null,
+      "requisitionId": null,
+      "completenessScore": 0,
+      "freshnessScore": 0,
+      "isCanonical": false,
+      "rawPayload": {},
+      "firstSeenAt": "2026-08-28T14:33:26.698Z",
+      "lastSeenAt": "2026-08-28T14:33:26.698Z"
+    }
+  },
+  "JSearchScanRun": {
+    "collectionName": "jsearchscanruns",
+    "references": {
+      "triggeredBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "status": "pending",
+      "finishedAt": null,
+      "totalFetched": 0,
+      "totalSavedRaw": 0,
+      "totalValidated": 0,
+      "totalPublished": 0,
+      "totalFailed": 0,
+      "retryCount": 0,
+      "errorMessage": null,
+      "triggeredBy": null,
+      "startedAt": "2026-08-28T14:33:26.680Z",
+      "rawMeta": {}
+    }
+  },
+  "Lead": {
+    "collectionName": "leads",
+    "references": {
+      "provider": {
+        "model": "User",
+        "many": false
+      },
+      "recruiter": {
+        "model": "User",
+        "many": false
+      },
+      "jobPost": {
+        "model": "JobPost",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "tags": [],
+      "status": "new",
+      "sourceType": "manual",
+      "priorityScore": 0,
+      "assignedByEngine": false,
+      "confirmationStatus": "pending",
+      "message": "",
+      "isUnlocked": false,
+      "unlockPaymentId": "",
+      "notifiedViaWhatsapp": false,
+      "notes": []
+    }
+  },
+  "LeadDistributionLog": {
+    "collectionName": "leaddistributionlogs",
+    "references": {
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "intentId": {
+        "model": "JobSearchIntent",
+        "many": false
+      },
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "jobId": null,
+      "recruiterId": null,
+      "intentId": null,
+      "position": 0,
+      "matchScore": 0,
+      "reason": [],
+      "status": "queued"
+    }
+  },
+  "LeadEvent": {
+    "collectionName": "leadevents",
+    "references": {
+      "leadId": {
+        "model": "Lead",
+        "many": false
+      },
+      "actorId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "actorType": "system",
+      "actorId": null,
+      "payload": {},
+      "timestamp": "2026-08-28T14:33:26.345Z"
+    }
+  },
+  "LearnedSelector": {
+    "collectionName": "learnedselectors",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "confidence": 100
+    }
+  },
+  "Location": {
+    "collectionName": "locations",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "type": "place"
+    }
+  },
+  "MatchLog": {
+    "collectionName": "matchlogs",
+    "references": {
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "alertType": "email",
+      "sentAt": "2026-08-28T14:33:26.350Z"
+    }
+  },
+  "NewsletterSubscriber": {
+    "collectionName": "newslettersubscribers",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "isActive": true,
+      "subscribedAt": "2026-08-28T14:33:26.352Z"
+    }
+  },
+  "Notification": {
+    "collectionName": "notifications",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "automationSource": "",
+      "sourceTag": "",
+      "isRead": false,
+      "data": {},
+      "createdAt": "2026-08-28T14:33:26.354Z"
+    }
+  },
+  "Otp": {
+    "collectionName": "otps",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "userId": null,
+      "countryCode": "",
+      "resendCount": 0,
+      "resendWindowStart": null,
+      "attempts": 0,
+      "blockedUntil": null,
+      "verifiedAt": null,
+      "ipAddress": "",
+      "userAgent": "",
+      "providerUsed": ""
+    }
+  },
+  "OutreachCampaign": {
+    "collectionName": "outreachcampaigns",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "candidatesContacted": 0,
+      "status": "running",
+      "candidates": [],
+      "runDate": "2026-08-28T14:33:26.364Z"
+    }
+  },
+  "PartnerBankAccount": {
+    "collectionName": "partnerbankaccounts",
+    "references": {
+      "partnerId": {
+        "model": "User",
+        "many": false
+      },
+      "verifiedBy": {
+        "model": "Admin",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "accountType": "Savings",
+      "isPrimary": true,
+      "isVerified": false,
+      "verificationStatus": "pending"
+    }
+  },
+  "PartnerProfile": {
+    "collectionName": "partnerprofiles",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      },
+      "deletedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "referralLink": "",
+      "commissionRate": 40,
+      "totalRevenueCollected": 0,
+      "totalCommissionEarned": 0,
+      "availableCommission": 0,
+      "withdrawnCommission": 0,
+      "pendingPayout": 0,
+      "tier": "Gold",
+      "level": 1,
+      "status": "active",
+      "createdBy": null,
+      "createdByModel": "Admin",
+      "isDeleted": false,
+      "deletedAt": null,
+      "deletedBy": null,
+      "approvalSections": [],
+      "activityLogs": []
+    }
+  },
+  "PartnerReward": {
+    "collectionName": "partnerrewards",
+    "references": {
+      "partner": {
+        "model": "User",
+        "many": false
+      },
+      "referral": {
+        "model": "Referral",
+        "many": false
+      },
+      "referredUser": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "referral": null,
+      "referredUser": null,
+      "amount": 0,
+      "status": "pending",
+      "paidAt": null,
+      "remarks": ""
+    }
+  },
+  "Payment": {
+    "collectionName": "payments",
+    "references": {
+      "user": {
+        "model": "User",
+        "many": false
+      },
+      "plan": {
+        "model": "Plan",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "currency": "INR",
+      "status": "created",
+      "paymentMethod": "",
+      "transactionId": "",
+      "stripePaymentIntentId": "",
+      "isSimulated": false,
+      "billingRuleSnapshot": null,
+      "platformCommissionAmount": 0,
+      "providerShareAmount": 0,
+      "referralCommissionAmount": 0,
+      "cashbackAmount": 0,
+      "netPlatformRevenue": 0,
+      "priceSnapshot": null,
+      "metadata": {}
+    }
+  },
+  "PayoutMethod": {
+    "collectionName": "payoutmethods",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "bankDetails": {
+        "accountHolderName": "",
+        "bankName": "",
+        "accountNumber": "",
+        "ifscCode": ""
+      },
+      "upiId": "",
+      "qrCodeImage": "",
+      "providerName": "",
+      "isDefault": false
+    }
+  },
+  "PayoutRequest": {
+    "collectionName": "payoutrequests",
+    "references": {
+      "partnerId": {
+        "model": "User",
+        "many": false
+      },
+      "partnerProfileId": {
+        "model": "PartnerProfile",
+        "many": false
+      },
+      "processedBy": {
+        "model": "Admin",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "status": "pending",
+      "paymentMethod": "",
+      "adminRemarks": "",
+      "processedAt": null,
+      "processedBy": null,
+      "paymentDetails": {},
+      "requestedAt": "2026-08-28T14:33:26.388Z"
+    }
+  },
+  "PipelineAuditLog": {
+    "collectionName": "pipelineauditlogs",
+    "references": {
+      "adminUserId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "beforeState": null,
+      "afterState": null,
+      "adminUserId": null,
+      "reason": null,
+      "timestamp": "2026-08-28T14:33:26.707Z",
+      "metadata": {}
+    }
+  },
+  "PipelineAutomation": {
+    "collectionName": "pipelineautomations",
+    "references": {
+      "configId": {
+        "model": "DataSourceConfig",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "frequency": "daily",
+      "location": "",
+      "jobType": "",
+      "experienceMin": 0,
+      "experienceMax": 50,
+      "maxRecordsPerRun": 100,
+      "maxSpendPerRun": 10,
+      "outreachChannels": [
+        "email"
+      ],
+      "autoSendClaimLink": true,
+      "status": "active",
+      "lastRunAt": null,
+      "nextRunAt": null,
+      "failureCount": 0,
+      "activeFilters": {}
+    }
+  },
+  "PipelineCategory": {
+    "collectionName": "pipelinecategories",
+    "references": {
+      "approvedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "keywords": [],
+      "isActive": true,
+      "isSystemDefault": false,
+      "approvedBy": null
+    }
+  },
+  "PipelineCompanyMaster": {
+    "collectionName": "pipelinecompanymasters",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "companyDomain": null,
+      "aliases": [],
+      "confidenceScore": 100,
+      "status": "active"
+    }
+  },
+  "PipelineJob": {
+    "collectionName": "pipelinejobs",
+    "references": {
+      "companyId": {
+        "model": "CompanyMaster",
+        "many": false
+      },
+      "canonicalLocationId": {
+        "model": "LocationMaster",
+        "many": false
+      },
+      "canonicalSourceVersionId": {
+        "model": "JobSourceVersion",
+        "many": false
+      },
+      "categoryId": {
+        "model": "Category",
+        "many": false
+      },
+      "duplicateGroupId": {
+        "model": "DuplicateGroup",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "description": null,
+      "companyId": null,
+      "companyDomain": null,
+      "city": null,
+      "state": null,
+      "country": null,
+      "canonicalLocationId": null,
+      "jobType": null,
+      "employmentType": null,
+      "salaryRaw": null,
+      "salaryNormalizedAnnual": null,
+      "salaryCurrency": null,
+      "salaryMin": null,
+      "salaryMax": null,
+      "salaryUnit": null,
+      "postedDate": null,
+      "validThrough": null,
+      "sourceApplyUrl": null,
+      "sourceJobId": null,
+      "requisitionId": null,
+      "sourceName": null,
+      "sourceType": null,
+      "sourceConfidenceScore": 0,
+      "canonicalSourceVersionId": null,
+      "categoryId": null,
+      "categoryName": null,
+      "status": "active",
+      "expiryReason": null,
+      "missingSuccessfulScanCount": 0,
+      "contentFingerprint": null,
+      "compositeKey": null,
+      "duplicateGroupId": null,
+      "validationStatus": "needs_review",
+      "validationErrors": [],
+      "lastSeenAt": "2026-08-28T14:33:26.684Z",
+      "firstSeenAt": "2026-08-28T14:33:26.684Z"
+    }
+  },
+  "PipelineLocationMaster": {
+    "collectionName": "pipelinelocationmasters",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "city": null,
+      "state": null,
+      "country": null,
+      "aliases": []
+    }
+  },
+  "Plan": {
+    "collectionName": "plans",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "aiLimits": {
+        "chatAssistant": 0,
+        "aiCareerAnalysis": 0,
+        "atsScore": 0,
+        "skillGapReport": 0,
+        "whyNotHired": 0,
+        "interviewCallProb": 0,
+        "resumeImprovement": 0,
+        "careerGps": 0,
+        "salaryInsights": 0,
+        "mockInterview": 0,
+        "careerHealth": 0,
+        "refreshInsight": 0,
+        "careerReport": 0,
+        "claudeDeepReports": 0,
+        "resumeOptimization": 0,
+        "careerHealthRefresh": 0,
+        "interviewQuestionsRefresh": 0,
+        "careerGpsRefresh": 0,
+        "whyNotHiredRefresh": 0,
+        "skillGapRefresh": 0,
+        "atsOptimizerRefresh": 0,
+        "chatMessagesLimit": 0,
+        "dailyTasksRefresh": 0,
+        "careerPlanRefresh": 0,
+        "resourcesRefresh": 0,
+        "progressRefresh": 0,
+        "aiTipsRefresh": 0,
+        "resumeScoreRefresh": 0,
+        "autoAnalysisLimit": 0,
+        "aiJdGenerator": 0,
+        "aiJdParsing": 0,
+        "aiCopilot": 0,
+        "interviewKits": 0,
+        "jobPostLimit": 0,
+        "jobBoostJobsLimit": 0,
+        "jobBoostDaysLimit": 0,
+        "outreachCampaigns": 0,
+        "directMessaging": 0,
+        "customReports": 0
+      },
+      "customConfig": {
+        "allowSkillSelection": false,
+        "allowCitySelection": false,
+        "allowPincodeSelection": false,
+        "allowVisibilitySelection": false,
+        "allowDurationSelection": false,
+        "minSkills": 1,
+        "maxSkills": 10,
+        "minCities": 1,
+        "maxCities": 10,
+        "minPincodes": 1,
+        "maxPincodes": 50,
+        "minDurationMonths": 1,
+        "maxDurationMonths": 12
+      },
+      "planType": "paid",
+      "billingCycle": "monthly",
+      "gstPercent": 0,
+      "contactLimit": 0,
+      "isDefaultFree": false,
+      "priceMonthly": 0,
+      "discountedPrice": 0,
+      "description": "",
+      "coverageType": "pincode",
+      "currency": "INR",
+      "priceAED": 0,
+      "priceUSD": 0,
+      "duration": 365,
+      "features": [],
+      "maxSkills": 4,
+      "maxPincodes": 1,
+      "maxCities": 1,
+      "visibilityLevel": "basic",
+      "unlockCredits": 0,
+      "boostWeight": 0,
+      "isRotationEligible": false,
+      "isActive": true,
+      "isPopular": false,
+      "country": "IN",
+      "availableCountries": [],
+      "sortOrder": 0,
+      "showOnLandingPage": false,
+      "priorityWeight": 0,
+      "allowedSkills": 1,
+      "allowedPincodes": 1,
+      "allowedCities": 1,
+      "planBenefits": null,
+      "supportsWhatsappAlerts": false,
+      "supportsSmsAlerts": false,
+      "supportsPerformanceInsights": false,
+      "status": "active",
+      "maxJobApplications": 0,
+      "usageResetCycle": "monthly",
+      "isProviderDefault": false,
+      "isCustomisable": false,
+      "planCategory": "general",
+      "countryPricing": [],
+      "metadata": {}
+    }
+  },
+  "ProfileShareToken": {
+    "collectionName": "profilesharetokens",
+    "references": {
+      "candidateId": {
+        "model": "User",
+        "many": false
+      },
+      "createdByUserId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "isRevoked": false,
+      "accessCount": 0,
+      "lastAccessedAt": null
+    }
+  },
+  "ProfileUnlock": {
+    "collectionName": "profileunlocks",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      },
+      "planId": {
+        "model": "Plan",
+        "many": false
+      },
+      "sourcePlanId": {
+        "model": "Plan",
+        "many": false
+      },
+      "subscriptionId": {
+        "model": "UserSubscription",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "jobId": null,
+      "purpose": "full_profile",
+      "otpVerified": false,
+      "planId": null,
+      "sourcePlanId": null,
+      "subscriptionId": null,
+      "expiresAt": null,
+      "ipAddress": "",
+      "userAgent": "",
+      "unlockedAt": "2026-08-28T14:33:26.432Z"
+    }
+  },
+  "ProviderAIProfile": {
+    "collectionName": "provideraiprofiles",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "generatedProfile": {
+        "suggestedPricingRange": {
+          "min": 0,
+          "max": 0,
+          "avg": 0,
+          "currency": "INR"
+        },
+        "description": "",
+        "skills": [],
+        "category": "",
+        "serviceTags": []
+      },
+      "rawInput": "",
+      "model": "",
+      "source": "fallback",
+      "status": "success",
+      "confidence": 0,
+      "version": 1
+    }
+  },
+  "ProviderAiUsage": {
+    "collectionName": "provideraiusages",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "subscriptionId": {
+        "model": "ProviderSubscription",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "usage": {
+        "chatAssistant": 0,
+        "aiCareerAnalysis": 0,
+        "atsScore": 0,
+        "skillGapReport": 0,
+        "whyNotHired": 0,
+        "interviewCallProb": 0,
+        "resumeImprovement": 0,
+        "careerGps": 0,
+        "salaryInsights": 0,
+        "mockInterview": 0,
+        "claudeDeepReports": 0,
+        "refreshInsight": 0,
+        "careerHealth": 0,
+        "careerReport": 0,
+        "careerHealthRefresh": 0,
+        "careerGpsRefresh": 0,
+        "whyNotHiredRefresh": 0,
+        "skillGapRefresh": 0,
+        "atsOptimizerRefresh": 0,
+        "interviewQuestionsRefresh": 0,
+        "resumeScoreRefresh": 0,
+        "aiTipsRefresh": 0,
+        "autoAnalysisLimit": 0,
+        "dailyTasksRefresh": 0,
+        "careerPlanRefresh": 0,
+        "resumeOptimization": 0,
+        "chatMessagesLimit": 0
+      }
+    }
+  },
+  "ProviderAvailability": {
+    "collectionName": "provideravailabilities",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "workingHours": {
+        "start": "",
+        "end": ""
+      },
+      "isAvailableNow": true,
+      "workingDays": [],
+      "availableSlots": [],
+      "updatedAt": "2026-08-28T14:33:26.442Z"
+    }
+  },
+  "ProviderEmbedding": {
+    "collectionName": "providerembeddings",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "model": "text-embedding-3-small",
+      "dimensions": 1536,
+      "vector": [],
+      "textSnapshot": "",
+      "metadata": {},
+      "updatedAtSource": "2026-08-28T14:33:26.445Z"
+    }
+  },
+  "ProviderMetrics": {
+    "collectionName": "providermetrics",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "avgResponseSeconds": 0,
+      "acceptanceRate": 0,
+      "rejectionRate": 0,
+      "hireConversionRate": 0,
+      "profileCompletionScore": 0,
+      "trustScore": 0,
+      "rankingScore": 0,
+      "lastLeadAssignedAt": null,
+      "totalAssignedLeads": 0,
+      "totalAcceptedLeads": 0,
+      "totalCompletedDeals": 0
+    }
+  },
+  "ProviderProfile": {
+    "collectionName": "providerprofiles",
+    "references": {
+      "user": {
+        "model": "User",
+        "many": false
+      },
+      "profilePhotoApproval.reviewedBy": {
+        "model": "User",
+        "many": false
+      },
+      "resumeApproval.reviewedBy": {
+        "model": "User",
+        "many": false
+      },
+      "approvedBy": {
+        "model": "User",
+        "many": false
+      },
+      "activePlanId": {
+        "model": "Plan",
+        "many": false
+      },
+      "activeSubscriptionId": {
+        "model": "ProviderSubscription",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "location": {
+        "placeId": "",
+        "name": "",
+        "formattedAddress": "",
+        "city": "",
+        "state": "",
+        "country": "",
+        "postalCode": "",
+        "latitude": null,
+        "longitude": null,
+        "source": "google_places"
+      },
+      "geoPoint": {},
+      "profilePhotoApproval": {
+        "status": "none",
+        "pendingUrl": "",
+        "approvedUrl": "",
+        "rejectionReason": "",
+        "reviewedBy": null,
+        "reviewedAt": null
+      },
+      "resumeApproval": {
+        "status": "none",
+        "pendingUrl": "",
+        "approvedUrl": "",
+        "rejectionReason": "",
+        "reviewedBy": null,
+        "reviewedAt": null
+      },
+      "followBackRequest": {
+        "status": "",
+        "question": "",
+        "sectionKey": "general",
+        "requestedAt": null,
+        "requestedBy": "Admin",
+        "answer": "",
+        "attachmentUrl": "",
+        "respondedAt": null
+      },
+      "availabilitySummary": {
+        "isAvailableNow": true,
+        "nextAvailableAt": null,
+        "slotsSummary": ""
+      },
+      "resumeParsing": {
+        "status": "pending",
+        "provider": "",
+        "parsedAt": null,
+        "errorMessage": "",
+        "confidenceScore": null
+      },
+      "freelancerAnalytics": {
+        "profileViews": 0,
+        "responseRate": 0,
+        "trendingSkillScore": 0,
+        "freelanceOpportunities": 0
+      },
+      "skills": [],
+      "roles": [],
+      "expandedSkills": [],
+      "locations": [],
+      "tier": "unskilled",
+      "skillLevel": "unskilled",
+      "experience": "",
+      "designation": "",
+      "company": "",
+      "noticePeriod": "",
+      "currentCtc": "",
+      "expectedCtc": "",
+      "availability": "",
+      "city": "",
+      "state": "",
+      "nearestLocation": "",
+      "latitude": null,
+      "longitude": null,
+      "locationData": null,
+      "serviceLocationData": null,
+      "locationUpdatedAt": null,
+      "whatsappFreelancePlanActive": false,
+      "whatsappFreelancePlanSubscriptionId": null,
+      "whatsappFreelancePlanExpiry": null,
+      "languages": [],
+      "description": "",
+      "pricing": "",
+      "pricingType": "",
+      "documents": [],
+      "resumeUrl": "",
+      "photo": "",
+      "profilePhoto": "",
+      "profileName": "",
+      "rating": 0,
+      "totalReviews": 0,
+      "profileCompletion": 0,
+      "contactVisibility": "both",
+      "isPublicProfile": false,
+      "whatsappConsent": false,
+      "trustScore": 0,
+      "rankingScore": 0,
+      "isVerified": false,
+      "isApproved": false,
+      "approvalAction": "pending",
+      "approvalNote": "",
+      "approvedBy": null,
+      "approvedByRole": null,
+      "approvedAt": null,
+      "currentPlan": "free",
+      "subscriptionPlan": "free",
+      "subscriptionStartDate": null,
+      "subscriptionEndDate": null,
+      "isActiveSubscription": false,
+      "isTopCity": false,
+      "boostWeight": 0,
+      "activePlanId": null,
+      "activeSubscriptionId": null,
+      "visibilityLevel": "basic",
+      "boostedUntil": null,
+      "allowedSkillsCount": 1,
+      "allowedPincodesCount": 1,
+      "allowedCitiesCount": 1,
+      "planCoverageType": "pincode",
+      "isTopInPincode": false,
+      "isTopInCity": false,
+      "isTopInCountry": false,
+      "priorityWeight": 0,
+      "inRotationPool": false,
+      "renewalReminderSent": false,
+      "whatsappAlerts": true,
+      "workMode": [],
+      "jobType": [],
+      "willingToTravelKm": 0,
+      "remoteAvailable": false,
+      "relocationAvailable": false,
+      "preferredCountries": [],
+      "aiSuggestions": [],
+      "embedding": null,
+      "embeddingText": "",
+      "planBenefitsSnapshot": null,
+      "profileViews": 0,
+      "leadsReceived": 0,
+      "contactsUnlocked": 0,
+      "customConfig": null,
+      "lastAnalyzedHash": null,
+      "parsedResumeData": null,
+      "isResumeAutoGenerated": false,
+      "originalBio": "",
+      "originalSkills": [],
+      "originalPortfolioLinks": [],
+      "aiGeneratedDraft": null,
+      "finalBio": "",
+      "category": "",
+      "visibility": "public",
+      "profileStatus": "draft",
+      "specialities": [],
+      "pricingEntries": [],
+      "previousExperience": [],
+      "education": [],
+      "languageEntries": [],
+      "portfolioLinks": [],
+      "projects": [],
+      "uploadedAssets": [],
+      "approvalSections": [],
+      "activityLogs": [],
+      "serviceLocations": []
+    }
+  },
+  "ProviderServiceArea": {
+    "collectionName": "providerserviceareas",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "geoPoint": {
+        "type": "Point",
+        "coordinates": [
+          0,
+          0
+        ]
+      },
+      "locality": "",
+      "radiusKm": 15
+    }
+  },
+  "ProviderSubscription": {
+    "collectionName": "providersubscriptions",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "planId": {
+        "model": "Plan",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "planSnapshot": {
+        "name": "",
+        "slug": "",
+        "type": "provider",
+        "priceMonthly": 0,
+        "description": "",
+        "coverageType": "pincode",
+        "maxSkills": 1,
+        "maxPincodes": 1,
+        "maxCities": 1,
+        "visibilityLevel": "basic",
+        "features": [],
+        "isPopular": false,
+        "priorityWeight": 0,
+        "planBenefits": null,
+        "planCategory": "general",
+        "planType": "paid",
+        "billingCycle": "monthly",
+        "price": 0,
+        "discountedPrice": 0,
+        "duration": 30,
+        "maxJobApplications": 0,
+        "usageResetCycle": "monthly",
+        "isCustomisable": false,
+        "boostWeight": 0,
+        "supportsWhatsappAlerts": false,
+        "supportsSmsAlerts": false,
+        "supportsPerformanceInsights": false
+      },
+      "priceSnapshot": {},
+      "customLimits": {
+        "maxSkills": null,
+        "maxPincodes": null,
+        "maxCities": null,
+        "maxJobApplications": null,
+        "visibilityLevel": null,
+        "coverageType": null,
+        "durationMonths": null,
+        "selectedSkills": [],
+        "selectedCities": [],
+        "selectedPincodes": []
+      },
+      "subtotal": 0,
+      "gstPercent": 0,
+      "gstAmount": 0,
+      "totalAmount": 0,
+      "paymentStatus": "pending",
+      "subscriptionStatus": "pending",
+      "startDate": null,
+      "endDate": null,
+      "stripeSubscriptionId": null,
+      "isAutoRenew": false,
+      "selectedSkills": [],
+      "selectedPincodes": [],
+      "selectedCities": [],
+      "coverageLabel": "",
+      "visibilityLevel": "",
+      "paymentProvider": "",
+      "paymentId": "",
+      "orderId": "",
+      "priorityWeight": 0,
+      "finalAmount": 0,
+      "currency": "INR",
+      "customConfig": null,
+      "benefits": null,
+      "remainingDurationMs": 0,
+      "planCategory": "general",
+      "usageResetCycle": "monthly",
+      "maxJobApplications": 0,
+      "selectedAddons": []
+    }
+  },
+  "ProviderUsage": {
+    "collectionName": "providerusages",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "subscriptionId": {
+        "model": "ProviderSubscription",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "skillsUsed": 0,
+      "locationsUsed": 0,
+      "jobApplicationsUsed": 0,
+      "cityCoverageUsed": 0,
+      "pincodeCoverageUsed": 0,
+      "metadata": {}
+    }
+  },
+  "ProviderWallet": {
+    "collectionName": "providerwallets",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "totalEarnings": 0,
+      "availableBalance": 0,
+      "pendingBalance": 0,
+      "withdrawnAmount": 0,
+      "commissionDeducted": 0
+    }
+  },
+  "ProviderWalletTransaction": {
+    "collectionName": "providerwallettransactions",
+    "references": {
+      "walletId": {
+        "model": "ProviderWallet",
+        "many": false
+      },
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "referenceId": null,
+      "description": ""
+    }
+  },
+  "ProviderWithdrawal": {
+    "collectionName": "providerwithdrawals",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      },
+      "payoutMethodId": {
+        "model": "PayoutMethod",
+        "many": false
+      },
+      "processedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "status": "pending",
+      "transactionId": "",
+      "adminNotes": "",
+      "processedAt": null,
+      "processedBy": null
+    }
+  },
+  "QuerySeedHistory": {
+    "collectionName": "queryseedhistories",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "status": "pending",
+      "failureReason": null,
+      "lastUsedAt": null
+    }
+  },
+  "RawJobImport": {
+    "collectionName": "rawjobimports",
+    "references": {
+      "scanRunId": {
+        "model": "JSearchScanRun",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "sourceName": "JSearch",
+      "sourceType": "aggregated",
+      "sourceConfidenceScore": 90,
+      "sourceJobId": null,
+      "applyUrl": null,
+      "sourceApplyUrl": null,
+      "requisitionId": null,
+      "rawTitle": null,
+      "rawCompanyName": null,
+      "rawLocation": null,
+      "rawDescription": null,
+      "rawSalary": null,
+      "rawPostedDate": null,
+      "rawJobType": null,
+      "rawEmploymentType": null,
+      "processingStatus": "raw",
+      "validationErrors": [],
+      "rawPayload": {},
+      "firstFetchedAt": "2026-08-28T14:33:26.713Z",
+      "lastFetchedAt": "2026-08-28T14:33:26.713Z"
+    }
+  },
+  "RecruiterAiUsage": {
+    "collectionName": "recruiteraiusages",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "subscriptionId": {
+        "model": "UserSubscription",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "usage": {
+        "aiJdGenerator": 0,
+        "aiJdParsing": 0,
+        "aiCopilot": 0,
+        "interviewKits": 0,
+        "outreachCampaigns": 0,
+        "directMessaging": 0,
+        "customReports": 0
+      }
+    }
+  },
+  "RecruiterCvViewTracker": {
+    "collectionName": "recruitercvviewtrackers",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "candidateId": {
+        "model": "ProviderProfile",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "viewedAt": "2026-08-28T14:33:26.506Z"
+    }
+  },
+  "RecruiterHireEmbedding": {
+    "collectionName": "recruiterhireembeddings",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "successSignals": {
+        "hireCompleted": false,
+        "satisfactionRating": 0
+      },
+      "sourceType": "hire_history",
+      "referenceId": "",
+      "model": "text-embedding-3-small",
+      "dimensions": 1536,
+      "vector": [],
+      "skill": "",
+      "city": ""
+    }
+  },
+  "RecruiterLead": {
+    "collectionName": "recruiterleads",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "careersEmail": "",
+      "publicHrEmail": "",
+      "contactPageUrl": "",
+      "linkedInCompanyUrl": "",
+      "atsUsed": "",
+      "activeJobCount": 0,
+      "hiringLevel": "normal",
+      "source": "ats_sync",
+      "status": "new"
+    }
+  },
+  "RecruiterLeadTracker": {
+    "collectionName": "recruiterleadtrackers",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "candidateId": {
+        "model": "ProviderProfile",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "viewedAt": "2026-08-28T14:33:26.514Z"
+    }
+  },
+  "RecruiterProfile": {
+    "collectionName": "recruiterprofiles",
+    "references": {
+      "user": {
+        "model": "User",
+        "many": false
+      },
+      "profilePhotoApproval.reviewedBy": {
+        "model": "User",
+        "many": false
+      },
+      "approvedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "location": {
+        "placeId": "",
+        "name": "",
+        "formattedAddress": "",
+        "city": "",
+        "state": "",
+        "country": "",
+        "postalCode": "",
+        "latitude": null,
+        "longitude": null,
+        "source": "google_places"
+      },
+      "geoPoint": {},
+      "hiringPreferences": {
+        "preferredBudgetType": "",
+        "preferredUrgency": "",
+        "preferredShiftType": "",
+        "preferredTimeOfDay": "",
+        "preferredRadiusKm": null
+      },
+      "careerPageSettings": {
+        "url": "",
+        "primaryColor": "#4F46E5",
+        "secondaryColor": "#111827",
+        "showCompanyLogo": true,
+        "showCultureSection": true,
+        "allowResumeDownload": true,
+        "anonymousApplications": false
+      },
+      "profilePhotoApproval": {
+        "status": "none",
+        "pendingUrl": "",
+        "approvedUrl": "",
+        "rejectionReason": "",
+        "reviewedBy": null,
+        "reviewedAt": null
+      },
+      "companyName": "",
+      "gstNumber": "",
+      "companyType": "individual",
+      "industry": "",
+      "companySize": "",
+      "foundedYear": "",
+      "city": "",
+      "state": "",
+      "nearestLocation": "",
+      "latitude": null,
+      "longitude": null,
+      "locationData": null,
+      "locationUpdatedAt": null,
+      "description": "",
+      "skillsNeeded": [],
+      "currentPlan": "free",
+      "unlocksRemaining": 0,
+      "unlockPackSize": 0,
+      "boostJobsRemaining": 0,
+      "boostDaysRemaining": 0,
+      "jobPostLimitRemaining": 0,
+      "outreachCampaignsRemaining": 0,
+      "directMessagingRemaining": 0,
+      "aiJdGeneratorRemaining": 0,
+      "aiJdParsingRemaining": 0,
+      "aiCopilotRemaining": 0,
+      "interviewKitsRemaining": 0,
+      "customReportsRemaining": 0,
+      "freeProfileViews": 0,
+      "profilePhoto": "",
+      "profileName": "",
+      "companyLogo": "",
+      "businessType": "",
+      "companyWebsite": "",
+      "countryCode": "",
+      "timezone": "",
+      "hiringLocation": "",
+      "contactPersonName": "",
+      "designation": "",
+      "bio": "",
+      "avgRating": 0,
+      "totalReviews": 0,
+      "isApproved": false,
+      "isVerified": false,
+      "approvalAction": "pending",
+      "approvalNote": "",
+      "approvedBy": null,
+      "approvedByRole": null,
+      "approvedAt": null,
+      "whatsappAlerts": true,
+      "renewalReminderSent": false,
+      "totalJobsPosted": 0,
+      "totalUnlocks": 0,
+      "totalHires": 0,
+      "approvalSections": [],
+      "activityLogs": []
+    }
+  },
+  "RecruiterSearchLog": {
+    "collectionName": "recruitersearchlogs",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "hiredProviderId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "semanticEmbeddingModel": "text-embedding-3-small",
+      "resultCount": 0,
+      "hiredProviderId": null,
+      "wasSuccessful": false,
+      "parsedIntent": {}
+    }
+  },
+  "RecruiterSubscription": {
+    "collectionName": "recruitersubscriptions",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "planId": {
+        "model": "Plan",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "planSnapshot": {
+        "aiLimits": {
+          "aiJdGenerator": 0,
+          "aiJdParsing": 0,
+          "aiCopilot": 0,
+          "interviewKits": 0,
+          "jobPostLimit": 0,
+          "jobBoostJobsLimit": 0,
+          "jobBoostDaysLimit": 0,
+          "outreachCampaigns": 0,
+          "directMessaging": 0,
+          "customReports": 0
+        },
+        "name": "",
+        "slug": "",
+        "type": "recruiter",
+        "priceMonthly": 0,
+        "description": "",
+        "features": [],
+        "unlockCredits": 0,
+        "planType": "paid",
+        "billingCycle": "monthly",
+        "price": 0,
+        "discountedPrice": 0,
+        "duration": 30
+      },
+      "priceSnapshot": {},
+      "subtotal": 0,
+      "gstPercent": 0,
+      "gstAmount": 0,
+      "totalAmount": 0,
+      "paymentStatus": "pending",
+      "subscriptionStatus": "pending",
+      "startDate": null,
+      "endDate": null,
+      "razorpaySubscriptionId": null,
+      "isAutoRenew": false,
+      "paymentProvider": "razorpay",
+      "paymentId": "",
+      "orderId": "",
+      "finalAmount": 0,
+      "currency": "INR",
+      "usageResetCycle": "monthly",
+      "lastUsageResetAt": null
+    }
+  },
+  "Referral": {
+    "collectionName": "referrals",
+    "references": {
+      "referrerId": {
+        "model": "User",
+        "many": false
+      },
+      "partnerProfileId": {
+        "model": "PartnerProfile",
+        "many": false
+      },
+      "referredUserId": {
+        "model": "User",
+        "many": false
+      },
+      "selectedPlanId": {
+        "model": "Plan",
+        "many": false
+      },
+      "firstSubscriptionId": {
+        "model": "UserSubscription",
+        "many": false
+      },
+      "firstPaymentId": {
+        "model": "Payment",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "partnerProfileId": null,
+      "referralCode": "",
+      "registrationSource": "referral_link",
+      "status": "registered",
+      "selectedPlanId": null,
+      "firstSubscriptionId": null,
+      "firstPaymentId": null,
+      "firstPlanAmount": 0,
+      "commissionRate": 40,
+      "commissionAmount": 0,
+      "commissionStatus": "pending",
+      "subscriptionAmount": 0,
+      "commissionPercentage": 0,
+      "paidAt": null,
+      "jobsCreated": 0,
+      "jobsCompleted": 0,
+      "rewardEligible": false,
+      "rewardAmount": 0,
+      "rewardStatus": "pending",
+      "activatedAt": null
+    }
+  },
+  "RefundRequest": {
+    "collectionName": "refundrequests",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      },
+      "subscriptionId": {
+        "model": "ProviderSubscription",
+        "many": false
+      },
+      "planId": {
+        "model": "Plan",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "bankDetails": {},
+      "status": "Refund Requested",
+      "refundAmount": 0,
+      "usedCredits": 0,
+      "remainingCredits": 0,
+      "totalCredits": 0,
+      "adminReason": "",
+      "transactionId": "",
+      "cancellationDate": "2026-08-28T14:33:26.540Z"
+    }
+  },
+  "RepeatHireInsight": {
+    "collectionName": "repeathireinsights",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "providerId": {
+        "model": "User",
+        "many": false
+      },
+      "skillId": {
+        "model": "SkillCategory",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "skillId": null,
+      "city": "",
+      "lastHiredAt": null,
+      "hireCount": 0
+    }
+  },
+  "ResumeAccessLog": {
+    "collectionName": "resumeaccesslogs",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "candidateId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "ipAddress": "",
+      "userAgent": ""
+    }
+  },
+  "ResumeFileCache": {
+    "collectionName": "resumefilecaches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "createdAt": "2026-08-28T14:33:26.546Z"
+    }
+  },
+  "Review": {
+    "collectionName": "reviews",
+    "references": {
+      "reviewerId": {
+        "model": "User",
+        "many": false
+      },
+      "revieweeId": {
+        "model": "User",
+        "many": false
+      },
+      "leadId": {
+        "model": "Lead",
+        "many": false
+      },
+      "provider": {
+        "model": "User",
+        "many": false
+      },
+      "recruiter": {
+        "model": "User",
+        "many": false
+      },
+      "jobPost": {
+        "model": "JobPost",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "leadId": null,
+      "comment": ""
+    }
+  },
+  "RotationPool": {
+    "collectionName": "rotationpools",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "maxPoolSize": 5,
+      "rotationInterval": 60,
+      "currentIndex": 0,
+      "status": "running",
+      "rotationStrategy": "round_robin",
+      "providers": [],
+      "history": []
+    }
+  },
+  "SavedJob": {
+    "collectionName": "savedjobs",
+    "references": {
+      "provider": {
+        "model": "User",
+        "many": false
+      },
+      "jobPost": {
+        "model": "JobPost",
+        "many": false
+      },
+      "externalJob": {
+        "model": "ExternalJob",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "isExternal": false
+    }
+  },
+  "ScraperCache": {
+    "collectionName": "scrapercaches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "confidence": 0
+    }
+  },
+  "SeoMeta": {
+    "collectionName": "seometas",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "keywords": [],
+      "schema_enabled": true
+    }
+  },
+  "SeoPage": {
+    "collectionName": "seopages",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "type": "job_listing",
+      "job_count": 0,
+      "is_active": true,
+      "generated_at": "2026-08-28T14:33:26.560Z",
+      "last_updated": "2026-08-28T14:33:26.560Z"
+    }
+  },
+  "SkillCategory": {
+    "collectionName": "skillcategories",
+    "references": {
+      "deactivatedBy": {
+        "model": "User",
+        "many": false
+      },
+      "reactivatedBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "type": "unskilled",
+      "icon": "🔧",
+      "sortOrder": 0,
+      "isActive": true,
+      "deactivatedAt": null,
+      "deactivatedBy": null,
+      "deactivationReason": "",
+      "reactivatedAt": null,
+      "reactivatedBy": null,
+      "skills": []
+    }
+  },
+  "SkillGapReport": {
+    "collectionName": "skillgapreports",
+    "references": {
+      "candidateId": {
+        "model": "User",
+        "many": false
+      },
+      "matchedJobIds": {
+        "model": "JobPost",
+        "many": true
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "candidateSkills": [],
+      "matchedJobIds": [],
+      "missingSkills": [],
+      "recommendedSkills": [],
+      "reportSummary": "",
+      "detailedAnalysis": "",
+      "confidence": "medium",
+      "aiProvider": "claude-sonnet",
+      "rawAiResponse": null
+    }
+  },
+  "SkillSynonym": {
+    "collectionName": "skillsynonyms",
+    "references": {
+      "canonicalSkillId": {
+        "model": "SkillCategory",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "locale": "en",
+      "status": "active"
+    }
+  },
+  "SourceConfidence": {
+    "collectionName": "sourceconfidences",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "confidenceScore": 50,
+      "isActive": true
+    }
+  },
+  "SourceConnector": {
+    "collectionName": "sourceconnectors",
+    "references": {
+      "createdBy": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "countriesSupported": [],
+      "apiBaseUrl": "",
+      "authType": "No auth",
+      "encryptedSecretReference": "",
+      "actorId": "",
+      "formId": "",
+      "webhookUrl": "",
+      "dailyQuota": 0,
+      "monthlyQuota": 0,
+      "dailyBudget": 0,
+      "monthlyBudget": 0,
+      "riskLevel": "Low",
+      "status": "Ready to Run",
+      "inputSchemaJson": {},
+      "outputMappingJson": {},
+      "activeSignalMappingJson": {},
+      "dedupeRulesJson": {}
+    }
+  },
+  "SourceRunLog": {
+    "collectionName": "sourcerunlogs",
+    "references": {
+      "sourceId": {
+        "model": "SourceConnector",
+        "many": false
+      },
+      "adminId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "country": "",
+      "keyword": "",
+      "location": "",
+      "expectedRecords": 0,
+      "importedRecords": 0,
+      "duplicateRecords": 0,
+      "activeLeadsFound": 0,
+      "costUsed": 0,
+      "status": "Success",
+      "errorMessage": "",
+      "filtersJson": {},
+      "startedAt": "2026-08-28T14:33:26.580Z"
+    }
+  },
+  "StagingCandidate": {
+    "collectionName": "stagingcandidates",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "phone": "",
+      "jobTitle": "",
+      "skills": [],
+      "location": "",
+      "activeScore": 0,
+      "leadStatus": "Raw Lead",
+      "resumeUpdatedAt": null,
+      "openToWork": false,
+      "recentlyActive": false,
+      "noticePeriodAvailable": false,
+      "preferredJobTypeAvailable": false,
+      "resumeUploaded": false,
+      "appliedToJob": false,
+      "claimLinkClicked": false,
+      "emailVerified": false,
+      "phoneVerified": false,
+      "consentAccepted": false,
+      "profileCompleted": false,
+      "apifyRunId": "",
+      "sourceQuery": "",
+      "emailToggle": true,
+      "whatsappToggle": true,
+      "smsToggle": false,
+      "emailSentAt": null,
+      "whatsappSentAt": null,
+      "smsSentAt": null,
+      "status": "staged",
+      "publicProfileUrl": "",
+      "careerHistory": [],
+      "lastImportedAt": "2026-08-28T14:33:26.583Z"
+    }
+  },
+  "SupportTicket": {
+    "collectionName": "supporttickets",
+    "references": {
+      "user": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "status": "open"
+    }
+  },
+  "SyncLog": {
+    "collectionName": "synclogs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "jobsFetched": 0,
+      "jobsInserted": 0,
+      "jobsUpdated": 0,
+      "jobsDeactivated": 0,
+      "duplicatesSkipped": 0,
+      "companiesChecked": 0,
+      "companiesAdded": 0,
+      "errorMessage": "",
+      "errorDetails": null
+    }
+  },
+  "SystemCostLog": {
+    "collectionName": "systemcostlogs",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "costInUsd": 0,
+      "tokensUsed": 0,
+      "computeUnits": 0,
+      "timestamp": "2026-08-28T14:33:26.592Z"
+    }
+  },
+  "Task": {
+    "collectionName": "tasks",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      },
+      "jobId": {
+        "model": "JobPost",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "candidateName": "",
+      "candidateRole": "",
+      "priority": "Medium",
+      "dueDate": "No date",
+      "status": "todo",
+      "order": 0,
+      "aiSuggested": false,
+      "comments": 0,
+      "attachments": 0
+    }
+  },
+  "TranslationCache": {
+    "collectionName": "translationcaches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {}
+  },
+  "TrustScore": {
+    "collectionName": "trustscores",
+    "references": {
+      "providerId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "breakdown": {
+        "ratingWeight": 0,
+        "responseWeight": 0,
+        "completenessWeight": 0,
+        "rejectionWeight": 0,
+        "verificationWeight": 0,
+        "fraudPenaltyWeight": 0
+      },
+      "reasons": [],
+      "configVersion": 1,
+      "computedAt": "2026-08-28T14:33:26.598Z"
+    }
+  },
+  "User": {
+    "collectionName": "users",
+    "references": {
+      "referredByPartnerId": {
+        "model": "User",
+        "many": false
+      },
+      "createdByPartnerId": {
+        "model": "User",
+        "many": false
+      },
+      "profilePhotoApproval.reviewedBy": {
+        "model": "User",
+        "many": false
+      },
+      "resumeApproval.reviewedBy": {
+        "model": "User",
+        "many": false
+      },
+      "approvedBy": {
+        "model": "User",
+        "many": false
+      },
+      "referredBy": {
+        "model": "User",
+        "many": false
+      },
+      "providerProfileId": {
+        "model": "ProviderProfile",
+        "many": false
+      },
+      "recruiterProfileId": {
+        "model": "RecruiterProfile",
+        "many": false
+      }
+    },
+    "hiddenFields": [
+      "password",
+      "role"
+    ],
+    "defaults": {
+      "profilePhotoApproval": {
+        "status": "none",
+        "pendingUrl": "",
+        "approvedUrl": "",
+        "rejectionReason": "",
+        "reviewedBy": null,
+        "reviewedAt": null
+      },
+      "resumeApproval": {
+        "status": "none",
+        "pendingUrl": "",
+        "approvedUrl": "",
+        "rejectionReason": "",
+        "reviewedBy": null,
+        "reviewedAt": null
+      },
+      "location": {},
+      "panelAccess": {
+        "provider": {
+          "enabled": true,
+          "source": "none"
+        },
+        "recruiter": {
+          "enabled": true,
+          "source": "none"
+        }
+      },
+      "bankDetails": {},
+      "phoneVerification": {
+        "verified": false
+      },
+      "__enc_bankDetails": {},
+      "name": "",
+      "countryCode": "",
+      "nationalNumber": "",
+      "fullPhone": "",
+      "hasPassword": false,
+      "roles": [],
+      "referredByPartnerId": null,
+      "createdByPartnerId": null,
+      "referralCodeUsed": "",
+      "source": "direct",
+      "referredUsersCount": 0,
+      "partnerStatus": "active",
+      "firstSubscriptionCompleted": false,
+      "avatar": "",
+      "profilePhoto": "",
+      "authProvider": "email",
+      "isVerified": false,
+      "isEmailVerified": false,
+      "isPhoneVerified": false,
+      "emailOtp": "",
+      "emailOtpExpires": null,
+      "unlockOtp": "",
+      "unlockOtpExpires": null,
+      "whatsappConsent": false,
+      "isPublicProfile": false,
+      "whatsappNumber": "",
+      "isWhatsappSameAsMobile": true,
+      "whatsappAlerts": true,
+      "isActive": true,
+      "isBlocked": false,
+      "termsAccepted": false,
+      "deviceInfo": "",
+      "ipAddress": "",
+      "locale": "en",
+      "preferredLanguage": "en",
+      "country": "",
+      "currency": "",
+      "renewalReminderSent": false,
+      "renewalReminder2Sent": false,
+      "subscriptionBadge": "",
+      "approvalStatus": "approved",
+      "approvedAt": null,
+      "approvedBy": null,
+      "rejectionReason": "",
+      "roleIntent": "provider",
+      "activePanel": null,
+      "referredBy": null,
+      "referredByCode": "",
+      "referrerType": null,
+      "firstRegisteredRole": null,
+      "providerProfileId": null,
+      "recruiterProfileId": null,
+      "referralWalletBalance": 0,
+      "totalReferralCommission": 0,
+      "totalReferrals": 0,
+      "status": "active",
+      "commissionBalance": 0,
+      "signupCashbackCredited": false,
+      "signupCashbackCreditedAt": null,
+      "phoneHistory": []
+    }
+  },
+  "UserSubscription": {
+    "collectionName": "usersubscriptions",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      },
+      "planId": {
+        "model": "Plan",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "usage": {
+        "contactsViewed": 0,
+        "downloadsUsed": 0,
+        "skillsUsed": 0,
+        "pincodesUsed": 0,
+        "jobsBoosted": 0
+      },
+      "boostMeta": {
+        "boostEnabled": false,
+        "boostWeight": 0,
+        "boostSource": "",
+        "boostExpiresAt": null
+      },
+      "priceSnapshot": {},
+      "audience": null,
+      "planCode": "",
+      "startedAt": null,
+      "expiresAt": null,
+      "billingCycle": "",
+      "amount": 0,
+      "gstAmount": 0,
+      "totalAmount": 0,
+      "paymentStatus": "",
+      "paymentId": "",
+      "status": "active",
+      "isDefault": false,
+      "autoRenew": false,
+      "unlockCreditsTotal": 0,
+      "unlockCreditsUsed": 0,
+      "unlockCreditsRemaining": 0,
+      "expiryDate": null,
+      "priorityWeight": 0,
+      "durationMonths": 1,
+      "monthlyPrice": 0,
+      "discountPercent": 0,
+      "finalAmount": 0,
+      "currency": "INR",
+      "billingRuleSnapshot": null,
+      "platformCommissionAmount": 0,
+      "providerShareAmount": 0,
+      "referralCommissionAmount": 0,
+      "cashbackAmount": 0,
+      "netPlatformRevenue": 0,
+      "startDate": "2026-08-28T14:33:26.624Z"
+    }
+  },
+  "VisitHistory": {
+    "collectionName": "visithistories",
+    "references": {
+      "user": {
+        "model": "User",
+        "many": false
+      },
+      "visitedUser": {
+        "model": "User",
+        "many": false
+      },
+      "visitedProfile": {
+        "model": "ProviderProfile",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "searchQuery": "",
+      "searchCity": "",
+      "searchSkill": "",
+      "metadata": {}
+    }
+  },
+  "WageEstimateCache": {
+    "collectionName": "wageestimatecaches",
+    "references": {},
+    "hiddenFields": [],
+    "defaults": {
+      "estimate": {
+        "currency": "INR",
+        "analysis": ""
+      }
+    }
+  },
+  "WalletTransaction": {
+    "collectionName": "wallettransactions",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      },
+      "sourceUserId": {
+        "model": "User",
+        "many": false
+      },
+      "sourceSubscriptionId": {
+        "model": "UserSubscription",
+        "many": false
+      },
+      "sourcePaymentId": {
+        "model": "Payment",
+        "many": false
+      },
+      "sourceReferralId": {
+        "model": "Referral",
+        "many": false
+      },
+      "sourceJobId": {
+        "model": "JobPost",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "direction": "credit",
+      "sourceUserId": null,
+      "sourceSubscriptionId": null,
+      "sourcePaymentId": null,
+      "sourceReferralId": null,
+      "sourceJobId": null,
+      "balanceAfter": 0,
+      "description": "",
+      "status": "credited"
+    }
+  },
+  "WhatsappLog": {
+    "collectionName": "whatsapplogs",
+    "references": {
+      "user": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "message": "",
+      "status": "sent",
+      "triggerEvent": "",
+      "metadata": {}
+    }
+  },
+  "WithdrawalRequest": {
+    "collectionName": "withdrawalrequests",
+    "references": {
+      "userId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "status": "pending"
+    }
+  },
+  "WorkspaceChat": {
+    "collectionName": "workspacechats",
+    "references": {
+      "recruiterId": {
+        "model": "User",
+        "many": false
+      }
+    },
+    "hiddenFields": [],
+    "defaults": {
+      "messages": []
+    }
+  }
+}
