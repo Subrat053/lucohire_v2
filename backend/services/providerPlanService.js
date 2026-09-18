@@ -168,12 +168,87 @@ const getOrCreateCurrentUsage = async (providerId, subscription) => {
 };
 
 const assignDefaultProviderPlan = async (providerId) => {
-  const plan = await findPlan({
+  let plan = await findPlan({
     type: 'provider',
     isProviderDefault: true,
     status: 'active',
     isActive: true
   });
+
+  if (!plan) {
+    // Fallback 1: Look for any active default free provider plan
+    plan = await findPlan({
+      type: 'provider',
+      isDefaultFree: true,
+      status: 'active',
+      isActive: true
+    });
+  }
+
+  if (!plan) {
+    // Fallback 2: Look for any active free provider plan
+    plan = await findPlan({
+      type: 'provider',
+      price: 0,
+      status: 'active',
+      isActive: true
+    });
+  }
+
+  if (!plan) {
+    // Fallback 3: Auto-provision baseline default free provider plan so registration never fails
+    try {
+      const defaultPlanData = {
+        name: 'Default Free Provider Plan',
+        slug: 'provider-free-default',
+        type: 'provider',
+        audience: 'provider',
+        planType: 'free',
+        price: 0,
+        priceMonthly: 0,
+        billingCycle: 'yearly',
+        gstPercent: 0,
+        isDefaultFree: true,
+        isProviderDefault: true,
+        description: 'Default free plan assigned automatically on provider registration.',
+        coverageType: 'pincode',
+        maxSkills: 2,
+        maxPincodes: 2,
+        maxCities: 1,
+        maxJobApplications: 5,
+        visibilityLevel: 'basic',
+        priorityWeight: 0,
+        isActive: true,
+        status: 'active',
+        duration: 365,
+        planCategory: 'default_free',
+        usageResetCycle: 'monthly',
+        features: [
+          '2 free locations/pincodes coverage',
+          '2 free skills category selection',
+          '5 job applications per month',
+          'Basic search visibility',
+        ],
+        sortOrder: 0,
+      };
+
+      const key = {
+        type: defaultPlanData.type,
+        slug: defaultPlanData.slug,
+        duration: defaultPlanData.duration,
+      };
+
+      const created = await prisma.plan.upsert({
+        where: { type_slug_duration: key },
+        update: { ...defaultPlanData },
+        create: { ...defaultPlanData },
+      });
+
+      plan = withLegacyId(created);
+    } catch (seedErr) {
+      console.error('Failed to auto-seed default provider plan:', seedErr.message);
+    }
+  }
 
   if (!plan) {
     throw new Error('Default provider plan is not configured by admin.');

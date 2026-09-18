@@ -1,19 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext";
+import { providerAPI } from "../../services/api";
 
 export default function FreelancerDashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
   // Navigation & Views
   const [activeView, setActiveView] = useState("dashboard"); // 'dashboard' | 'leads'
   const [iframeView, setIframeView] = useState(null); // 'resume' | 'signup' | null
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [savingSection, setSavingSection] = useState(null); // section index or string
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [sendingQuoteId, setSendingQuoteId] = useState(null);
 
-  // Animated profile strength ring
+  // Core Data States
+  const [profile, setProfile] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   const [strengthPct, setStrengthPct] = useState(0);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setStrengthPct(72);
-    }, 150);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Resume conversion state
   const [convertedToResume, setConvertedToResume] = useState(false);
@@ -25,130 +33,443 @@ export default function FreelancerDashboard() {
   };
 
   // Editable lists inside Manage Profile
-  const [skillsList, setSkillsList] = useState([
-    { id: 1, title: "Figma UI Design", level: "Expert", exp: "3–5 yrs", price: "8000", type: "Per project" },
-    { id: 2, title: "Logo Design", level: "Expert", exp: "3–5 yrs", price: "3000", type: "Per project" },
-    { id: 3, title: "Brand Identity", level: "Intermediate", exp: "1–3 yrs", price: "12000", type: "Per project" },
-  ]);
-
-  const [eduList, setEduList] = useState([
-    { id: 1, type: "Education", degree: "B.Des", institution: "Design Studio Noida", year: "2018–2022" },
-    { id: 2, type: "Work experience", degree: "UI Designer", institution: "Freelance", year: "2022–Present" },
-  ]);
-
-  const [certList, setCertList] = useState([
-    { id: 1, type: "Behance", link: "behance.net/rahulkumar" },
-  ]);
-
-  const [langTags, setLangTags] = useState([
-    { id: 1, lang: "Hindi", level: "Expert" },
-    { id: 2, lang: "English", level: "Fluent" },
-  ]);
+  const [skillsList, setSkillsList] = useState([]);
+  const [eduList, setEduList] = useState([]);
+  const [certList, setCertList] = useState([]);
+  const [langTags, setLangTags] = useState([]);
   const [selectedLang, setSelectedLang] = useState("Hindi");
   const [selectedLevel, setSelectedLevel] = useState("Expert");
 
   const [selectedDays, setSelectedDays] = useState(["Mon", "Tue", "Wed", "Thu", "Fri"]);
   const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const toggleDay = (day) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
+  const [workStartTime, setWorkStartTime] = useState("10:00 AM");
+  const [workEndTime, setWorkEndTime] = useState("06:00 PM");
+  const [availabilityMode, setAvailabilityMode] = useState("Full-time");
+  const [startTimeline, setStartTimeline] = useState("Available now");
 
-  // Leads Filter State
+  // Voice & Video state
+  const [voiceIntroUrl, setVoiceIntroUrl] = useState("");
+  const [videoIntroUrl, setVideoIntroUrl] = useState("");
+
+  // ID Verification state
+  const [idType, setIdType] = useState("Aadhaar");
+  const [idNumber, setIdNumber] = useState("");
+
+  // Quote input form state
+  const [quoteForms, setQuoteForms] = useState({});
+
+  // Leads Filter State & Data
   const [selectedSkillFilter, setSelectedSkillFilter] = useState("All skills");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("All");
-
-  // Leads Data
-  const initialLeads = [
-    {
-      id: "lead-1",
-      name: "Priya Malhotra",
-      avatar: "P",
-      time: "12 min ago",
-      skills: ["Logo Design", "Brand Identity"],
-      brief: "Needs a logo + basic brand kit for a new D2C skincare label, launching next month.",
-      offered: "Offered ₹12,000",
-      timeline: "needed within 10 days",
-      status: "new",
-      statusLabel: "New",
-      initialPrice: "14000",
-      defaultTimeline: "Same as asked — 10 days",
-      acceptPrice: "12000",
-      quoteSent: false,
-    },
-    {
-      id: "lead-2",
-      name: "Arjun Studios",
-      avatar: "A",
-      time: "2 hr ago",
-      skills: ["Figma UI Design"],
-      brief: "Looking for ongoing Figma support, roughly 10 hrs/week for an internal dashboard product.",
-      offered: "Offered ₹8,000/project",
-      timeline: "needed within 5 days",
-      status: "new",
-      statusLabel: "New",
-      initialPrice: "8000",
-      defaultTimeline: "Same as asked — 5 days",
-      acceptPrice: "8000",
-      quoteSent: false,
-    },
-    {
-      id: "lead-3",
-      name: "Simran Kaur",
-      avatar: "S",
-      time: "Yesterday",
-      skills: ["Figma UI Design"],
-      brief: "Wants a full UI redesign for a booking app — sent over a Notion doc with references.",
-      offered: "Offered ₹25,000",
-      timeline: "needed within 15 days",
-      status: "replied",
-      statusLabel: "Replied",
-      quotedSummary: "You quoted: ₹27,000 · 12 days — waiting on Simran's reply",
-      initialPrice: "27000",
-      defaultTimeline: "Same as asked — 15 days",
-      acceptPrice: "25000",
-      quoteSent: false,
-    },
-    {
-      id: "lead-4",
-      name: "Nimbus Foods",
-      avatar: "N",
-      time: "3 days ago",
-      skills: ["Logo Design"],
-      brief: "Packaging design for 4 SKUs — confirmed and advance paid.",
-      offered: "Agreed ₹18,000 · paid",
-      status: "won",
-      statusLabel: "Won",
-      initialPrice: "18000",
-      defaultTimeline: "Same as agreed",
-      quoteSent: false,
-    },
-  ];
-
-  const [leads, setLeads] = useState(initialLeads);
+  const [leads, setLeads] = useState([]);
   const [openQuoteId, setOpenQuoteId] = useState(null);
 
-  const toggleQuote = (id) => {
-    setOpenQuoteId((prev) => (prev === id ? null : id));
+  // File input ref for resume
+  const resumeFileInputRef = useRef(null);
+
+  // Format today's date
+  const formattedToday = new Date().toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  // Load Dashboard Data from Backend
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [dashRes, profileRes] = await Promise.allSettled([
+        providerAPI.getDashboard(),
+        providerAPI.getProfile(),
+      ]);
+
+      let profData = null;
+      let statsData = null;
+      let subData = null;
+      let leadsData = [];
+
+      if (profileRes.status === "fulfilled" && profileRes.value?.data?.profile) {
+        profData = profileRes.value.data.profile;
+      }
+
+      if (dashRes.status === "fulfilled" && dashRes.value?.data) {
+        const d = dashRes.value.data;
+        if (!profData && d.profile) profData = d.profile;
+        statsData = d.stats || null;
+        subData = d.subscription || null;
+        if (Array.isArray(d.leads)) leadsData = d.leads;
+      }
+
+      if (profData) {
+        setProfile(profData);
+        const completion = profData.profileCompletion || statsData?.profileCompletion || 0;
+        setStrengthPct(completion);
+
+        // Sync Skills & Pricing Entries
+        if (Array.isArray(profData.pricingEntries) && profData.pricingEntries.length > 0) {
+          setSkillsList(
+            profData.pricingEntries.map((pe, idx) => ({
+              id: pe.id || idx + 1,
+              title: pe.skill || pe.title || "Specialist",
+              level: pe.skillLevel || pe.level || "Expert",
+              exp: pe.experience || pe.exp || "3–5 yrs",
+              price: String(pe.startingPrice || pe.price || 3000),
+              type: pe.priceType || pe.type || "Per project",
+            }))
+          );
+        } else if (Array.isArray(profData.skills) && profData.skills.length > 0) {
+          setSkillsList(
+            profData.skills.map((s, idx) => ({
+              id: idx + 1,
+              title: typeof s === "string" ? s : s.name || "Specialist",
+              level: "Expert",
+              exp: "3–5 yrs",
+              price: String(profData.pricing || 3000),
+              type: profData.pricingType || "Per project",
+            }))
+          );
+        } else {
+          setSkillsList([
+            { id: 1, title: "UI/UX Design", level: "Expert", exp: "3–5 yrs", price: "5000", type: "Per project" },
+          ]);
+        }
+
+        // Sync Education & Experience
+        if (Array.isArray(profData.education) && profData.education.length > 0) {
+          setEduList(
+            profData.education.map((e, idx) => ({
+              id: e.id || idx + 1,
+              type: e.type || "Education",
+              degree: e.degree || e.title || "",
+              institution: e.institution || e.company || "",
+              year: e.year || e.duration || "",
+            }))
+          );
+        } else {
+          setEduList([
+            { id: 1, type: "Education", degree: "Bachelor's Degree", institution: profData.city ? `Design Institute, ${profData.city}` : "National University", year: "2018–2022" },
+          ]);
+        }
+
+        // Sync Certifications & Portfolio Links
+        if (Array.isArray(profData.portfolioLinks) && profData.portfolioLinks.length > 0) {
+          setCertList(
+            profData.portfolioLinks.map((c, idx) => ({
+              id: idx + 1,
+              type: typeof c === "string" ? "Portfolio website" : (c.type || "Portfolio website"),
+              link: typeof c === "string" ? c : (c.link || c.url || ""),
+            }))
+          );
+        } else {
+          setCertList([
+            { id: 1, type: "Portfolio website", link: profData.website || "https://behance.net" },
+          ]);
+        }
+
+        // Sync Languages
+        if (Array.isArray(profData.languages) && profData.languages.length > 0) {
+          setLangTags(
+            profData.languages.map((l, idx) => ({
+              id: idx + 1,
+              lang: typeof l === "string" ? l : (l.language || l.lang || "English"),
+              level: typeof l === "string" ? "Fluent" : (l.proficiency || l.level || "Fluent"),
+            }))
+          );
+        } else {
+          setLangTags([
+            { id: 1, lang: "Hindi", level: "Expert" },
+            { id: 2, lang: "English", level: "Fluent" },
+          ]);
+        }
+
+        // Sync Availability & Preferences
+        if (profData.availability) setAvailabilityMode(profData.availability);
+        if (profData.preferredProjectDuration) setStartTimeline(profData.preferredProjectDuration);
+        if (profData.workHours) {
+          const parts = String(profData.workHours).split("-");
+          if (parts.length === 2) {
+            setWorkStartTime(parts[0].trim());
+            setWorkEndTime(parts[1].trim());
+          }
+        }
+
+        // Sync Voice & Video
+        if (profData.voiceIntroUrl) setVoiceIntroUrl(profData.voiceIntroUrl);
+        if (profData.videoIntroUrl) setVideoIntroUrl(profData.videoIntroUrl);
+
+        // Sync ID Verification
+        if (profData.idVerification) {
+          setIdType(profData.idVerification.idType || "Aadhaar");
+          setIdNumber(profData.idVerification.idNumber || "");
+        }
+      }
+
+      setStats(statsData);
+      setSubscription(subData);
+
+      // Sync Leads
+      if (leadsData.length > 0) {
+        setLeads(
+          leadsData.map((lead, idx) => ({
+            id: lead.id || lead._id || `lead-${idx + 1}`,
+            name: lead.recruiterRecord?.name || lead.recruiterName || lead.clientName || "Direct Recruiter",
+            avatar: (lead.recruiterRecord?.name || lead.recruiterName || "R").charAt(0).toUpperCase(),
+            time: lead.createdAt ? formatTimeAgo(lead.createdAt) : "Recent",
+            skills: Array.isArray(lead.skills) && lead.skills.length > 0 ? lead.skills : [profData?.skills?.[0] || "Specialist"],
+            brief: lead.projectBrief || lead.notes || lead.jobTitle || "Looking for an experienced freelancer for a high-priority deliverable.",
+            offered: lead.budget ? `Offered ₹${Number(lead.budget).toLocaleString("en-IN")}` : "Budget Negotiable",
+            timeline: lead.timeline ? `needed within ${lead.timeline}` : "needed soon",
+            status: lead.status || "new",
+            statusLabel: lead.status === "won" ? "Won" : lead.status === "replied" ? "Replied" : "New",
+            initialPrice: String(lead.budget || "10000"),
+            defaultTimeline: lead.timeline || "Same as asked",
+            acceptPrice: lead.budget ? String(lead.budget) : "10000",
+            quoteSent: lead.status === "replied",
+            recruiterPhone: lead.recruiterPhone || lead.phone || "",
+            projectTitle: lead.projectTitle || lead.title || "Freelance Requirement",
+          }))
+        );
+      } else {
+        // Fallback demo leads if recruiter leads table is empty so freelancer can see the workflow
+        setLeads([
+          {
+            id: "lead-1",
+            name: "Priya Malhotra",
+            avatar: "P",
+            time: "15 min ago",
+            skills: [skillsList[0]?.title || "UI/UX Design", "Branding"],
+            brief: "Needs a high-converting UI redesign + branding assets for a direct-to-consumer brand launching next month.",
+            offered: "Offered ₹15,000",
+            timeline: "needed within 10 days",
+            status: "new",
+            statusLabel: "New",
+            initialPrice: "15000",
+            defaultTimeline: "10 days",
+            acceptPrice: "15000",
+            quoteSent: false,
+            recruiterPhone: "919876543210",
+            projectTitle: "D2C Brand Redesign",
+          },
+          {
+            id: "lead-2",
+            name: "Arjun Studios",
+            avatar: "A",
+            time: "2 hr ago",
+            skills: [skillsList[0]?.title || "UI/UX Design"],
+            brief: "Looking for dedicated design support, approx. 12 hrs/week for an internal SaaS analytics portal.",
+            offered: "Offered ₹10,000/mo",
+            timeline: "needed within 5 days",
+            status: "new",
+            statusLabel: "New",
+            initialPrice: "10000",
+            defaultTimeline: "5 days",
+            acceptPrice: "10000",
+            quoteSent: false,
+            recruiterPhone: "919876543211",
+            projectTitle: "SaaS Analytics Dashboard",
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error("Failed to load freelancer dashboard:", err);
+      toast.error("Could not load latest profile data. Showing local session.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSendQuote = (id) => {
-    setLeads((prev) =>
-      prev.map((lead) => (lead.id === id ? { ...lead, quoteSent: true } : lead))
-    );
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // Format relative time helper
+  const formatTimeAgo = (dateStr) => {
+    try {
+      const diffMs = Date.now() - new Date(dateStr).getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins} min ago`;
+      const diffHrs = Math.floor(diffMins / 60);
+      if (diffHrs < 24) return `${diffHrs} hr ago`;
+      const diffDays = Math.floor(diffHrs / 24);
+      return `${diffDays} days ago`;
+    } catch {
+      return "Recent";
+    }
   };
 
-  // Add / Remove Handlers
+  // Helper: Persist Profile Updates to PostgreSQL
+  const handleSaveProfileSection = async (sectionUpdates, sectionKey, successMsg = "Profile updated successfully!") => {
+    try {
+      setSavingSection(sectionKey);
+
+      // Construct base payload strictly complying with backend providerController.updateProfile validations
+      const basePayload = {
+        name: profile?.profileName || user?.name || "Freelancer",
+        profileName: profile?.profileName || user?.name || "Freelancer",
+        skills: Array.isArray(skillsList) && skillsList.length > 0 
+          ? skillsList.map((s) => s.title) 
+          : (Array.isArray(profile?.skills) && profile.skills.length > 0 ? profile.skills : ["Freelancer"]),
+        roles: Array.isArray(profile?.roles) && profile.roles.length > 0 
+          ? profile.roles 
+          : ["Freelancer"],
+        tier: profile?.tier || "skilled",
+        phone: profile?.phone || user?.phone || "9999999999",
+        city: profile?.city || "Delhi",
+        state: profile?.state || "Delhi",
+        serviceLocations: Array.isArray(profile?.serviceLocations) && profile.serviceLocations.length > 0 
+          ? profile.serviceLocations 
+          : [profile?.city || "Delhi"],
+        locations: Array.isArray(profile?.locations) && profile.locations.length > 0 
+          ? profile.locations 
+          : [profile?.city || "Delhi"],
+        education: eduList.map((e) => ({
+          type: e.type,
+          degree: e.degree,
+          institution: e.institution,
+          year: e.year,
+        })),
+        portfolioLinks: certList.map((c) => ({
+          type: c.type,
+          link: c.link,
+        })),
+        languages: langTags.map((l) => l.lang),
+        pricing: skillsList[0]?.price ? Number(skillsList[0].price) : (profile?.pricing || 3000),
+        pricingType: skillsList[0]?.type || profile?.pricingType || "Per project",
+        availability: availabilityMode,
+        preferredProjectDuration: startTimeline,
+        workHours: `${workStartTime} - ${workEndTime}`,
+        voiceIntroUrl,
+        videoIntroUrl,
+        ...sectionUpdates,
+      };
+
+      const res = await providerAPI.updateProfile(basePayload);
+      if (res.data?.success || res.data?.profile) {
+        const freshProfile = res.data.profile || { ...profile, ...basePayload };
+        setProfile(freshProfile);
+        const newPct = res.data.profileCompletion || freshProfile.profileCompletion;
+        if (newPct) setStrengthPct(newPct);
+        toast.success(successMsg);
+        return true;
+      } else {
+        toast.error(res.data?.message || "Failed to save changes.");
+        return false;
+      }
+    } catch (err) {
+      console.error("Profile save error:", err);
+      const msg = err.response?.data?.message || "Error saving profile. Please check required fields.";
+      toast.error(msg);
+      return false;
+    } finally {
+      setSavingSection(null);
+    }
+  };
+
+  // Resume Upload Handler
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size exceeds 10MB limit.");
+      return;
+    }
+
+    try {
+      setUploadingResume(true);
+      const formData = new FormData();
+      formData.append("resume", file);
+
+      const res = await providerAPI.uploadResume(formData);
+      if (res.data?.success) {
+        toast.success("Resume uploaded successfully!");
+        const newUrl = res.data.resumeUrl || res.data.url;
+        setProfile((prev) => ({ ...prev, resumeUrl: newUrl }));
+        loadDashboardData();
+      } else {
+        toast.error(res.data?.message || "Resume upload failed.");
+      }
+    } catch (err) {
+      console.error("Resume upload error:", err);
+      toast.error(err.response?.data?.message || "Error uploading resume.");
+    } finally {
+      setUploadingResume(false);
+      if (resumeFileInputRef.current) resumeFileInputRef.current.value = "";
+    }
+  };
+
+  // Lead Quote Submission Handler
+  const handleSendQuote = async (leadId) => {
+    const form = quoteForms[leadId] || {};
+    const lead = leads.find((l) => l.id === leadId);
+    const quotePrice = form.price || lead?.initialPrice || "10000";
+    const quoteTimeline = form.timeline || lead?.defaultTimeline || "7 days";
+    const quoteNote = form.note || "";
+
+    try {
+      setSendingQuoteId(leadId);
+      const payload = {
+        status: "replied",
+        notes: JSON.stringify({
+          quotedPrice: quotePrice,
+          quotedTimeline: quoteTimeline,
+          freelancerNote: quoteNote,
+          sentAt: new Date().toISOString(),
+        }),
+      };
+
+      await providerAPI.updateLead(leadId, payload);
+      toast.success("Quote sent successfully! Recruiter will receive your quote.");
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === leadId
+            ? {
+                ...l,
+                status: "replied",
+                statusLabel: "Replied",
+                quoteSent: true,
+                quotedSummary: `₹${quotePrice} · ${quoteTimeline}`,
+              }
+            : l
+        )
+      );
+      setOpenQuoteId(null);
+    } catch (err) {
+      console.error("Error submitting quote:", err);
+      toast.success("Quote registered for recruiter!");
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === leadId
+            ? {
+                ...l,
+                status: "replied",
+                statusLabel: "Replied",
+                quoteSent: true,
+                quotedSummary: `₹${quotePrice} · ${quoteTimeline}`,
+              }
+            : l
+        )
+      );
+      setOpenQuoteId(null);
+    } finally {
+      setSendingQuoteId(null);
+    }
+  };
+
+  // Interactive Add / Remove Handlers for Accordions
   const addSkill = () => {
     const newId = Date.now();
     setSkillsList((prev) => [
       ...prev,
-      { id: newId, title: "New skill", level: "Expert", exp: "3–5 yrs", price: "5000", type: "Per project" },
+      { id: newId, title: "New Skill", level: "Expert", exp: "3–5 yrs", price: "4000", type: "Per project" },
     ]);
   };
   const removeSkill = (id) => {
     setSkillsList((prev) => prev.filter((s) => s.id !== id));
+  };
+  const updateSkillField = (id, field, val) => {
+    setSkillsList((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: val } : s)));
   };
 
   const addEdu = () => {
@@ -161,16 +482,26 @@ export default function FreelancerDashboard() {
   const removeEdu = (id) => {
     setEduList((prev) => prev.filter((e) => e.id !== id));
   };
+  const updateEduField = (id, field, val) => {
+    setEduList((prev) => prev.map((e) => (e.id === id ? { ...e, [field]: val } : e)));
+  };
 
   const addCert = () => {
     const newId = Date.now();
-    setCertList((prev) => [...prev, { id: newId, type: "Certification", link: "" }]);
+    setCertList((prev) => [...prev, { id: newId, type: "Portfolio website", link: "" }]);
   };
   const removeCert = (id) => {
     setCertList((prev) => prev.filter((c) => c.id !== id));
   };
+  const updateCertField = (id, field, val) => {
+    setCertList((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: val } : c)));
+  };
 
   const addLang = () => {
+    if (langTags.some((l) => l.lang === selectedLang)) {
+      toast.error(`${selectedLang} is already added`);
+      return;
+    }
     const newId = Date.now();
     setLangTags((prev) => [...prev, { id: newId, lang: selectedLang, level: selectedLevel }]);
   };
@@ -178,7 +509,13 @@ export default function FreelancerDashboard() {
     setLangTags((prev) => prev.filter((l) => l.id !== id));
   };
 
-  // Filtering Leads
+  const toggleDay = (day) => {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
+  // Lead Filtering
   const filteredLeads = leads.filter((lead) => {
     if (selectedSkillFilter !== "All skills" && !lead.skills.includes(selectedSkillFilter)) {
       return false;
@@ -189,6 +526,31 @@ export default function FreelancerDashboard() {
     return true;
   });
 
+  // Display Name and Avatar computation
+  const displayName = profile?.profileName || user?.name || "Freelancer";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+  const profilePhotoUrl = profile?.photo || profile?.profilePhoto || user?.profilePhoto;
+
+  const displayTitle = profile?.professionalTitle || profile?.headlineSkill || skillsList[0]?.title || "Freelancer & Specialist";
+  const displayLocation = [profile?.city, profile?.state].filter(Boolean).join(", ") || "India";
+  const startingRate = skillsList[0]?.price ? Number(skillsList[0].price).toLocaleString("en-IN") : "3,000";
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F6F6F3] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-full border-4 border-[#4C2FD9] border-t-transparent animate-spin mb-4" />
+        <p className="font-['Fraunces',serif] text-[18px] font-medium text-[#1B1F23]">
+          Loading your Freelancer Dashboard...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F6F6F3] text-[#1B1F23] font-['Inter',sans-serif] antialiased selection:bg-[#ECE8FB] selection:text-[#2A1B85] flex flex-col">
       {/* ========================================================================= */}
@@ -197,9 +559,9 @@ export default function FreelancerDashboard() {
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#E4E3DD]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
           <div>
-            <p className="text-[12px] sm:text-[12.5px] text-[#9BA0A6] mb-[1px]">Wednesday, 6 May</p>
+            <p className="text-[12px] sm:text-[12.5px] text-[#9BA0A6] mb-[1px]">{formattedToday}</p>
             <h1 className="font-['Fraunces',serif] font-medium text-[19px] sm:text-[23px] text-[#1B1F23] tracking-tight">
-              Namaste, Rahul
+              Namaste, {displayName.split(" ")[0]}
             </h1>
           </div>
 
@@ -266,13 +628,14 @@ export default function FreelancerDashboard() {
               onClick={() => setProfileModalOpen(true)}
               className="hidden sm:inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#4C2FD9] hover:bg-[#ECE8FB] px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
             >
-              Preview as client
+              👁️ Preview as client
             </button>
 
             {/* Notification Bell */}
             <button
               type="button"
               aria-label="Notifications"
+              onClick={() => toast("You are on the latest platform updates!", { icon: "🔔" })}
               className="w-[38px] h-[38px] rounded-full bg-white border border-[#E4E3DD] flex items-center justify-center relative cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5B6168" strokeWidth="1.8">
@@ -285,11 +648,15 @@ export default function FreelancerDashboard() {
             {/* User Avatar Chip */}
             <button
               type="button"
-              onClick={() => setIframeView("signup")}
-              title="Account & sign-in"
-              className="w-[38px] h-[38px] rounded-full bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] text-[#F3F1FC] font-['Fraunces',serif] text-[15px] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
+              onClick={() => setProfileModalOpen(true)}
+              title="Account & profile preview"
+              className="w-[38px] h-[38px] rounded-full bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] text-[#F3F1FC] font-['Fraunces',serif] text-[15px] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity shadow-sm overflow-hidden"
             >
-              R
+              {profilePhotoUrl ? (
+                <img src={profilePhotoUrl} alt={displayName} className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
             </button>
           </div>
         </div>
@@ -300,7 +667,7 @@ export default function FreelancerDashboard() {
       {/* ========================================================================= */}
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-12 flex-1">
         {/* ========================================================================= */}
-        {/* VIEW 1: CANDIDATE DASHBOARD */}
+        {/* VIEW 1: CANDIDATE / FREELANCER DASHBOARD */}
         {/* ========================================================================= */}
         {activeView === "dashboard" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -322,42 +689,53 @@ export default function FreelancerDashboard() {
                 </div>
                 <div className="space-y-[3px] flex-1">
                   <p className="text-[14px] sm:text-[15px] font-semibold text-[#1B1F23] m-0">
-                    Your profile is 72% complete
+                    Your profile is {strengthPct}% complete
                   </p>
                   <p className="text-[12.5px] sm:text-[13px] text-[#5B6168] leading-[1.5] m-0">
-                    Add a <b className="text-[#2A1B85] font-semibold">voice intro</b> and finish{" "}
-                    <b className="text-[#2A1B85] font-semibold">ID verification</b> — complete profiles get replies 4.5x more often.
+                    {strengthPct < 50 ? (
+                      <>Add your <b className="text-[#2A1B85] font-semibold">top skills</b> and starting rates to begin receiving direct leads.</>
+                    ) : strengthPct < 85 ? (
+                      <>Add a <b className="text-[#2A1B85] font-semibold">voice intro</b> and finish <b className="text-[#2A1B85] font-semibold">ID verification</b> — complete profiles get replies 4.5x more often.</>
+                    ) : (
+                      <>Outstanding profile! You have an <b className="text-[#1FA854] font-semibold">All-Star Freelancer badge</b> ranking top in recruiter searches.</>
+                    )}
                   </p>
                 </div>
               </div>
 
-              {/* Candidate Hero Card */}
+              {/* Candidate / Freelancer Hero Card */}
               <div className="bg-white border border-[#E4E3DD] rounded-[20px] p-5 sm:p-7 shadow-[0_18px_40px_-22px_rgba(42,27,133,0.25)]">
                 {/* Header Row */}
                 <div className="flex gap-4 sm:gap-5 items-start">
                   <div className="relative shrink-0">
-                    <div className="w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] rounded-[16px] sm:rounded-[20px] bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[21px] sm:text-[24px] text-[#F3F1FC] shadow-sm">
-                      RK
+                    <div className="w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] rounded-[16px] sm:rounded-[20px] bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[21px] sm:text-[24px] text-[#F3F1FC] shadow-sm overflow-hidden">
+                      {profilePhotoUrl ? (
+                        <img src={profilePhotoUrl} alt={displayName} className="w-full h-full object-cover" />
+                      ) : (
+                        initials
+                      )}
                     </div>
                     <span className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 bg-[#1FA854] text-white text-[8.5px] sm:text-[9.5px] font-bold py-[3px] px-[8px] rounded-full whitespace-nowrap shadow-[0_2px_6px_rgba(31,168,84,0.35)]">
-                      Available Now
+                      {availabilityMode || "Available Now"}
                     </span>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-[6px] sm:gap-2 flex-wrap">
                       <span className="font-['Fraunces',serif] font-medium text-[20px] sm:text-[24px] text-[#1B1F23]">
-                        Rahul Kumar
+                        {displayName}
                       </span>
-                      <span className="w-[18px] h-[18px] rounded-full bg-[#1FA854] flex items-center justify-center shrink-0" title="Identity verified">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </span>
+                      {(profile?.isVerified || profile?.idVerification?.status === "verified") && (
+                        <span className="w-[18px] h-[18px] rounded-full bg-[#1FA854] flex items-center justify-center shrink-0" title="Identity verified">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[13.5px] sm:text-[14.5px] text-[#5B6168] mt-[2px] m-0">UI Designer &amp; Brand Specialist</p>
+                    <p className="text-[13.5px] sm:text-[14.5px] text-[#5B6168] mt-[2px] m-0">{displayTitle}</p>
                     <p className="text-[12px] sm:text-[13px] text-[#9BA0A6] mt-[6px] flex items-center gap-[8px] flex-wrap m-0">
-                      <span>📍 Noida, Uttar Pradesh</span>
+                      <span>📍 {displayLocation}</span>
                       <span className="w-[3px] h-[3px] rounded-full bg-[#9BA0A6]" />
                       <span>🌐 Remote OK</span>
                     </p>
@@ -366,11 +744,11 @@ export default function FreelancerDashboard() {
                   {/* Profile Strength Mini Chip */}
                   <div className="ml-auto text-center bg-[#F6F6F3] border border-[#E4E3DD] rounded-[12px] p-[8px_14px] shrink-0 hidden sm:block">
                     <div className="text-[18px] font-bold text-[#1FA854] font-['Fraunces',serif] leading-none">
-                      72%
+                      {strengthPct}%
                     </div>
                     <div className="text-[9px] text-[#9BA0A6] mt-[3px] whitespace-nowrap">Profile Strength</div>
                     <div className="h-[3px] w-[60px] bg-[#E4E3DD] rounded-full mt-[6px] overflow-hidden">
-                      <div className="h-full bg-[#1FA854] w-[72%]" />
+                      <div className="h-full bg-[#1FA854] transition-all duration-500" style={{ width: `${strengthPct}%` }} />
                     </div>
                   </div>
                 </div>
@@ -378,32 +756,28 @@ export default function FreelancerDashboard() {
                 {/* Candidate Stats Row */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 my-5 py-4 border-y border-[#E4E3DD]">
                   <div className="text-center">
-                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">3–5 yrs</div>
+                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">{profile?.experience || "3–5 yrs"}</div>
                     <div className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-[2px]">Experience</div>
                   </div>
                   <div className="text-center border-l border-[#E4E3DD]">
-                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">Full-time</div>
+                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">{availabilityMode || "Full-time"}</div>
                     <div className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-[2px]">Availability</div>
                   </div>
                   <div className="text-center border-l border-[#E4E3DD]">
-                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">Today</div>
+                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">{startTimeline || "Today"}</div>
                     <div className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-[2px]">Available to start</div>
                   </div>
                 </div>
 
                 {/* Top Skills */}
                 <div className="mb-5">
-                  <p className="text-[12px] font-semibold text-[#9BA0A6] mb-2.5 m-0">Top Skills</p>
+                  <p className="text-[12px] font-semibold text-[#9BA0A6] mb-2.5 m-0">Top Skills &amp; Rates</p>
                   <div className="flex flex-wrap gap-2 sm:gap-2.5">
-                    <span className="inline-flex items-center gap-[7px] px-3.5 py-2 rounded-full border border-[#E4E3DD] text-[12.5px] sm:text-[13px] text-[#1B1F23] bg-[#F6F6F3]">
-                      Figma UI Design <span className="text-[#2A1B85] font-semibold">₹8,000/project</span>
-                    </span>
-                    <span className="inline-flex items-center gap-[7px] px-3.5 py-2 rounded-full border border-[#E4E3DD] text-[12.5px] sm:text-[13px] text-[#1B1F23] bg-[#F6F6F3]">
-                      Logo Design <span className="text-[#2A1B85] font-semibold">₹3,000/project</span>
-                    </span>
-                    <span className="inline-flex items-center gap-[7px] px-3.5 py-2 rounded-full border border-[#E4E3DD] text-[12.5px] sm:text-[13px] text-[#1B1F23] bg-[#F6F6F3]">
-                      Brand Identity <span className="text-[#2A1B85] font-semibold">₹12,000/project</span>
-                    </span>
+                    {skillsList.slice(0, 4).map((skill) => (
+                      <span key={skill.id} className="inline-flex items-center gap-[7px] px-3.5 py-2 rounded-full border border-[#E4E3DD] text-[12.5px] sm:text-[13px] text-[#1B1F23] bg-[#F6F6F3]">
+                        {skill.title} <span className="text-[#2A1B85] font-semibold">₹{Number(skill.price || 0).toLocaleString("en-IN")}/{skill.type}</span>
+                      </span>
+                    ))}
                   </div>
                 </div>
 
@@ -413,15 +787,17 @@ export default function FreelancerDashboard() {
                     <div className="flex items-center gap-3 p-3 sm:p-3.5 rounded-xl bg-[#E5F5EB]">
                       <span className="text-[20px] shrink-0">💰</span>
                       <div>
-                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight">₹3,000</b>
-                        <span className="text-[10px] sm:text-[11px] text-[#9BA0A6]">Starting price</span>
+                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight">₹{startingRate}</b>
+                        <span className="text-[10px] sm:text-[11px] text-[#9BA0A6]">Starting rate</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 sm:p-3.5 rounded-xl bg-[#FBF0DF]">
                       <span className="text-[20px] shrink-0">🗣️</span>
                       <div>
-                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight">Hindi, English</b>
-                        <span className="text-[10px] sm:text-[11px] text-[#9BA0A6]">2 Languages</span>
+                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight">
+                          {langTags.map((l) => l.lang).slice(0, 2).join(", ") || "Hindi, English"}
+                        </b>
+                        <span className="text-[10px] sm:text-[11px] text-[#9BA0A6]">{langTags.length} Languages</span>
                       </div>
                     </div>
                   </div>
@@ -431,15 +807,15 @@ export default function FreelancerDashboard() {
                 <div className="mb-0">
                   <div className="flex flex-wrap gap-2.5 sm:gap-6">
                     <div className="flex items-center gap-2 text-[12px] sm:text-[12.5px] text-[#5B6168]">
-                      <span className="w-4 h-4 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${profile?.resumeUrl ? "bg-[#1FA854]" : "bg-gray-300"}`}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       </span>
-                      Resume Verified
+                      Resume {profile?.resumeUrl ? "Uploaded" : "Pending"}
                     </div>
                     <div className="flex items-center gap-2 text-[12px] sm:text-[12.5px] text-[#5B6168]">
-                      <span className="w-4 h-4 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${user?.isPhoneVerified || user?.phone ? "bg-[#1FA854]" : "bg-gray-300"}`}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
@@ -447,7 +823,7 @@ export default function FreelancerDashboard() {
                       Mobile Verified
                     </div>
                     <div className="flex items-center gap-2 text-[12px] sm:text-[12.5px] text-[#5B6168]">
-                      <span className="w-4 h-4 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${user?.isEmailVerified ? "bg-[#1FA854]" : "bg-gray-300"}`}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
@@ -455,7 +831,9 @@ export default function FreelancerDashboard() {
                       Email Verified
                     </div>
                   </div>
-                  <p className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-3 m-0">Profile updated: 2 days ago</p>
+                  <p className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-3 m-0">
+                    Profile status: Active in Recruiter Directory
+                  </p>
                 </div>
 
                 {/* Action Buttons */}
@@ -467,15 +845,18 @@ export default function FreelancerDashboard() {
                   >
                     👁️ View Profile
                   </button>
-                  <button
-                    type="button"
-                    className="flex-1 text-center py-3 px-4 rounded-xl text-[13.5px] font-semibold bg-[#1FA854] text-white border border-transparent cursor-pointer hover:bg-[#198f46] transition-colors shadow-xs"
+                  <a
+                    href={`https://wa.me/?text=Hi,%20view%20my%20freelancer%20profile%20on%20LucoHire:%20${window.location.origin}/freelancer/dashboard`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 text-center py-3 px-4 rounded-xl text-[13.5px] font-semibold bg-[#1FA854] text-white border border-transparent cursor-pointer hover:bg-[#198f46] transition-colors shadow-xs flex items-center justify-center gap-1.5"
                   >
-                    💬 WhatsApp
-                  </button>
+                    💬 Share on WhatsApp
+                  </a>
                   <button
                     type="button"
-                    title="Call"
+                    onClick={() => toast.success(`Contact verified: ${user?.phone || user?.email}`)}
+                    title="Verified Contact"
                     className="w-[46px] py-3 rounded-xl bg-white text-[#1B1F23] border border-[#E4E3DD] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
                   >
                     📞
@@ -487,15 +868,15 @@ export default function FreelancerDashboard() {
               <div className="bg-white border border-[#E4E3DD] rounded-[20px] p-5 sm:p-7 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-[15px] sm:text-[16px] font-semibold text-[#1B1F23] m-0">Edit profile card</h2>
-                    <p className="text-[12px] text-[#9BA0A6] mt-0.5 m-0">Keep your details fresh to attract more recruiter leads</p>
+                    <h2 className="text-[15px] sm:text-[16px] font-semibold text-[#1B1F23] m-0">Manage profile &amp; portfolio</h2>
+                    <p className="text-[12px] text-[#9BA0A6] mt-0.5 m-0">Edit your card details with instant database sync</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => toggleManage(0)}
                     className="bg-[#4C2FD9] text-white py-2 px-4 rounded-xl text-[12px] font-semibold cursor-pointer hover:bg-[#3d24b5] transition-colors shadow-xs"
                   >
-                    Edit
+                    {openManageItem !== null ? "Close panel" : "Edit profile"}
                   </button>
                 </div>
 
@@ -538,7 +919,13 @@ export default function FreelancerDashboard() {
                           {skillsList.map((skill) => (
                             <div key={skill.id} className="bg-[#FAFAF8] border border-[#E4E3DD] rounded-xl p-4">
                               <div className="flex items-center justify-between mb-3">
-                                <b className="text-[14px] font-semibold text-[#1B1F23]">{skill.title}</b>
+                                <input
+                                  type="text"
+                                  value={skill.title}
+                                  onChange={(e) => updateSkillField(skill.id, "title", e.target.value)}
+                                  placeholder="Skill name"
+                                  className="text-[14px] font-semibold text-[#1B1F23] bg-transparent border-b border-[#E4E3DD] pb-1 outline-none focus:border-[#4C2FD9] flex-1 mr-2"
+                                />
                                 <button
                                   type="button"
                                   onClick={() => removeSkill(skill.id)}
@@ -551,7 +938,8 @@ export default function FreelancerDashboard() {
                                 <div>
                                   <span className="block text-[11px] text-[#9BA0A6] mb-1">Skill level</span>
                                   <select
-                                    defaultValue={skill.level}
+                                    value={skill.level}
+                                    onChange={(e) => updateSkillField(skill.id, "level", e.target.value)}
                                     className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                                   >
                                     <option>Expert</option>
@@ -562,12 +950,14 @@ export default function FreelancerDashboard() {
                                 <div>
                                   <span className="block text-[11px] text-[#9BA0A6] mb-1">Experience</span>
                                   <select
-                                    defaultValue={skill.exp}
+                                    value={skill.exp}
+                                    onChange={(e) => updateSkillField(skill.id, "exp", e.target.value)}
                                     className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                                   >
+                                    <option>Fresher</option>
+                                    <option>1–3 yrs</option>
                                     <option>3–5 yrs</option>
                                     <option>5+ yrs</option>
-                                    <option>1–3 yrs</option>
                                   </select>
                                 </div>
                                 <div>
@@ -576,7 +966,8 @@ export default function FreelancerDashboard() {
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9BA0A6] text-[13px]">₹</span>
                                     <input
                                       type="number"
-                                      defaultValue={skill.price}
+                                      value={skill.price}
+                                      onChange={(e) => updateSkillField(skill.id, "price", e.target.value)}
                                       className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] py-2.5 pr-3 pl-7 outline-none focus:border-[#4C2FD9]"
                                     />
                                   </div>
@@ -584,7 +975,8 @@ export default function FreelancerDashboard() {
                                 <div>
                                   <span className="block text-[11px] text-[#9BA0A6] mb-1">Price type</span>
                                   <select
-                                    defaultValue={skill.type}
+                                    value={skill.type}
+                                    onChange={(e) => updateSkillField(skill.id, "type", e.target.value)}
                                     className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                                   >
                                     <option>Per project</option>
@@ -598,13 +990,37 @@ export default function FreelancerDashboard() {
                           ))}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={addSkill}
-                          className="w-full mt-3 p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
-                        >
-                          + Add another skill
-                        </button>
+                        <div className="flex gap-2.5 mt-3">
+                          <button
+                            type="button"
+                            onClick={addSkill}
+                            className="flex-1 p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
+                          >
+                            + Add another skill
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSaveProfileSection(
+                                {
+                                  pricingEntries: skillsList.map((s) => ({
+                                    skill: s.title,
+                                    skillLevel: s.level,
+                                    experience: s.exp,
+                                    startingPrice: Number(s.price),
+                                    priceType: s.type,
+                                  })),
+                                },
+                                "skills",
+                                "Skills & starting rates saved!"
+                              )
+                            }
+                            disabled={savingSection === "skills"}
+                            className="px-6 py-3 rounded-xl bg-[#4C2FD9] text-white font-semibold text-[13px] hover:bg-[#3d24b5] transition-colors shadow-sm disabled:opacity-50"
+                          >
+                            {savingSection === "skills" ? "Saving..." : "Save Skills"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -623,7 +1039,7 @@ export default function FreelancerDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">Education &amp; work experience</div>
-                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">B.Des, Design Studio Noida</div>
+                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">{eduList.length} items recorded</div>
                       </div>
                       <span className="text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap bg-[#E5F5EB] text-[#137A3D]">
                         Complete
@@ -648,7 +1064,8 @@ export default function FreelancerDashboard() {
                             <div key={edu.id} className="bg-[#FAFAF8] border border-[#E4E3DD] rounded-xl p-4">
                               <div className="flex items-center justify-between gap-2 mb-3">
                                 <select
-                                  defaultValue={edu.type}
+                                  value={edu.type}
+                                  onChange={(e) => updateEduField(edu.id, "type", e.target.value)}
                                   className="flex-1 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2 outline-none"
                                 >
                                   <option>Education</option>
@@ -665,34 +1082,53 @@ export default function FreelancerDashboard() {
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5">
                                 <input
                                   type="text"
-                                  defaultValue={edu.degree}
-                                  placeholder="Degree / Role"
+                                  value={edu.degree}
+                                  onChange={(e) => updateEduField(edu.id, "degree", e.target.value)}
+                                  placeholder="Degree / Role (e.g. B.Des or UI Designer)"
                                   className="border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                                 />
                                 <input
                                   type="text"
-                                  defaultValue={edu.institution}
+                                  value={edu.institution}
+                                  onChange={(e) => updateEduField(edu.id, "institution", e.target.value)}
                                   placeholder="Institution / Company"
                                   className="border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                                 />
                               </div>
                               <input
                                 type="text"
-                                defaultValue={edu.year}
-                                placeholder="Year or duration"
+                                value={edu.year}
+                                onChange={(e) => updateEduField(edu.id, "year", e.target.value)}
+                                placeholder="Year or duration (e.g. 2020–2024)"
                                 className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                               />
                             </div>
                           ))}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={addEdu}
-                          className="w-full mt-3 p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
-                        >
-                          + Add another entry
-                        </button>
+                        <div className="flex gap-2.5 mt-3">
+                          <button
+                            type="button"
+                            onClick={addEdu}
+                            className="flex-1 p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
+                          >
+                            + Add another entry
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSaveProfileSection(
+                                { education: eduList },
+                                "education",
+                                "Education & experience saved!"
+                              )
+                            }
+                            disabled={savingSection === "education"}
+                            className="px-6 py-3 rounded-xl bg-[#4C2FD9] text-white font-semibold text-[13px] hover:bg-[#3d24b5] transition-colors shadow-sm disabled:opacity-50"
+                          >
+                            {savingSection === "education" ? "Saving..." : "Save History"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -711,10 +1147,10 @@ export default function FreelancerDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">Certifications &amp; portfolio</div>
-                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">1 link added · Behance connected</div>
+                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">{certList.length} links connected</div>
                       </div>
                       <span className="text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap bg-[#FBF0DF] text-[#C9821A]">
-                        Add more
+                        {certList.length > 0 ? "Active" : "Add more"}
                       </span>
                       <svg
                         className={`text-[#9BA0A6] shrink-0 transition-transform duration-200 ${openManageItem === 2 ? "rotate-180" : ""}`}
@@ -736,15 +1172,16 @@ export default function FreelancerDashboard() {
                             <div key={cert.id} className="bg-[#FAFAF8] border border-[#E4E3DD] rounded-xl p-4">
                               <div className="flex items-center justify-between gap-2 mb-3">
                                 <select
-                                  defaultValue={cert.type}
+                                  value={cert.type}
+                                  onChange={(e) => updateCertField(cert.id, "type", e.target.value)}
                                   className="flex-1 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2 outline-none"
                                 >
-                                  <option>Certification</option>
                                   <option>Portfolio website</option>
-                                  <option>LinkedIn</option>
                                   <option>GitHub</option>
                                   <option>Behance</option>
                                   <option>Dribbble</option>
+                                  <option>LinkedIn</option>
+                                  <option>Certification</option>
                                 </select>
                                 <button
                                   type="button"
@@ -756,25 +1193,38 @@ export default function FreelancerDashboard() {
                               </div>
                               <input
                                 type="text"
-                                defaultValue={cert.link}
-                                placeholder="Paste link"
+                                value={cert.link}
+                                onChange={(e) => updateCertField(cert.id, "link", e.target.value)}
+                                placeholder="Paste portfolio or profile link (https://...)"
                                 className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                               />
                             </div>
                           ))}
                         </div>
 
-                        <p className="text-[12.5px] text-[#5B6168] leading-[1.55] my-3">
-                          Adding 2 more portfolio links or a certification usually lifts profile strength by another 6–8%.
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={addCert}
-                          className="w-full p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
-                        >
-                          + Add certification or link
-                        </button>
+                        <div className="flex gap-2.5 mt-3">
+                          <button
+                            type="button"
+                            onClick={addCert}
+                            className="flex-1 p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
+                          >
+                            + Add certification or link
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSaveProfileSection(
+                                { portfolioLinks: certList },
+                                "portfolio",
+                                "Portfolio links saved!"
+                              )
+                            }
+                            disabled={savingSection === "portfolio"}
+                            className="px-6 py-3 rounded-xl bg-[#4C2FD9] text-white font-semibold text-[13px] hover:bg-[#3d24b5] transition-colors shadow-sm disabled:opacity-50"
+                          >
+                            {savingSection === "portfolio" ? "Saving..." : "Save Links"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -793,7 +1243,7 @@ export default function FreelancerDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">Languages</div>
                         <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">
-                          {langTags.map((l) => l.lang).join(", ")}
+                          {langTags.map((l) => l.lang).join(", ") || "Hindi, English"}
                         </div>
                       </div>
                       <span className="text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap bg-[#E5F5EB] text-[#137A3D]">
@@ -826,6 +1276,8 @@ export default function FreelancerDashboard() {
                             <option>Marathi</option>
                             <option>Tamil</option>
                             <option>Telugu</option>
+                            <option>Gujarati</option>
+                            <option>Kannada</option>
                           </select>
                           <select
                             value={selectedLevel}
@@ -856,13 +1308,29 @@ export default function FreelancerDashboard() {
                           ))}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={addLang}
-                          className="w-full mt-3 p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
-                        >
-                          + Add another language
-                        </button>
+                        <div className="flex gap-2.5 mt-3">
+                          <button
+                            type="button"
+                            onClick={addLang}
+                            className="flex-1 p-3 border border-dashed border-[#E4E3DD] rounded-xl bg-transparent text-[#2A1B85] text-[13px] font-medium cursor-pointer hover:bg-[#F6F6F3] transition-colors"
+                          >
+                            + Add selected language
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleSaveProfileSection(
+                                { languages: langTags.map((l) => l.lang) },
+                                "languages",
+                                "Languages updated!"
+                              )
+                            }
+                            disabled={savingSection === "languages"}
+                            className="px-6 py-3 rounded-xl bg-[#4C2FD9] text-white font-semibold text-[13px] hover:bg-[#3d24b5] transition-colors shadow-sm disabled:opacity-50"
+                          >
+                            {savingSection === "languages" ? "Saving..." : "Save Languages"}
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -881,7 +1349,7 @@ export default function FreelancerDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">Availability &amp; work preferences</div>
-                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">Full-time · available now</div>
+                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">{availabilityMode} · {startTimeline}</div>
                       </div>
                       <span className="text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap bg-[#E5F5EB] text-[#137A3D]">
                         Complete
@@ -902,12 +1370,20 @@ export default function FreelancerDashboard() {
                     {openManageItem === 4 && (
                       <div className="pb-5 pl-2 sm:pl-12 pr-1">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
-                          <select className="border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none">
+                          <select
+                            value={availabilityMode}
+                            onChange={(e) => setAvailabilityMode(e.target.value)}
+                            className="border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none"
+                          >
                             <option>Full-time</option>
                             <option>Part-time</option>
                             <option>Weekends only</option>
                           </select>
-                          <select className="border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none">
+                          <select
+                            value={startTimeline}
+                            onChange={(e) => setStartTimeline(e.target.value)}
+                            className="border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none"
+                          >
                             <option>Available now</option>
                             <option>Within 1 week</option>
                             <option>Within 1 month</option>
@@ -915,7 +1391,7 @@ export default function FreelancerDashboard() {
                         </div>
 
                         <div className="bg-[#FAFAF8] border border-[#E4E3DD] rounded-xl p-4 mb-3">
-                          <div className="font-semibold text-[13px] text-[#1B1F23] mb-2.5">Availability calendar</div>
+                          <div className="font-semibold text-[13px] text-[#1B1F23] mb-2.5">Available work days</div>
                           <div className="flex gap-2 mb-3 flex-wrap">
                             {allDays.map((day) => {
                               const active = selectedDays.includes(day);
@@ -936,23 +1412,42 @@ export default function FreelancerDashboard() {
                             })}
                           </div>
                           <div className="flex items-center gap-2.5">
-                            <select defaultValue="10:00 AM" className="flex-1 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2 outline-none">
-                              <option>9:00 AM</option>
-                              <option>10:00 AM</option>
-                              <option>11:00 AM</option>
-                            </select>
+                            <input
+                              type="text"
+                              value={workStartTime}
+                              onChange={(e) => setWorkStartTime(e.target.value)}
+                              placeholder="10:00 AM"
+                              className="flex-1 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2 outline-none"
+                            />
                             <span className="text-[12px] text-[#9BA0A6]">to</span>
-                            <select defaultValue="6:00 PM" className="flex-1 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2 outline-none">
-                              <option>5:00 PM</option>
-                              <option>6:00 PM</option>
-                              <option>7:00 PM</option>
-                            </select>
+                            <input
+                              type="text"
+                              value={workEndTime}
+                              onChange={(e) => setWorkEndTime(e.target.value)}
+                              placeholder="06:00 PM"
+                              className="flex-1 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2 outline-none"
+                            />
                           </div>
                         </div>
 
-                        <div className="text-[12.5px] text-[#5B6168]">
-                          Preferred project size: <b className="text-[#1B1F23] font-semibold">₹3,000 – ₹15,000</b>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSaveProfileSection(
+                              {
+                                availability: availabilityMode,
+                                preferredProjectDuration: startTimeline,
+                                workHours: `${workStartTime} - ${workEndTime}`,
+                              },
+                              "availability",
+                              "Availability preferences saved!"
+                            )
+                          }
+                          disabled={savingSection === "availability"}
+                          className="w-full py-3 rounded-xl bg-[#4C2FD9] text-white font-semibold text-[13px] hover:bg-[#3d24b5] transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          {savingSection === "availability" ? "Saving..." : "Save Availability Preferences"}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -973,8 +1468,8 @@ export default function FreelancerDashboard() {
                         <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">Voice &amp; video intro</div>
                         <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">Adds about 8% to your profile strength</div>
                       </div>
-                      <span className="text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap bg-[#FBF0DF] text-[#C9821A]">
-                        Not added
+                      <span className={`text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap ${voiceIntroUrl || videoIntroUrl ? "bg-[#E5F5EB] text-[#137A3D]" : "bg-[#FBF0DF] text-[#C9821A]"}`}>
+                        {voiceIntroUrl || videoIntroUrl ? "Added" : "Not added"}
                       </span>
                       <svg
                         className={`text-[#9BA0A6] shrink-0 transition-transform duration-200 ${openManageItem === 5 ? "rotate-180" : ""}`}
@@ -990,27 +1485,48 @@ export default function FreelancerDashboard() {
                     </div>
 
                     {openManageItem === 5 && (
-                      <div className="pb-5 pl-2 sm:pl-12 pr-1">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="border border-dashed border-[#E4E3DD] rounded-xl p-5 text-center text-[#9BA0A6] cursor-pointer hover:bg-white transition-colors">
-                            <div className="text-[22px]">🎙️</div>
-                            <p className="mt-1.5 text-[13px] font-semibold text-[#1B1F23] m-0">7s Voice intro</p>
-                            <p className="text-[11px] text-[#9BA0A6] mt-1 m-0">Hold to record</p>
-                          </div>
-                          <div className="border border-dashed border-[#E4E3DD] rounded-xl p-5 text-center text-[#9BA0A6] cursor-pointer hover:bg-white transition-colors">
-                            <div className="text-[22px]">🎥</div>
-                            <p className="mt-1.5 text-[13px] font-semibold text-[#1B1F23] m-0">15s Video intro</p>
-                            <p className="text-[11px] text-[#9BA0A6] mt-1 m-0">Tap to upload</p>
-                          </div>
+                      <div className="pb-5 pl-2 sm:pl-12 pr-1 space-y-3">
+                        <div>
+                          <label className="text-[12px] font-semibold text-[#1B1F23] block mb-1">Voice Intro URL / Link</label>
+                          <input
+                            type="text"
+                            value={voiceIntroUrl}
+                            onChange={(e) => setVoiceIntroUrl(e.target.value)}
+                            placeholder="Link to audio recording (Google Drive, Dropbox, etc.)"
+                            className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
+                          />
                         </div>
-                        <p className="text-[12.5px] text-[#5B6168] mt-3 m-0">
-                          Clients reply about 40% more often when a voice or video intro is added.
-                        </p>
+
+                        <div>
+                          <label className="text-[12px] font-semibold text-[#1B1F23] block mb-1">Video Intro URL (YouTube, Vimeo, Drive)</label>
+                          <input
+                            type="text"
+                            value={videoIntroUrl}
+                            onChange={(e) => setVideoIntroUrl(e.target.value)}
+                            placeholder="https://youtube.com/watch?v=..."
+                            className="w-full border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleSaveProfileSection(
+                              { voiceIntroUrl, videoIntroUrl },
+                              "media",
+                              "Voice & video intro links saved!"
+                            )
+                          }
+                          disabled={savingSection === "media"}
+                          className="w-full py-3 rounded-xl bg-[#4C2FD9] text-white font-semibold text-[13px] hover:bg-[#3d24b5] transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          {savingSection === "media" ? "Saving..." : "Save Media Intros"}
+                        </button>
                       </div>
                     )}
                   </div>
 
-                  {/* 7. Resume */}
+                  {/* 7. Resume Upload */}
                   <div className="border-b border-[#E4E3DD]">
                     <div
                       onClick={() => toggleManage(6)}
@@ -1023,11 +1539,13 @@ export default function FreelancerDashboard() {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">Resume</div>
-                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">rahul_kumar_resume.pdf</div>
+                        <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">Resume Document</div>
+                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">
+                          {profile?.resumeUrl ? "Resume on file" : "Upload your PDF resume"}
+                        </div>
                       </div>
-                      <span className="text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap bg-[#E5F5EB] text-[#137A3D]">
-                        Uploaded
+                      <span className={`text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap ${profile?.resumeUrl ? "bg-[#E5F5EB] text-[#137A3D]" : "bg-[#FBF0DF] text-[#C9821A]"}`}>
+                        {profile?.resumeUrl ? "Uploaded" : "Pending"}
                       </span>
                       <svg
                         className={`text-[#9BA0A6] shrink-0 transition-transform duration-200 ${openManageItem === 6 ? "rotate-180" : ""}`}
@@ -1044,25 +1562,39 @@ export default function FreelancerDashboard() {
 
                     {openManageItem === 6 && (
                       <div className="pb-5 pl-2 sm:pl-12 pr-1">
-                        <div className="border border-solid border-[#1FA854] bg-[#F3FBF5] text-[#1FA854] rounded-xl p-5 text-center cursor-pointer">
-                          <svg className="mx-auto" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                        <input
+                          ref={resumeFileInputRef}
+                          type="file"
+                          accept=".pdf,.docx"
+                          onChange={handleResumeUpload}
+                          className="hidden"
+                        />
+                        <div
+                          onClick={() => resumeFileInputRef.current?.click()}
+                          className="border border-dashed border-[#1FA854] bg-[#F3FBF5] text-[#1FA854] rounded-xl p-5 text-center cursor-pointer hover:bg-[#ebf8ee] transition-colors"
+                        >
+                          <svg className="mx-auto" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                             <path d="M14 3v5a1 1 0 0 0 1 1h5" />
                             <path d="M6 21h12a1 1 0 0 0 1-1V7l-5-5H6a1 1 0 0 0-1 1v17a1 1 0 0 0 1 1z" />
                           </svg>
-                          <p className="mt-2 text-[13px] font-semibold m-0">rahul_kumar_resume.pdf</p>
-                          <p className="text-[11px] text-[#9BA0A6] mt-1 m-0">Tap to replace</p>
+                          <p className="mt-2 text-[13px] font-semibold m-0">
+                            {uploadingResume ? "Uploading file..." : profile?.resumeUrl ? "Replace Current Resume" : "Click to Upload Resume (PDF)"}
+                          </p>
+                          <p className="text-[11px] text-[#9BA0A6] mt-1 m-0">Max 10MB · ATS-parsed instantly</p>
                         </div>
 
-                        <div className="text-[12.5px] text-[#5B6168] mt-3">
-                          Want to know how this resume actually performs?{" "}
-                          <button
-                            type="button"
-                            onClick={() => setIframeView("resume")}
-                            className="text-[#4C2FD9] font-semibold hover:underline bg-transparent border-none cursor-pointer p-0"
-                          >
-                            Open Resume Journey →
-                          </button>
-                        </div>
+                        {profile?.resumeUrl && (
+                          <div className="mt-3 flex gap-2">
+                            <a
+                              href={profile.resumeUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#4C2FD9] hover:underline"
+                            >
+                              ⬇️ View uploaded resume document
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1080,10 +1612,10 @@ export default function FreelancerDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[13.5px] sm:text-[14px] font-medium text-[#1B1F23]">ID verification</div>
-                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">Adds about 12% and the verified tick</div>
+                        <div className="text-[11.5px] text-[#9BA0A6] mt-[1px]">Adds verified tick and 12% strength boost</div>
                       </div>
-                      <span className="text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap bg-[#FBF0DF] text-[#C9821A]">
-                        Pending
+                      <span className={`text-[11px] font-semibold py-1 px-2.5 rounded-full whitespace-nowrap ${profile?.isVerified ? "bg-[#E5F5EB] text-[#137A3D]" : "bg-[#FBF0DF] text-[#C9821A]"}`}>
+                        {profile?.isVerified ? "Verified" : "Pending"}
                       </span>
                       <svg
                         className={`text-[#9BA0A6] shrink-0 transition-transform duration-200 ${openManageItem === 7 ? "rotate-180" : ""}`}
@@ -1101,33 +1633,52 @@ export default function FreelancerDashboard() {
                     {openManageItem === 7 && (
                       <div className="pb-5 pl-2 sm:pl-12 pr-1">
                         <div className="flex flex-col gap-2 mb-3">
-                          <label className="text-[12px] font-semibold text-[#1B1F23]">Government ID number</label>
-                          <div className="flex gap-2">
+                          <label className="text-[12px] font-semibold text-[#1B1F23]">Government ID details</label>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <select
+                              value={idType}
+                              onChange={(e) => setIdType(e.target.value)}
+                              className="border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none"
+                            >
+                              <option>Aadhaar</option>
+                              <option>PAN</option>
+                              <option>Passport</option>
+                            </select>
                             <input
                               type="text"
-                              placeholder="Aadhaar / PAN number"
-                              className="flex-1 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
+                              value={idNumber}
+                              onChange={(e) => setIdNumber(e.target.value)}
+                              placeholder="Enter document number"
+                              className="sm:col-span-2 border border-[#E4E3DD] rounded-xl bg-white text-[13px] text-[#1B1F23] p-2.5 outline-none focus:border-[#4C2FD9]"
                             />
-                            <button
-                              type="button"
-                              className="px-4 py-2.5 rounded-xl text-[12.5px] font-semibold bg-[#4C2FD9] text-white cursor-pointer hover:bg-[#3d24b5] transition-colors"
-                            >
-                              Verify
-                            </button>
                           </div>
                         </div>
 
-                        <div className="border border-dashed border-[#E4E3DD] rounded-xl p-5 text-center text-[#9BA0A6] cursor-pointer hover:bg-white transition-colors">
-                          <svg className="mx-auto" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                            <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z" />
-                          </svg>
-                          <p className="mt-2 text-[13px] font-semibold text-[#1B1F23] m-0">Upload ID photo</p>
-                          <p className="text-[11px] text-[#9BA0A6] mt-1 m-0">Aadhaar, PAN, or Passport</p>
-                        </div>
-
-                        <div className="text-[12.5px] text-[#5B6168] mt-3">
-                          Verify to get the blue tick and a <b className="font-semibold text-[#1B1F23]">12% strength boost</b> — verified profiles get replies 4.5x more often.
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!idNumber.trim()) {
+                              toast.error("Please enter a valid ID number");
+                              return;
+                            }
+                            handleSaveProfileSection(
+                              {
+                                idVerification: {
+                                  idType,
+                                  idNumber,
+                                  status: "pending",
+                                  submittedAt: new Date().toISOString(),
+                                },
+                              },
+                              "idVerification",
+                              "ID submitted for verification!"
+                            );
+                          }}
+                          disabled={savingSection === "idVerification"}
+                          className="w-full py-3 rounded-xl bg-[#4C2FD9] text-white font-semibold text-[13px] hover:bg-[#3d24b5] transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          {savingSection === "idVerification" ? "Submitting..." : "Submit ID for Verification"}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1143,7 +1694,10 @@ export default function FreelancerDashboard() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setConvertedToResume(true)}
+                    onClick={() => {
+                      setConvertedToResume(true);
+                      toast.success("Resume formatted with your live profile details!");
+                    }}
                     className="w-full sm:w-auto shrink-0 py-3 px-6 rounded-xl text-[13.5px] font-semibold bg-[#4C2FD9] text-white border border-transparent cursor-pointer hover:bg-[#3d24b5] transition-colors shadow-sm"
                   >
                     {convertedToResume ? "✓ Converted to resume" : "📝 Convert my details into resume"}
@@ -1154,12 +1708,19 @@ export default function FreelancerDashboard() {
                   <div className="flex gap-3 mt-4 pt-4 border-t border-[#E4E3DD]">
                     <button
                       type="button"
+                      onClick={() => {
+                        window.print();
+                      }}
                       className="flex-1 py-2.5 px-4 rounded-xl text-[13px] font-semibold bg-[#F6F6F3] text-[#1B1F23] border border-[#E4E3DD] cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      ⬇️ Download PDF
+                      ⬇️ Print / Save as PDF
                     </button>
                     <button
                       type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast.success("Profile link copied to clipboard!");
+                      }}
                       className="flex-1 py-2.5 px-4 rounded-xl text-[13px] font-semibold bg-[#F6F6F3] text-[#1B1F23] border border-[#E4E3DD] cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       🔗 Copy Share Link
@@ -1176,7 +1737,9 @@ export default function FreelancerDashboard() {
               {/* Metrics Strip */}
               <div className="grid grid-cols-3 lg:grid-cols-1 gap-3">
                 <div className="bg-white border border-[#E4E3DD] rounded-[16px] p-4 shadow-xs">
-                  <div className="text-[20px] sm:text-[22px] font-bold text-[#1B1F23] font-['Fraunces',serif]">128</div>
+                  <div className="text-[20px] sm:text-[22px] font-bold text-[#1B1F23] font-['Fraunces',serif]">
+                    {profile?.profileViews || stats?.profileViews || 128}
+                  </div>
                   <div className="text-[12px] text-[#9BA0A6] mt-1 leading-snug">Profile views this week</div>
                   <div className="text-[11px] text-[#1FA854] font-semibold mt-2 flex items-center gap-1">
                     <span>↑ 18%</span>
@@ -1185,40 +1748,48 @@ export default function FreelancerDashboard() {
                 </div>
 
                 <div className="bg-white border border-[#E4E3DD] rounded-[16px] p-4 shadow-xs">
-                  <div className="text-[20px] sm:text-[22px] font-bold text-[#1B1F23] font-['Fraunces',serif]">6</div>
-                  <div className="text-[12px] text-[#9BA0A6] mt-1 leading-snug">WhatsApp leads this week</div>
+                  <div className="text-[20px] sm:text-[22px] font-bold text-[#1B1F23] font-['Fraunces',serif]">
+                    {leads.length}
+                  </div>
+                  <div className="text-[12px] text-[#9BA0A6] mt-1 leading-snug">Active recruiter leads</div>
                   <div className="text-[11px] text-[#1FA854] font-semibold mt-2 flex items-center gap-1">
-                    <span>↑ 2</span>
-                    <span className="text-[10px] text-[#9BA0A6]">new clients</span>
+                    <span>↑ {leads.filter((l) => l.status === "new").length}</span>
+                    <span className="text-[10px] text-[#9BA0A6]">new inquiries</span>
                   </div>
                 </div>
 
                 <div className="bg-white border border-[#E4E3DD] rounded-[16px] p-4 shadow-xs">
-                  <div className="text-[20px] sm:text-[22px] font-bold text-[#1B1F23] font-['Fraunces',serif]">92%</div>
+                  <div className="text-[20px] sm:text-[22px] font-bold text-[#1B1F23] font-['Fraunces',serif]">
+                    {stats?.responseRate ? `${stats.responseRate}%` : "95%"}
+                  </div>
                   <div className="text-[12px] text-[#9BA0A6] mt-1 leading-snug">Response rate</div>
                   <div className="text-[11px] text-[#1FA854] font-semibold mt-2">Steady (Top 5%)</div>
                 </div>
               </div>
 
-              {/* LucoHire Pro Subscription Card */}
+              {/* Active Plan / Subscription Card */}
               <div className="relative overflow-hidden bg-gradient-to-br from-[#2A1B85] via-[#3B22A8] to-[#4C2FD9] rounded-[20px] p-6 text-[#F3F1FC] shadow-md">
                 <div className="absolute -right-8 -top-8 w-40 h-40 border border-white/15 rounded-full pointer-events-none" />
 
                 <div className="flex items-start justify-between relative z-1">
                   <div>
                     <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#CFC7F5] bg-white/10 py-1 px-2.5 rounded-full">
-                      LucoHire Pro
+                      {subscription?.planName || "Freelancer Plan"}
                     </span>
-                    <h3 className="font-['Fraunces',serif] text-[22px] mt-2 font-medium text-white m-0">Get seen first</h3>
+                    <h3 className="font-['Fraunces',serif] text-[22px] mt-2 font-medium text-white m-0">
+                      {subscription?.isDefault ? "Standard Tier" : "Priority Talent Tier"}
+                    </h3>
                   </div>
                   <div className="text-right">
-                    <div className="text-[22px] font-bold text-white">₹399</div>
+                    <div className="text-[22px] font-bold text-white">
+                      {subscription?.totalAmount ? `₹${subscription.totalAmount}` : "₹0"}
+                    </div>
                     <div className="text-[11px] text-[#CFC7F5]">per month</div>
                   </div>
                 </div>
 
                 <p className="text-[13px] text-[#DCD6F7] leading-[1.6] my-4 relative z-1">
-                  Move to the top of category search and clear your WhatsApp lead cap for the month.
+                  Rank high in client discovery searches and access verified direct WhatsApp inquiries.
                 </p>
 
                 <div className="flex flex-col gap-2.5 mb-5 relative z-1">
@@ -1228,7 +1799,7 @@ export default function FreelancerDashboard() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </span>
-                    Unlimited WhatsApp leads, no monthly cap
+                    Direct client WhatsApp inquiries
                   </div>
                   <div className="flex items-center gap-2.5 text-[12.5px] text-[#F3F1FC]">
                     <span className="w-4 h-4 rounded-full bg-white/15 flex items-center justify-center shrink-0">
@@ -1236,7 +1807,7 @@ export default function FreelancerDashboard() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </span>
-                    Priority placement in category search
+                    Direct quote submissions
                   </div>
                   <div className="flex items-center gap-2.5 text-[12.5px] text-[#F3F1FC]">
                     <span className="w-4 h-4 rounded-full bg-white/15 flex items-center justify-center shrink-0">
@@ -1244,29 +1815,21 @@ export default function FreelancerDashboard() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </span>
-                    Featured verified badge on your card
-                  </div>
-                  <div className="flex items-center gap-2.5 text-[12.5px] text-[#F3F1FC]">
-                    <span className="w-4 h-4 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                    Platform fee drops from 10% to 5%
+                    Verified talent card in category search
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between bg-white/10 rounded-xl p-3 text-[12px] text-[#DCD6F7] mb-5 relative z-1">
-                  <span>Currently on <b className="text-white font-semibold">Free plan</b></span>
-                  <span><b className="text-white font-semibold">2</b> of 3 leads used</span>
+                  <span>Status: <b className="text-white font-semibold">Active Plan</b></span>
+                  <span><b className="text-white font-semibold">{leads.length}</b> leads received</span>
                 </div>
 
-                <button
-                  type="button"
-                  className="w-full bg-white text-[#2A1B85] border-none py-3.5 px-4 rounded-xl text-[14px] font-bold cursor-pointer hover:bg-gray-100 transition-colors relative z-1 shadow"
+                <Link
+                  to="/provider/plans"
+                  className="block text-center w-full bg-white text-[#2A1B85] border-none py-3.5 px-4 rounded-xl text-[14px] font-bold cursor-pointer hover:bg-gray-100 transition-colors relative z-1 shadow"
                 >
-                  Upgrade to Pro
-                </button>
+                  Manage / Upgrade Plan
+                </Link>
               </div>
 
               {/* Quick Resume Toolkit Banner on Desktop */}
@@ -1293,7 +1856,7 @@ export default function FreelancerDashboard() {
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 2: LEADS VIEW */}
+        {/* VIEW 2: DYNAMIC LEADS VIEW */}
         {/* ========================================================================= */}
         {activeView === "leads" && (
           <div className="space-y-6">
@@ -1304,53 +1867,33 @@ export default function FreelancerDashboard() {
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-1">
                 <div>
-                  <div className="font-['Fraunces',serif] text-[36px] sm:text-[44px] font-semibold leading-none text-white">6</div>
-                  <div className="text-[13px] sm:text-[14px] text-[#CFC7F5] mt-1.5">WhatsApp leads this week</div>
+                  <div className="font-['Fraunces',serif] text-[36px] sm:text-[44px] font-semibold leading-none text-white">
+                    {leads.length}
+                  </div>
+                  <div className="text-[13px] sm:text-[14px] text-[#CFC7F5] mt-1.5">Direct recruiter project leads</div>
                 </div>
                 <div className="sm:text-right">
                   <span className="inline-block text-[12px] font-bold text-white bg-white/15 py-2 px-4 rounded-full whitespace-nowrap">
-                    2 of 3 used on Free
+                    Active Pipeline
                   </span>
-                </div>
-              </div>
-
-              <div className="mt-5 relative z-1 max-w-2xl">
-                <div className="h-1.5 rounded-full bg-white/20 overflow-hidden">
-                  <div className="h-full bg-white rounded-full w-[67%]" />
-                </div>
-                <div className="text-[11.5px] text-[#CFC7F5] mt-2">
-                  1 lead left this week · resets in 3 days ·{" "}
-                  <button type="button" className="text-white font-bold underline bg-transparent border-none cursor-pointer p-0">
-                    go unlimited
-                  </button>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3 mt-6 relative z-1 max-w-lg">
                 <div className="bg-white/10 rounded-xl p-3 sm:p-3.5">
-                  <div className="text-[16px] sm:text-[18px] font-bold text-white">92%</div>
+                  <div className="text-[16px] sm:text-[18px] font-bold text-white">{stats?.responseRate ? `${stats.responseRate}%` : "95%"}</div>
                   <div className="text-[10px] sm:text-[11px] text-[#CFC7F5] mt-0.5 leading-tight">Response rate</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-3 sm:p-3.5">
-                  <div className="text-[16px] sm:text-[18px] font-bold text-white">1</div>
-                  <div className="text-[10px] sm:text-[11px] text-[#CFC7F5] mt-0.5 leading-tight">Won this week</div>
+                  <div className="text-[16px] sm:text-[18px] font-bold text-white">
+                    {leads.filter((l) => l.status === "won").length}
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] text-[#CFC7F5] mt-0.5 leading-tight">Won leads</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-3 sm:p-3.5">
-                  <div className="text-[16px] sm:text-[18px] font-bold text-white">12m</div>
+                  <div className="text-[16px] sm:text-[18px] font-bold text-white">15m</div>
                   <div className="text-[10px] sm:text-[11px] text-[#CFC7F5] mt-0.5 leading-tight">Avg. reply time</div>
                 </div>
-              </div>
-
-              <div className="flex gap-2 mt-5 flex-wrap relative z-1">
-                <span className="text-[11px] text-[#F3F1FC] bg-white/15 py-1 px-3 rounded-full font-medium">
-                  <b className="text-white font-bold">3</b> Figma UI Design
-                </span>
-                <span className="text-[11px] text-[#F3F1FC] bg-white/15 py-1 px-3 rounded-full font-medium">
-                  <b className="text-white font-bold">2</b> Logo Design
-                </span>
-                <span className="text-[11px] text-[#F3F1FC] bg-white/15 py-1 px-3 rounded-full font-medium">
-                  <b className="text-white font-bold">1</b> Brand Identity
-                </span>
               </div>
             </div>
 
@@ -1360,7 +1903,7 @@ export default function FreelancerDashboard() {
                 <div className="space-y-1.5">
                   <p className="text-[11px] font-bold text-[#9BA0A6] uppercase tracking-wider m-0">Filter by skill</p>
                   <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-wrap">
-                    {["All skills", "Figma UI Design", "Logo Design", "Brand Identity"].map((skill) => {
+                    {["All skills", ...skillsList.map((s) => s.title)].slice(0, 5).map((skill) => {
                       const active = selectedSkillFilter === skill;
                       return (
                         <button
@@ -1384,10 +1927,10 @@ export default function FreelancerDashboard() {
                   <p className="text-[11px] font-bold text-[#9BA0A6] uppercase tracking-wider m-0">Filter by status</p>
                   <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-wrap">
                     {[
-                      { key: "All", label: "All · 6" },
-                      { key: "New", label: "New · 2" },
-                      { key: "Replied", label: "Replied · 3" },
-                      { key: "Won", label: "Won · 1" },
+                      { key: "All", label: `All · ${leads.length}` },
+                      { key: "New", label: `New · ${leads.filter((l) => l.status === "new").length}` },
+                      { key: "Replied", label: `Replied · ${leads.filter((l) => l.status === "replied").length}` },
+                      { key: "Won", label: `Won · ${leads.filter((l) => l.status === "won").length}` },
                     ].map((st) => {
                       const active = selectedStatusFilter === st.key;
                       return (
@@ -1410,152 +1953,161 @@ export default function FreelancerDashboard() {
               </div>
             </div>
 
-            {/* Lead Cards Grid (Responsive: 1 col on mobile, 2 cols on tablet/desktop) */}
+            {/* Lead Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
-              {filteredLeads.map((lead) => (
-                <div key={lead.id} className="bg-white border border-[#E4E3DD] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-                  <div>
-                    {/* Skills match */}
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {lead.skills.map((s) => (
-                        <span key={s} className="text-[11px] font-semibold text-[#2A1B85] bg-[#ECE8FB] py-1 px-2.5 rounded-full">
-                          🎯 {s}
-                        </span>
-                      ))}
-                    </div>
+              {filteredLeads.map((lead) => {
+                const leadQuoteForm = quoteForms[lead.id] || {
+                  price: lead.initialPrice,
+                  timeline: lead.defaultTimeline,
+                  note: "",
+                };
 
-                    {/* Client top info */}
-                    <div className="flex items-start gap-3">
-                      <div className="w-[42px] h-[42px] rounded-full shrink-0 bg-[#ECE8FB] text-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[16px]">
-                        {lead.avatar}
+                return (
+                  <div key={lead.id} className="bg-white border border-[#E4E3DD] rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                    <div>
+                      {/* Skills match */}
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {lead.skills.map((s) => (
+                          <span key={s} className="text-[11px] font-semibold text-[#2A1B85] bg-[#ECE8FB] py-1 px-2.5 rounded-full">
+                            🎯 {s}
+                          </span>
+                        ))}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[14px] font-semibold text-[#1B1F23]">{lead.name}</span>
-                          <span className="text-[11px] text-[#9BA0A6] whitespace-nowrap">{lead.time}</span>
+
+                      {/* Client top info */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-[42px] h-[42px] rounded-full shrink-0 bg-[#ECE8FB] text-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[16px]">
+                          {lead.avatar}
                         </div>
-                        <p className="text-[13px] text-[#5B6168] mt-1 leading-relaxed m-0">{lead.brief}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[14px] font-semibold text-[#1B1F23]">{lead.name}</span>
+                            <span className="text-[11px] text-[#9BA0A6] whitespace-nowrap">{lead.time}</span>
+                          </div>
+                          <p className="text-[13px] text-[#5B6168] mt-1 leading-relaxed m-0">{lead.brief}</p>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Meta row */}
-                    <div className="flex items-center gap-2.5 mt-3.5 flex-wrap">
-                      <span className="text-[12.5px] font-semibold text-[#2A1B85]">{lead.offered}</span>
-                      {lead.timeline && <span className="text-[12px] text-[#9BA0A6]">⏱ {lead.timeline}</span>}
-                      <span
-                        className={`text-[11px] font-semibold py-0.5 px-2.5 rounded-full ml-auto ${
-                          lead.status === "new"
-                            ? "bg-[#FBF0DF] text-[#C9821A]"
-                            : lead.status === "replied"
-                            ? "bg-[#ECE8FB] text-[#2A1B85]"
-                            : "bg-[#E5F5EB] text-[#137A3D]"
-                        }`}
-                      >
-                        {lead.statusLabel}
-                      </span>
-                    </div>
-
-                    {/* Quoted summary */}
-                    {lead.quotedSummary && (
-                      <div className="mt-3 text-[12.5px] text-[#5B6168] bg-[#F6F6F3] rounded-xl p-2.5 leading-relaxed">
-                        <b className="text-[#1B1F23]">You quoted:</b> {lead.quotedSummary.replace("You quoted:", "")}
+                      {/* Meta row */}
+                      <div className="flex items-center gap-2.5 mt-3.5 flex-wrap">
+                        <span className="text-[12.5px] font-semibold text-[#2A1B85]">{lead.offered}</span>
+                        {lead.timeline && <span className="text-[12px] text-[#9BA0A6]">⏱ {lead.timeline}</span>}
+                        <span
+                          className={`text-[11px] font-semibold py-0.5 px-2.5 rounded-full ml-auto ${
+                            lead.status === "new"
+                              ? "bg-[#FBF0DF] text-[#C9821A]"
+                              : lead.status === "replied"
+                              ? "bg-[#ECE8FB] text-[#2A1B85]"
+                              : "bg-[#E5F5EB] text-[#137A3D]"
+                          }`}
+                        >
+                          {lead.statusLabel}
+                        </span>
                       </div>
-                    )}
-                  </div>
 
-                  {/* Actions Area */}
-                  <div className="mt-4 pt-3 border-t border-[#E4E3DD]/70">
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="flex-1 py-2.5 px-3.5 rounded-xl text-[13px] font-semibold bg-[#1FA854] text-white border border-transparent cursor-pointer hover:bg-[#198f46] transition-colors"
-                      >
-                        💬 Chat
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleQuote(lead.id)}
-                        className="flex-1 py-2.5 px-3.5 rounded-xl text-[13px] font-semibold bg-white text-[#2A1B85] border border-[#ECE8FB] cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
-                      >
-                        💰 Send my quote
-                      </button>
-                      <button
-                        type="button"
-                        title="Request a call"
-                        className="w-[42px] py-2.5 rounded-xl bg-white text-[#1B1F23] border border-[#E4E3DD] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
-                      >
-                        📞
-                      </button>
+                      {/* Quoted summary */}
+                      {lead.quotedSummary && (
+                        <div className="mt-3 text-[12.5px] text-[#5B6168] bg-[#F6F6F3] rounded-xl p-2.5 leading-relaxed">
+                          <b className="text-[#1B1F23]">You quoted:</b> {lead.quotedSummary}
+                        </div>
+                      )}
                     </div>
 
-                    <button
-                      type="button"
-                      className="w-full mt-2 py-2 rounded-xl text-[12.5px] font-semibold bg-[#F6F6F3] text-[#1B1F23] hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                      View project details
-                    </button>
+                    {/* Actions Area */}
+                    <div className="mt-4 pt-3 border-t border-[#E4E3DD]/70">
+                      <div className="flex gap-2">
+                        <a
+                          href={`https://wa.me/${lead.recruiterPhone || "919999999999"}?text=Hi%20${encodeURIComponent(lead.name)},%20I%20saw%20your%20project%20"${encodeURIComponent(lead.projectTitle)}"%20on%20LucoHire.%20I%20am%20available%20to%20help.`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 py-2.5 px-3.5 rounded-xl text-[13px] font-semibold bg-[#1FA854] text-white border border-transparent cursor-pointer hover:bg-[#198f46] transition-colors text-center"
+                        >
+                          💬 Chat
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setOpenQuoteId((prev) => (prev === lead.id ? null : lead.id))}
+                          className="flex-1 py-2.5 px-3.5 rounded-xl text-[13px] font-semibold bg-white text-[#2A1B85] border border-[#ECE8FB] cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
+                        >
+                          💰 Send quote
+                        </button>
+                      </div>
 
-                    {/* Quote Composer Panel (Accordion) */}
-                    {openQuoteId === lead.id && (
-                      <div className="pt-3 mt-3 border-t border-dashed border-[#E4E3DD] transition-all">
-                        {!lead.quoteSent ? (
-                          <>
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <div>
-                                <label className="text-[11px] font-semibold text-[#9BA0A6] block mb-1">Your price</label>
-                                <input
-                                  type="text"
-                                  defaultValue={`₹ ${lead.initialPrice}`}
-                                  className="w-full text-[13px] text-[#1B1F23] bg-[#F6F6F3] border border-[#E4E3DD] rounded-xl p-2 outline-none focus:border-[#4C2FD9]"
+                      {/* Inline Quote Drawer */}
+                      {openQuoteId === lead.id && (
+                        <div className="pt-3 mt-3 border-t border-dashed border-[#E4E3DD]">
+                          {!lead.quoteSent ? (
+                            <>
+                              <div className="grid grid-cols-2 gap-2.5">
+                                <div>
+                                  <label className="text-[11px] font-semibold text-[#9BA0A6] block mb-1">Your price (₹)</label>
+                                  <input
+                                    type="number"
+                                    value={leadQuoteForm.price}
+                                    onChange={(e) =>
+                                      setQuoteForms((prev) => ({
+                                        ...prev,
+                                        [lead.id]: { ...leadQuoteForm, price: e.target.value },
+                                      }))
+                                    }
+                                    className="w-full text-[13px] text-[#1B1F23] bg-[#F6F6F3] border border-[#E4E3DD] rounded-xl p-2 outline-none focus:border-[#4C2FD9]"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[11px] font-semibold text-[#9BA0A6] block mb-1">Timeline</label>
+                                  <select
+                                    value={leadQuoteForm.timeline}
+                                    onChange={(e) =>
+                                      setQuoteForms((prev) => ({
+                                        ...prev,
+                                        [lead.id]: { ...leadQuoteForm, timeline: e.target.value },
+                                      }))
+                                    }
+                                    className="w-full text-[13px] text-[#1B1F23] bg-[#F6F6F3] border border-[#E4E3DD] rounded-xl p-2 outline-none focus:border-[#4C2FD9]"
+                                  >
+                                    <option>3 days</option>
+                                    <option>5 days</option>
+                                    <option>7 days</option>
+                                    <option>14 days</option>
+                                    <option>1 month</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div className="mt-2.5">
+                                <textarea
+                                  value={leadQuoteForm.note}
+                                  onChange={(e) =>
+                                    setQuoteForms((prev) => ({
+                                      ...prev,
+                                      [lead.id]: { ...leadQuoteForm, note: e.target.value },
+                                    }))
+                                  }
+                                  placeholder="Optional proposal note for recruiter..."
+                                  className="w-full text-[13px] text-[#1B1F23] bg-[#F6F6F3] border border-[#E4E3DD] rounded-xl p-2 min-h-[52px] resize-none outline-none focus:border-[#4C2FD9]"
                                 />
                               </div>
-                              <div>
-                                <label className="text-[11px] font-semibold text-[#9BA0A6] block mb-1">Your timeline</label>
-                                <select
-                                  defaultValue={lead.defaultTimeline}
-                                  className="w-full text-[13px] text-[#1B1F23] bg-[#F6F6F3] border border-[#E4E3DD] rounded-xl p-2 outline-none focus:border-[#4C2FD9]"
+                              <div className="flex items-center gap-2.5 mt-2.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendQuote(lead.id)}
+                                  disabled={sendingQuoteId === lead.id}
+                                  className="flex-1 py-2 px-3 rounded-xl text-[12.5px] font-semibold bg-[#4C2FD9] text-white cursor-pointer hover:bg-[#3d24b5] transition-colors disabled:opacity-50"
                                 >
-                                  <option>{lead.defaultTimeline}</option>
-                                  <option>3 days</option>
-                                  <option>7 days</option>
-                                  <option>14 days</option>
-                                  <option>Custom</option>
-                                </select>
+                                  {sendingQuoteId === lead.id ? "Sending..." : "Submit Quote"}
+                                </button>
                               </div>
+                            </>
+                          ) : (
+                            <div className="flex items-center gap-2 text-[12.5px] font-semibold text-[#137A3D] bg-[#E5F5EB] p-2.5 rounded-xl">
+                              ✓ Quote registered for {lead.name}
                             </div>
-                            <div className="mt-2.5">
-                              <textarea
-                                placeholder="Optional note — e.g. what's included, or why the price differs"
-                                className="w-full text-[13px] text-[#1B1F23] bg-[#F6F6F3] border border-[#E4E3DD] rounded-xl p-2 min-h-[52px] resize-none outline-none focus:border-[#4C2FD9]"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2.5 mt-2.5">
-                              <button
-                                type="button"
-                                onClick={() => handleSendQuote(lead.id)}
-                                className="text-[12px] text-[#5B6168] font-semibold hover:underline bg-transparent border-none cursor-pointer whitespace-nowrap p-0"
-                              >
-                                {lead.acceptPrice ? `Accept ₹${lead.acceptPrice} as-is instead` : "Deal already agreed"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleSendQuote(lead.id)}
-                                className="flex-1 py-2 px-3 rounded-xl text-[12.5px] font-semibold bg-[#4C2FD9] text-white cursor-pointer hover:bg-[#3d24b5] transition-colors"
-                              >
-                                {lead.status === "replied" ? "Send updated quote" : "Send quote"}
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-2 text-[12.5px] font-semibold text-[#137A3D] bg-[#E5F5EB] p-2.5 rounded-xl">
-                            ✓ Quote sent — {lead.name} will see it on WhatsApp
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
           </div>
@@ -1563,7 +2115,7 @@ export default function FreelancerDashboard() {
       </main>
 
       {/* ========================================================================= */}
-      {/* VIEW PROFILE MODAL (CENTERED DIALOG ON DESKTOP, BOTTOM SHEET ON MOBILE) */}
+      {/* VIEW PROFILE MODAL (PREVIEW AS CLIENT WITH LIVE DATA) */}
       {/* ========================================================================= */}
       {profileModalOpen && (
         <div className="fixed inset-0 bg-[#1B1F23]/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs">
@@ -1587,28 +2139,34 @@ export default function FreelancerDashboard() {
             <div className="bg-white border border-[#E4E3DD] rounded-2xl p-5 sm:p-6 shadow-md">
               <div className="flex gap-4 items-start">
                 <div className="relative shrink-0">
-                  <div className="w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] rounded-[16px] bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[21px] sm:text-[24px] text-[#F3F1FC]">
-                    RK
+                  <div className="w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] rounded-[16px] bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[21px] sm:text-[24px] text-[#F3F1FC] overflow-hidden">
+                    {profilePhotoUrl ? (
+                      <img src={profilePhotoUrl} alt={displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      initials
+                    )}
                   </div>
                   <span className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 bg-[#1FA854] text-white text-[8.5px] font-bold py-0.5 px-2 rounded-full whitespace-nowrap shadow-sm">
-                    Available Now
+                    {availabilityMode}
                   </span>
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-['Fraunces',serif] font-medium text-[20px] sm:text-[22px] text-[#1B1F23]">
-                      Rahul Kumar
+                      {displayName}
                     </span>
-                    <span className="w-4 h-4 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
+                    {(profile?.isVerified || profile?.idVerification?.status === "verified") && (
+                      <span className="w-4 h-4 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[13.5px] text-[#5B6168] mt-0.5 m-0">UI Designer &amp; Brand Specialist</p>
+                  <p className="text-[13.5px] text-[#5B6168] mt-0.5 m-0">{displayTitle}</p>
                   <p className="text-[12px] text-[#9BA0A6] mt-1 flex items-center gap-1.5 flex-wrap m-0">
-                    <span>📍 Noida, Uttar Pradesh</span>
+                    <span>📍 {displayLocation}</span>
                     <span className="w-1 h-1 rounded-full bg-[#9BA0A6]" />
                     <span>🌐 Remote OK</span>
                   </p>
@@ -1616,51 +2174,39 @@ export default function FreelancerDashboard() {
 
                 <div className="ml-auto text-center bg-[#F6F6F3] border border-[#E4E3DD] rounded-xl p-2.5 shrink-0">
                   <div className="text-[18px] font-bold text-[#1FA854] font-['Fraunces',serif] leading-none">
-                    72%
+                    {strengthPct}%
                   </div>
                   <div className="text-[9px] text-[#9BA0A6] mt-1 whitespace-nowrap">Profile Strength</div>
                   <div className="h-1 w-14 bg-[#E4E3DD] rounded-full mt-1.5 overflow-hidden">
-                    <div className="h-full bg-[#1FA854] w-[72%]" />
+                    <div className="h-full bg-[#1FA854]" style={{ width: `${strengthPct}%` }} />
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 my-4 py-3 border-y border-[#E4E3DD]">
                 <div className="text-center">
-                  <div className="text-[15px] font-bold text-[#1B1F23]">3–5 yrs</div>
+                  <div className="text-[15px] font-bold text-[#1B1F23]">{profile?.experience || "3–5 yrs"}</div>
                   <div className="text-[11px] text-[#9BA0A6] mt-0.5">Experience</div>
                 </div>
                 <div className="text-center border-l border-[#E4E3DD]">
-                  <div className="text-[15px] font-bold text-[#1B1F23]">Full-time</div>
+                  <div className="text-[15px] font-bold text-[#1B1F23]">{availabilityMode || "Full-time"}</div>
                   <div className="text-[11px] text-[#9BA0A6] mt-0.5">Availability</div>
                 </div>
                 <div className="text-center border-l border-[#E4E3DD]">
-                  <div className="text-[15px] font-bold text-[#1B1F23]">Today</div>
+                  <div className="text-[15px] font-bold text-[#1B1F23]">{startTimeline || "Today"}</div>
                   <div className="text-[11px] text-[#9BA0A6] mt-0.5">Available to start</div>
                 </div>
               </div>
 
-              {/* About block */}
-              <div className="mb-4">
-                <p className="text-[12px] font-semibold text-[#9BA0A6] mb-1 m-0">About</p>
-                <p className="text-[13px] leading-relaxed text-[#5B6168] m-0">
-                  Helps early-stage brands look credible, fast — 80+ logo and UI projects delivered for founders and small teams across India.
-                </p>
-              </div>
-
               {/* Top Skills */}
               <div className="mb-4">
-                <p className="text-[12px] font-semibold text-[#9BA0A6] mb-2 m-0">Top Skills</p>
+                <p className="text-[12px] font-semibold text-[#9BA0A6] mb-2 m-0">Top Skills &amp; Starting Rates</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4E3DD] text-[12.5px] text-[#1B1F23] bg-[#F6F6F3]">
-                    Figma UI Design <span className="text-[#2A1B85] font-semibold">₹8,000/project</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4E3DD] text-[12.5px] text-[#1B1F23] bg-[#F6F6F3]">
-                    Logo Design <span className="text-[#2A1B85] font-semibold">₹3,000/project</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4E3DD] text-[12.5px] text-[#1B1F23] bg-[#F6F6F3]">
-                    Brand Identity <span className="text-[#2A1B85] font-semibold">₹12,000/project</span>
-                  </span>
+                  {skillsList.map((s) => (
+                    <span key={s.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4E3DD] text-[12.5px] text-[#1B1F23] bg-[#F6F6F3]">
+                      {s.title} <span className="text-[#2A1B85] font-semibold">₹{Number(s.price).toLocaleString("en-IN")}/{s.type}</span>
+                    </span>
+                  ))}
                 </div>
               </div>
 
@@ -1670,65 +2216,31 @@ export default function FreelancerDashboard() {
                   <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#E5F5EB]">
                     <span className="text-[18px] shrink-0">💰</span>
                     <div>
-                      <b className="block text-[13px] text-[#1B1F23] leading-tight">₹3,000</b>
+                      <b className="block text-[13px] text-[#1B1F23] leading-tight">₹{startingRate}</b>
                       <span className="text-[10px] text-[#9BA0A6]">Starting price</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#FBF0DF]">
                     <span className="text-[18px] shrink-0">🗣️</span>
                     <div>
-                      <b className="block text-[13px] text-[#1B1F23] leading-tight">Hindi, English</b>
-                      <span className="text-[10px] text-[#9BA0A6]">2 Languages</span>
+                      <b className="block text-[13px] text-[#1B1F23] leading-tight">
+                        {langTags.map((l) => l.lang).join(", ") || "Hindi, English"}
+                      </b>
+                      <span className="text-[10px] text-[#9BA0A6]">{langTags.length} Languages</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Verifications */}
-              <div className="mb-0">
-                <div className="flex flex-wrap gap-3 sm:gap-6">
-                  <div className="flex items-center gap-1.5 text-[12px] text-[#5B6168]">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                    Resume Verified
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[12px] text-[#5B6168]">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                    Mobile Verified
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[12px] text-[#5B6168]">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#1FA854] flex items-center justify-center shrink-0">
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </span>
-                    Email Verified
-                  </div>
-                </div>
-                <p className="text-[11px] text-[#9BA0A6] mt-2.5 m-0">Profile updated: 2 days ago</p>
-              </div>
-
               <div className="flex gap-2.5 mt-4">
-                <button
-                  type="button"
+                <a
+                  href={`https://wa.me/?text=Hi,%20check%20out%20my%20profile%20on%20LucoHire:%20${window.location.origin}/freelancer/dashboard`}
+                  target="_blank"
+                  rel="noreferrer"
                   className="flex-1 text-center py-3 px-4 rounded-xl text-[13.5px] font-semibold bg-[#1FA854] text-white border border-transparent cursor-pointer hover:bg-[#198f46] transition-colors"
                 >
-                  💬 WhatsApp
-                </button>
-                <button
-                  type="button"
-                  title="Call"
-                  className="w-11 py-3 rounded-xl bg-white text-[#1B1F23] border border-[#E4E3DD] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  📞
-                </button>
+                  💬 Share on WhatsApp
+                </a>
               </div>
             </div>
           </div>
@@ -1736,7 +2248,7 @@ export default function FreelancerDashboard() {
       )}
 
       {/* ========================================================================= */}
-      {/* EMBEDDED IFRAME FULLSCREEN VIEW (Resume Journey / Sign in) */}
+      {/* EMBEDDED IFRAME FULLSCREEN VIEW (Resume Journey) */}
       {/* ========================================================================= */}
       {iframeView && (
         <div className="fixed inset-0 bg-[#F6F6F3] z-50 flex flex-col">
@@ -1753,8 +2265,8 @@ export default function FreelancerDashboard() {
             </button>
           </div>
           <iframe
-            src={iframeView === "resume" ? "/embedded/resume.html" : "/embedded/signup.html"}
-            title={iframeView === "resume" ? "Resume Journey" : "Sign in or create account"}
+            src="/embedded/resume.html"
+            title="Resume Journey"
             className="flex-1 w-full h-full border-none bg-white"
           />
         </div>

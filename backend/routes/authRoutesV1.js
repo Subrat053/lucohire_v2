@@ -16,6 +16,7 @@ router.post("/phone-login", phoneLoginV1);
 router.post("/register-email", registerEmailV1);
 router.post("/verify-email-otp", verifyEmailOtpV1);
 router.post("/login-email", loginEmailV1);
+router.post("/login", loginEmailV1);
 router.post("/log-firebase-otp", logFirebaseOtpAttempt);
 router.get("/me", protect, getMeV1);
 

@@ -41,7 +41,7 @@ const STEP_LABELS = {
 export default function LucoSigninSignup() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, saveUserSession } = useAuth();
 
   // Route awareness: open registration if path is /signup or /register or query ?register=true
   const isSignupPath =
@@ -277,12 +277,21 @@ export default function LucoSigninSignup() {
         password: signInPassword,
       });
 
-      if (res.data?.success || res.data?.token) {
+      const authData = res.data?.data || res.data;
+      const token = authData?.token;
+      const user = authData?.user;
+
+      if (token && user) {
         toast.success("Signed in successfully!");
-        if (login) {
-          login(res.data.token, res.data.user);
+        if (saveUserSession) {
+          saveUserSession({ token, user });
+        } else if (login) {
+          login(token, user);
         }
-        navigate("/provider/dashboard");
+        navigate("/freelancer/dashboard");
+      } else if (res.data?.success) {
+        toast.success("Signed in successfully!");
+        navigate("/freelancer/dashboard");
       } else {
         toast.error(res.data?.message || "Sign in failed.");
       }
@@ -533,11 +542,13 @@ export default function LucoSigninSignup() {
 
       if (res.data?.success) {
         toast.success("Profile created successfully!");
-        if (login && res.data.token && res.data.user) {
+        if (saveUserSession && res.data?.token && res.data?.user) {
+          saveUserSession({ token: res.data.token, user: res.data.user });
+        } else if (login) {
           login(res.data.token, res.data.user);
         }
         document.body.style.overflow = "";
-        navigate("/provider/dashboard");
+        navigate("/freelancer/dashboard");
       } else {
         toast.error(res.data?.message || "Failed to create profile.");
       }

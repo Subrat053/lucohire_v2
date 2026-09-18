@@ -359,7 +359,7 @@ class PrismaQuery {
     const convert = (record) => {
       if (!record) return record;
       const projected = applyProjection(this.modelName, record, this.projection);
-      return this.leanValue ? cloneValue(projected) : createDocument(this.modelName, projected, repository);
+      return this.leanValue ? cloneValue(projected) : createDocument(this.modelName, projected, repository, { projection: this.projection });
     };
     return Array.isArray(result) ? result.map(convert) : convert(result);
   }

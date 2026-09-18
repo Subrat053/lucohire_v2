@@ -18,7 +18,7 @@
     "seed:admin": "node scripts/seedAdmin.js",
     "seed:freelancers": "node scripts/seedFreelancers.js",
     "seed:fresh": "node utils/seedFreshState.js",
-    "seed:plans": "node utils/seedPlans.js",
+    "seed:plans": "node scripts/seedPlansPrisma.js",
     "migrate:reviews": "node utils/migrateReviews.js --write",
     "migrate:reviews:dry": "node utils/migrateReviews.js",
     "migrate:plans": "node utils/migratePlansAndSubscriptions.js --write",

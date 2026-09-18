@@ -1,4 +1,4 @@
-export const safeReturnPath = (path, fallback = '/provider/dashboard') => {
+export const safeReturnPath = (path, fallback = '/freelancer/dashboard') => {
   const candidate = String(path || '').trim();
 
   if (!candidate) {

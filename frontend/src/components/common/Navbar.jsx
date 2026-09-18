@@ -99,8 +99,9 @@ const Navbar = () => {
     const role = String(user?.activeRole || user?.role || (user?.roles && user?.roles[0]) || "").toLowerCase();
     switch (role) {
       case "provider":
+      case "freelancer":
       case "candidate":
-        return "/provider/dashboard";
+        return "/freelancer/dashboard";
       case "recruiter":
         return "/recruiter/dashboard";
       case "admin":

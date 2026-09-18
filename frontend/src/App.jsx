@@ -23,6 +23,7 @@ const PartnerRoutes = lazy(() => import("./routes/PartnerRoutes"));
 const DashboardRedirect = lazy(() => import("./components/common/DashboardRedirect"));
 const FreelancerDashboard = lazy(() => import("./pages/freelancer/FreelancerDashboard"));
 import LandingPageSkeleton from './components/landing/LandingPageSkeleton';
+import ProtectedRoute from "./components/common/ProtectedRoute";
 
 function App() {
   const { user, profile, showWhatsAppPrompt, setShowWhatsAppPrompt } = useAuth();
@@ -119,29 +120,55 @@ function App() {
 
       <Suspense fallback={<SuspenseFallback />}>
         <Routes>
-          {/* Provider Panel Routes */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 1: FREELANCER & CANDIDATE SUITE                                  */}
+          {/* ========================================================================= */}
+          <Route
+            path="/freelancer/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["provider"]}>
+                <FreelancerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/candidate/dashboard"
+            element={<Navigate to="/freelancer/dashboard" replace />}
+          />
+
+          {/* ========================================================================= */}
+          {/* CATEGORY 2: LEGACY PROVIDER PANEL SUITE (PRESERVED UNTOUCHED)             */}
+          {/* ========================================================================= */}
           <Route path="/provider/*" element={<ProviderRoutes />} />
 
-          {/* Recruiter Panel Routes */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 3: RECRUITER PANEL SUITE                                         */}
+          {/* ========================================================================= */}
           <Route path="/recruiter/*" element={<RecruiterRoutes />} />
 
-          {/* Admin Panel Routes */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 4: ADMIN PANEL SUITE                                             */}
+          {/* ========================================================================= */}
           <Route path="/admin/*" element={<AdminRoutes />} />
 
-          {/* Partner Panel Routes */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 5: PARTNER & MANAGER PANEL SUITE                                 */}
+          {/* ========================================================================= */}
           <Route path="/partner/*" element={<PartnerRoutes />} />
 
-          {/* Freelancer / Candidate Dashboard */}
-          <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
-          <Route path="/candidate/dashboard" element={<Navigate to="/freelancer/dashboard" replace />} />
-
-          {/* Global Dashboard Redirect */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 6: GLOBAL ROLE-AWARE DASHBOARD REDIRECT                          */}
+          {/* ========================================================================= */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
-          {/* Auth & Public Routes */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 7: AUTHENTICATION & PUBLIC PORTAL ROUTES                         */}
+          {/* ========================================================================= */}
           <Route path="/*" element={<AuthRoutes />} />
 
-          {/* 404 — role-aware */}
+          {/* ========================================================================= */}
+          {/* CATEGORY 8: ROLE-AWARE 404 NOT FOUND                                      */}
+          {/* ========================================================================= */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

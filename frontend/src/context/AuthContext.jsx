@@ -18,7 +18,9 @@ export const getDashboardByRole = (role) => {
     case "manager":
       return "/partner/dashboard";
     case "provider":
-      return "/provider/dashboard";
+    case "freelancer":
+    case "candidate":
+      return "/freelancer/dashboard";
     case "recruiter":
       return "/recruiter/candidates";
     default:
@@ -268,6 +270,30 @@ export const AuthProvider = ({ children }) => {
   );
 
   const login = useCallback(async (credentials, options = {}) => {
+    // Direct token + user arguments: login(token, user)
+    if (typeof credentials === "string" && options && typeof options === "object" && (options.id || options._id || options.email)) {
+      const normalizedUser = saveUserSession({ token: credentials, user: options });
+      return {
+        user: normalizedUser,
+        role: normalizedUser?.activeRole || normalizedUser?.role,
+        redirectTo: getDashboardByRole(normalizedUser?.activeRole || normalizedUser?.role),
+      };
+    }
+
+    // Pre-authenticated payload object: login({ token, user, ... })
+    const directToken = credentials?.token || credentials?.accessToken || credentials?.data?.token;
+    const directUser = credentials?.user || credentials?.data?.user;
+    if (directToken && directUser && !credentials?.password) {
+      const normalizedUser = saveUserSession({ token: directToken, user: directUser });
+      const directProfile = credentials?.profile || credentials?.data?.profile || null;
+      if (directProfile) setProfile(directProfile);
+      return {
+        user: normalizedUser,
+        role: normalizedUser?.activeRole || normalizedUser?.role,
+        redirectTo: getDashboardByRole(normalizedUser?.activeRole || normalizedUser?.role),
+      };
+    }
+
     const mode = options.mode || options.role || "user";
     const response =
       mode === "admin"
@@ -310,7 +336,7 @@ export const AuthProvider = ({ children }) => {
       role: normalizedUser?.activeRole || normalizedUser?.role,
       redirectTo: getDashboardByRole(normalizedUser?.activeRole || normalizedUser?.role),
     };
-  }, [normalizeUser]);
+  }, [normalizeUser, saveUserSession]);
 
   const loginUser = useCallback(async (credentials) => {
     const { data } = await authAPI.loginEmail(credentials);
