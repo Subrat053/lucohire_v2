@@ -316,16 +316,27 @@ header.luco-hero::after {
 
 .luco-pw-toggle {
   position: absolute;
-  right: 14px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  font-size: 12px;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--violet);
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background .15s ease, color .15s ease;
+  user-select: none;
+}
+
+.luco-pw-toggle:hover {
+  background: var(--wash);
 }
 
 .luco-row-between {
@@ -661,7 +672,7 @@ footer.luco-footnote a {
 
 .luco-reg-main {
   flex: 1;
-  padding: 26px 24px 140px;
+  padding: 26px 24px 32px;
   background: var(--paper);
 }
 
@@ -669,7 +680,7 @@ footer.luco-footnote a {
   .luco-reg-main {
     border-radius: var(--radius-lg);
     border: 1px solid var(--line-reg);
-    padding: 36px 36px 40px;
+    padding: 36px 36px 36px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.03);
   }
 }
@@ -756,13 +767,14 @@ p.luco-sub {
 .luco-reg-field .hint {
   font-size: 12px;
   color: var(--ink-faint);
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 .luco-reg-field input[type=text],
 .luco-reg-field input[type=tel],
 .luco-reg-field input[type=number],
 .luco-reg-field input[type=email],
+.luco-reg-field input[type=password],
 .luco-reg-field select,
 .luco-reg-field textarea {
   width: 100%;
@@ -775,6 +787,23 @@ p.luco-sub {
   color: var(--ink);
   outline: none;
   transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.luco-reg-field .luco-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.luco-reg-field .luco-input-wrap input {
+  padding-right: 80px;
+}
+
+.luco-reg-field .luco-input-wrap .luco-pw-toggle {
+  color: var(--teal);
+}
+
+.luco-reg-field .luco-input-wrap .luco-pw-toggle:hover {
+  background: var(--teal-wash);
 }
 
 .luco-reg-field input:focus,
@@ -1708,67 +1737,82 @@ input[type=range] {
   text-align: right;
 }
 
-/* Sticky Footer Navigation */
-.luco-reg-footer {
-  position: sticky;
-  bottom: 0;
-  background: var(--paper);
-  border-top: 1px solid var(--line-reg);
-  padding: 16px 24px calc(16px + env(safe-area-inset-bottom));
+/* In-Form Navigation Actions */
+.luco-form-actions {
   display: flex;
-  gap: 10px;
-  max-width: 480px;
-  margin: 0 auto;
-  width: 100%;
-  z-index: 15;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-reg);
 }
 
-@media (min-width: 1024px) {
-  .luco-reg-footer {
-    max-width: 1160px;
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    background: var(--paper);
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.03);
-  }
-}
-
-.luco-reg-footer button {
+.luco-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
   font-family: 'Inter', sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line-reg);
   border-radius: var(--radius-sm);
-  padding: 14px;
   cursor: pointer;
-  border: none;
   transition: all .2s ease;
 }
 
-#lucoBackBtn {
-  background: var(--paper);
-  border: 1px solid var(--line-reg);
-  color: var(--ink-soft);
-  flex: 0 0 96px;
+.luco-btn-back:hover {
+  background: var(--wash);
+  color: var(--ink);
+  border-color: #D1CFE2;
 }
 
-#lucoBackBtn:disabled {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#lucoNextBtn {
-  flex: 1;
-  background: var(--teal);
+.luco-btn-continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
   color: #fff;
+  background: var(--teal);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(76, 47, 217, 0.2);
+  transition: all .2s ease;
 }
 
-#lucoNextBtn:disabled {
+.luco-btn-continue:hover:not(:disabled) {
+  background: var(--teal-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(76, 47, 217, 0.28);
+}
+
+.luco-btn-continue:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.luco-btn-continue:disabled {
   background: var(--line-reg);
   color: var(--ink-faint);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
-#lucoNextBtn.final:not(:disabled) {
+.luco-btn-continue.final:not(:disabled) {
   background: var(--whatsapp);
+  box-shadow: 0 4px 14px rgba(31, 168, 84, 0.25);
+}
+
+.luco-btn-continue.final:hover:not(:disabled) {
+  background: #198c45;
+  box-shadow: 0 6px 18px rgba(31, 168, 84, 0.35);
 }
 
 /* Floating Score Toast */

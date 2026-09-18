@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI } from "../../services/api";
 import toast from "react-hot-toast";
@@ -55,6 +55,31 @@ export default function LucoSigninSignup() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
+  // Sync state with URL route changes
+  useEffect(() => {
+    const isSignup =
+      location.pathname.includes("/signup") ||
+      location.pathname.includes("/register") ||
+      new URLSearchParams(location.search).get("register") === "true";
+
+    if (isSignup) {
+      setActiveTab("signup");
+      setIsRegOpen(true);
+      document.body.style.overflow = "hidden";
+    } else {
+      setActiveTab("signin");
+      setIsRegOpen(false);
+      document.body.style.overflow = "";
+    }
+  }, [location.pathname, location.search]);
+
+  // Clean up body overflow when unmounting
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   // Floating score toast state
   const [toastMsg, setToastMsg] = useState("");
   const [showToast, setShowToast] = useState(false);
@@ -90,6 +115,7 @@ export default function LucoSigninSignup() {
   const [emailVerified, setEmailVerified] = useState(false);
   const [emailToken, setEmailToken] = useState("");
   const [password, setPassword] = useState("");
+  const [showRegPw, setShowRegPw] = useState(false);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [travelRadius, setTravelRadius] = useState(80);
@@ -201,9 +227,15 @@ export default function LucoSigninSignup() {
     if (tab === "signup") {
       setIsRegOpen(true);
       document.body.style.overflow = "hidden";
+      if (!location.pathname.includes("/signup")) {
+        navigate("/signup");
+      }
     } else {
       setIsRegOpen(false);
       document.body.style.overflow = "";
+      if (!location.pathname.includes("/login")) {
+        navigate("/login");
+      }
     }
   };
 
@@ -211,12 +243,18 @@ export default function LucoSigninSignup() {
     setIsRegOpen(false);
     setActiveTab("signin");
     document.body.style.overflow = "";
+    if (!location.pathname.includes("/login")) {
+      navigate("/login");
+    }
   };
 
   const openRegistration = () => {
     setIsRegOpen(true);
     setActiveTab("signup");
     document.body.style.overflow = "hidden";
+    if (!location.pathname.includes("/signup")) {
+      navigate("/signup");
+    }
   };
 
   // Sign In Handler
@@ -639,8 +677,25 @@ export default function LucoSigninSignup() {
                   type="button"
                   className="luco-pw-toggle"
                   onClick={() => setShowSignInPw(!showSignInPw)}
+                  aria-label={showSignInPw ? "Hide password" : "Show password"}
                 >
-                  {showSignInPw ? "Hide" : "Show"}
+                  {showSignInPw ? (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                      <span>Hide</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      <span>Show</span>
+                    </>
+                  )}
                 </button>
               </div>
               {signInErrors.password && (
@@ -731,15 +786,15 @@ export default function LucoSigninSignup() {
 
           <footer className="luco-footnote">
             New here?{" "}
-            <a
-              href="#"
+            <Link
+              to="/signup"
               onClick={(e) => {
                 e.preventDefault();
                 openRegistration();
               }}
             >
               Create an account
-            </a>
+            </Link>
           </footer>
         </main>
       </div>
@@ -1042,15 +1097,45 @@ export default function LucoSigninSignup() {
                 {/* Password field */}
                 <div className="luco-reg-field">
                   <div className="luco-field-label">
-                    <label>Password</label>
-                    <span className="hint">Minimum 6 characters</span>
+                    <label htmlFor="reg-password">Password</label>
+                    <span className={`luco-pts ${password.length >= 6 ? "done" : ""}`}>
+                      {password.length >= 6 ? "✓ min 6 chars" : "Min 6 characters"}
+                    </span>
                   </div>
-                  <input
-                    type="password"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <div className="luco-input-wrap">
+                    <input
+                      id="reg-password"
+                      type={showRegPw ? "text" : "password"}
+                      placeholder="Create a password (min 6 characters)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="luco-pw-toggle"
+                      onClick={() => setShowRegPw(!showRegPw)}
+                      aria-label={showRegPw ? "Hide password" : "Show password"}
+                    >
+                      {showRegPw ? (
+                        <>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                          <span>Hide</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          <span>Show</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Location & Travel Radius Block */}
@@ -1838,6 +1923,72 @@ export default function LucoSigninSignup() {
                   </p>
                 </div>
               </section>
+
+              {/* Form Navigation Actions (Directly under the active form) */}
+              <div className="luco-form-actions">
+                {currentStep > 1 ? (
+                  <button
+                    type="button"
+                    id="lucoBackBtn"
+                    className="luco-btn-back"
+                    onClick={() => {
+                      setCurrentStep((c) => Math.max(1, c - 1));
+                      const shell = document.getElementById("registrationScreen");
+                      if (shell) shell.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12" />
+                      <polyline points="12 19 5 12 12 5" />
+                    </svg>
+                    <span>Back</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                {currentStep < 4 ? (
+                  <button
+                    type="button"
+                    id="lucoNextBtn"
+                    className="luco-btn-continue"
+                    onClick={() => {
+                      if (currentStep === 1) {
+                        if (!name.trim()) {
+                          toast.error("Please enter your name.");
+                          return;
+                        }
+                        if (!email.trim()) {
+                          toast.error("Please enter your email.");
+                          return;
+                        }
+                      }
+                      setCurrentStep((c) => Math.min(4, c + 1));
+                      const shell = document.getElementById("registrationScreen");
+                      if (shell) shell.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  >
+                    <span>Continue</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    id="lucoNextBtn"
+                    className="luco-btn-continue final"
+                    disabled={!termsAccepted || loading}
+                    onClick={handleCreateProfile}
+                  >
+                    <span>{loading ? "Creating profile..." : "Create my profile"}</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </main>
 
             {/* ──────── DESKTOP REAL-TIME PREVIEW SIDEBAR ──────── */}
@@ -1932,38 +2083,6 @@ export default function LucoSigninSignup() {
               </div>
             </aside>
           </div>
-
-          {/* Sticky Navigation Footer */}
-          <footer className="luco-reg-footer">
-            <button
-              type="button"
-              id="lucoBackBtn"
-              disabled={currentStep === 1}
-              onClick={() => setCurrentStep((c) => Math.max(1, c - 1))}
-            >
-              Back
-            </button>
-
-            {currentStep < 4 ? (
-              <button
-                type="button"
-                id="lucoNextBtn"
-                onClick={() => setCurrentStep((c) => Math.min(4, c + 1))}
-              >
-                Continue
-              </button>
-            ) : (
-              <button
-                type="button"
-                id="lucoNextBtn"
-                className="final"
-                disabled={!termsAccepted || loading}
-                onClick={handleCreateProfile}
-              >
-                {loading ? "Creating profile..." : "Create my profile"}
-              </button>
-            )}
-          </footer>
         </div>
       </div>
     </div>

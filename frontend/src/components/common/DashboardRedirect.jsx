@@ -26,5 +26,8 @@ export default function DashboardRedirect() {
   if (activeRole === "manager" || activeRole === "partner") {
     return <Navigate to="/partner/dashboard" replace />;
   }
+  if (activeRole === "freelancer" || activeRole === "candidate") {
+    return <Navigate to="/freelancer/dashboard" replace />;
+  }
   return <Navigate to="/" replace />;
 }

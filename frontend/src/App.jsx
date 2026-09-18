@@ -21,6 +21,7 @@ const RecruiterRoutes = lazy(() => import("./routes/RecruiterRoutes"));
 const AdminRoutes = lazy(() => import("./routes/AdminRoutes"));
 const PartnerRoutes = lazy(() => import("./routes/PartnerRoutes"));
 const DashboardRedirect = lazy(() => import("./components/common/DashboardRedirect"));
+const FreelancerDashboard = lazy(() => import("./pages/freelancer/FreelancerDashboard"));
 import LandingPageSkeleton from './components/landing/LandingPageSkeleton';
 
 function App() {
@@ -129,6 +130,10 @@ function App() {
 
           {/* Partner Panel Routes */}
           <Route path="/partner/*" element={<PartnerRoutes />} />
+
+          {/* Freelancer / Candidate Dashboard */}
+          <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
+          <Route path="/candidate/dashboard" element={<Navigate to="/freelancer/dashboard" replace />} />
 
           {/* Global Dashboard Redirect */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
