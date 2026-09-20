@@ -512,6 +512,7 @@ export default function LucoSigninSignup() {
       const res = await authAPI.verifyRegistrationOtp({
         targetType: "mobile",
         phone: phone.replace(/\D/g, ""),
+        email: email.trim().toLowerCase() || undefined,
         otp: code,
       });
       if (res.data?.verified || code === "1234") {
@@ -647,6 +648,7 @@ export default function LucoSigninSignup() {
       const res = await authAPI.verifyRegistrationOtp({
         targetType: "mobile",
         phone: recPhone.replace(/\D/g, ""),
+        email: recEmail.trim().toLowerCase() || undefined,
         otp: code,
       });
       if (res.data?.verified || code === "1234") {

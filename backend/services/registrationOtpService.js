@@ -71,14 +71,19 @@ async function sendRegistrationOtp({ targetType, email, phone }) {
   const otpHash = await bcrypt.hash(otp, 10);
   const key = `${targetType}:${normalizedEmail}`;
 
-  registrationOtpStore.set(key, {
+  const otpRecord = {
     otpHash,
     email: normalizedEmail,
     phone: cleanPhone,
     targetType,
     expiresAt: Date.now() + OTP_EXPIRY_MS,
     attempts: 0,
-  });
+  };
+
+  registrationOtpStore.set(key, otpRecord);
+  if (cleanPhone) {
+    registrationOtpStore.set(`${targetType}:${cleanPhone}`, otpRecord);
+  }
 
   // Prepare email delivery
   const isMobile = targetType === 'mobile';
@@ -93,6 +98,7 @@ async function sendRegistrationOtp({ targetType, email, phone }) {
 
   if (!emailResult.success && !emailResult.devMode) {
     registrationOtpStore.delete(key);
+    if (cleanPhone) registrationOtpStore.delete(`${targetType}:${cleanPhone}`);
     throw new Error('Failed to deliver OTP email. Please check your email address and try again.');
   }
 
@@ -112,18 +118,32 @@ async function sendRegistrationOtp({ targetType, email, phone }) {
  * Verify 4-digit registration OTP.
  * @param {Object} params
  * @param {'mobile'|'email'} params.targetType
- * @param {string} params.email
+ * @param {string} [params.email]
  * @param {string} [params.phone]
  * @param {string} params.otp
  */
 async function verifyRegistrationOtp({ targetType, email, phone, otp }) {
-  if (!email || !otp) {
-    throw new Error('Email and OTP are required.');
+  if (!otp) {
+    throw new Error('OTP is required.');
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const key = `${targetType}:${normalizedEmail}`;
-  const record = registrationOtpStore.get(key);
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
+
+  if (!normalizedEmail && !cleanPhone) {
+    throw new Error('Email or phone number is required.');
+  }
+
+  let record = null;
+  let recordKey = null;
+  if (normalizedEmail) {
+    recordKey = `${targetType}:${normalizedEmail}`;
+    record = registrationOtpStore.get(recordKey);
+  }
+  if (!record && cleanPhone) {
+    recordKey = `${targetType}:${cleanPhone}`;
+    record = registrationOtpStore.get(recordKey);
+  }
 
   if (!record) {
     return {
@@ -132,8 +152,14 @@ async function verifyRegistrationOtp({ targetType, email, phone, otp }) {
     };
   }
 
+  const deleteOtpKeys = () => {
+    if (recordKey) registrationOtpStore.delete(recordKey);
+    if (record.email) registrationOtpStore.delete(`${targetType}:${record.email}`);
+    if (record.phone) registrationOtpStore.delete(`${targetType}:${record.phone}`);
+  };
+
   if (Date.now() > record.expiresAt) {
-    registrationOtpStore.delete(key);
+    deleteOtpKeys();
     return {
       success: false,
       message: 'OTP has expired. Please request a new OTP.',
@@ -141,7 +167,7 @@ async function verifyRegistrationOtp({ targetType, email, phone, otp }) {
   }
 
   if (record.attempts >= 5) {
-    registrationOtpStore.delete(key);
+    deleteOtpKeys();
     return {
       success: false,
       message: 'Too many incorrect attempts. Please request a new OTP.',
@@ -159,7 +185,7 @@ async function verifyRegistrationOtp({ targetType, email, phone, otp }) {
   }
 
   // Verification succeeded
-  registrationOtpStore.delete(key);
+  deleteOtpKeys();
 
   const verificationToken = `verified_${targetType}_${crypto.randomBytes(16).toString('hex')}`;
   verifiedTokensStore.set(verificationToken, {

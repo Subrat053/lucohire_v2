@@ -163,11 +163,11 @@ function toPrismaWhere(modelName, filter = {}) {
   const fields = fieldMap(modelName);
   const where = {};
   for (const [rawKey, condition] of Object.entries(filter || {})) {
-    if (rawKey === '$and' || rawKey === '$or' || rawKey === '$nor') {
+    if (rawKey === '$and' || rawKey === '$or' || rawKey === '$nor' || rawKey === 'AND' || rawKey === 'OR' || rawKey === 'NOT') {
       const nested = condition.map((item) => toPrismaWhere(modelName, item));
       if (nested.some((item) => item === null)) return null;
-      if (rawKey === '$and') where.AND = nested;
-      else if (rawKey === '$or') where.OR = nested;
+      if (rawKey === '$and' || rawKey === 'AND') where.AND = nested;
+      else if (rawKey === '$or' || rawKey === 'OR') where.OR = nested;
       else where.NOT = { OR: nested };
       continue;
     }

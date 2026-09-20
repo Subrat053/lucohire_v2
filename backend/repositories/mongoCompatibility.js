@@ -145,9 +145,9 @@ function matchesCondition(actual, expected) {
 function matchesMongo(document, filter = {}) {
   if (!filter || !Object.keys(filter).length) return true;
   return Object.entries(filter).every(([key, condition]) => {
-    if (key === '$or') return condition.some((nested) => matchesMongo(document, nested));
-    if (key === '$and') return condition.every((nested) => matchesMongo(document, nested));
-    if (key === '$nor') return !condition.some((nested) => matchesMongo(document, nested));
+    if (key === '$or' || key === 'OR') return condition.some((nested) => matchesMongo(document, nested));
+    if (key === '$and' || key === 'AND') return condition.every((nested) => matchesMongo(document, nested));
+    if (key === '$nor' || key === 'NOT') return !condition.some((nested) => matchesMongo(document, nested));
     if (key === '$expr') return Boolean(evaluateExpression(document, condition));
     if (key === '$text') {
       const search = String(condition?.$search || '').toLowerCase();

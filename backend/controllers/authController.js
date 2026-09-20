@@ -2819,21 +2819,52 @@ const registerFreelancerProfile = async (req, res) => {
 
     const normalizedEmail = (email || "").trim().toLowerCase();
     const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
+    const { parsePhoneString } = require("../utils/phoneValidation");
+    const parsedPhone = parsePhoneString(phone);
+    const fullPhone = parsedPhone.fullPhone || (cleanPhone ? `+91${cleanPhone}` : "");
 
     if (!normalizedEmail) {
       return res.status(400).json({ success: false, message: "Email is required." });
     }
 
-    const OR = [{ email: normalizedEmail }];
-    if (cleanPhone) OR.push({ phone: cleanPhone });
-    let user = await User.findOne({ OR });
+    // 1. Check if user already exists by email
+    let user = await User.findOne({ email: normalizedEmail });
+
+    // 2. Check if the phone is already used by another account
+    const phoneCandidates = [cleanPhone, fullPhone].filter(Boolean);
+    let existingPhoneUser = null;
+    if (phoneCandidates.length > 0) {
+      existingPhoneUser = await User.findOne({
+        $or: [
+          ...phoneCandidates.map((p) => ({ phone: p })),
+          ...phoneCandidates.map((p) => ({ fullPhone: p })),
+        ],
+      });
+    }
+
+    if (existingPhoneUser) {
+      if (user && String(existingPhoneUser._id || existingPhoneUser.id) !== String(user._id || user.id)) {
+        return res.status(400).json({
+          success: false,
+          message: `The mobile number is already linked to another account (${existingPhoneUser.email}). Please sign in or use a different number.`,
+        });
+      } else if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: `The mobile number is already registered with an existing account. Please sign in with your email or use a different mobile number.`,
+        });
+      }
+    }
 
     let isNewUser = false;
     if (!user) {
       isNewUser = true;
       user = await User.create({
         email: normalizedEmail,
-        phone: cleanPhone || "",
+        phone: fullPhone || cleanPhone || null,
+        fullPhone: fullPhone || cleanPhone || "",
+        countryCode: parsedPhone.countryCode || "+91",
+        nationalNumber: cleanPhone || "",
         name: name || normalizedEmail.split("@")[0],
         roles: ["provider"],
         activeRole: "provider",
@@ -2861,7 +2892,10 @@ const registerFreelancerProfile = async (req, res) => {
         user.profilePhoto = photo;
         user.avatar = photo;
       }
-      if (cleanPhone) user.phone = cleanPhone;
+      if (cleanPhone) {
+        user.phone = fullPhone || cleanPhone;
+        user.fullPhone = fullPhone || cleanPhone;
+      }
       if (!user.roles.includes("provider")) {
         user.roles.push("provider");
       }
@@ -2869,7 +2903,7 @@ const registerFreelancerProfile = async (req, res) => {
       if (emailVerified) user.isEmailVerified = true;
       if (mobileVerified) user.isPhoneVerified = true;
       if (termsAccepted) user.termsAccepted = true;
-      if (password && password.trim().length >= 6) {
+      if (password && !user.password && password.trim().length >= 6) {
         user.password = await bcrypt.hash(password.trim(), 10);
         user.hasPassword = true;
       }
@@ -2964,6 +2998,14 @@ const registerFreelancerProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("[registerFreelancerProfile] Error:", error);
+    if (error.code === "P2002" || error.message?.includes("Unique constraint failed")) {
+      const target = error.meta?.target;
+      const field = Array.isArray(target) && target.includes("phone") ? "mobile number" : "email address";
+      return res.status(400).json({
+        success: false,
+        message: `An account with this ${field} is already registered. Please sign in or use different details.`,
+      });
+    }
     return res.status(500).json({ success: false, message: "Registration failed.", error: error.message });
   }
 };
@@ -2995,6 +3037,9 @@ const registerRecruiterProfile = async (req, res) => {
 
     const normalizedEmail = (email || "").trim().toLowerCase();
     const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
+    const { parsePhoneString } = require("../utils/phoneValidation");
+    const parsedPhone = parsePhoneString(phone);
+    const fullPhone = parsedPhone.fullPhone || (cleanPhone ? `+91${cleanPhone}` : "");
 
     if (!normalizedEmail) {
       return res.status(400).json({ success: false, message: "Work email is required." });
@@ -3003,9 +3048,34 @@ const registerRecruiterProfile = async (req, res) => {
       return res.status(400).json({ success: false, message: "Company name is required." });
     }
 
-    const OR = [{ email: normalizedEmail }];
-    if (cleanPhone) OR.push({ phone: cleanPhone });
-    let user = await User.findOne({ OR });
+    // 1. Check if user already exists by email
+    let user = await User.findOne({ email: normalizedEmail });
+
+    // 2. Check if the phone is already used by another account
+    const phoneCandidates = [cleanPhone, fullPhone].filter(Boolean);
+    let existingPhoneUser = null;
+    if (phoneCandidates.length > 0) {
+      existingPhoneUser = await User.findOne({
+        $or: [
+          ...phoneCandidates.map((p) => ({ phone: p })),
+          ...phoneCandidates.map((p) => ({ fullPhone: p })),
+        ],
+      });
+    }
+
+    if (existingPhoneUser) {
+      if (user && String(existingPhoneUser._id || existingPhoneUser.id) !== String(user._id || user.id)) {
+        return res.status(400).json({
+          success: false,
+          message: `The mobile number is already linked to another account (${existingPhoneUser.email}). Please sign in or use a different number.`,
+        });
+      } else if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: `The mobile number is already registered with an existing account. Please sign in with your email or use a different mobile number.`,
+        });
+      }
+    }
 
     let isNewUser = false;
     if (!user) {
@@ -3013,8 +3083,10 @@ const registerRecruiterProfile = async (req, res) => {
       user = await User.create({
         name: name || companyName,
         email: normalizedEmail,
-        phone: cleanPhone,
-        fullPhone: cleanPhone,
+        phone: fullPhone || cleanPhone || null,
+        fullPhone: fullPhone || cleanPhone || "",
+        countryCode: parsedPhone.countryCode || "+91",
+        nationalNumber: cleanPhone || "",
         password: password || undefined,
         roles: ["recruiter"],
         activeRole: "recruiter",
@@ -3036,7 +3108,10 @@ const registerRecruiterProfile = async (req, res) => {
       user.activeRole = "recruiter";
       user.role = "recruiter";
       if (name) user.name = name;
-      if (cleanPhone && !user.phone) user.phone = cleanPhone;
+      if (cleanPhone) {
+        user.phone = fullPhone || cleanPhone;
+        user.fullPhone = fullPhone || cleanPhone;
+      }
       if (mobileVerified) user.isPhoneVerified = true;
       if (emailVerified) user.isEmailVerified = true;
       await user.save();
@@ -3090,6 +3165,14 @@ const registerRecruiterProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("[registerRecruiterProfile] Error:", error);
+    if (error.code === "P2002" || error.message?.includes("Unique constraint failed")) {
+      const target = error.meta?.target;
+      const field = Array.isArray(target) && target.includes("phone") ? "mobile number" : "email address";
+      return res.status(400).json({
+        success: false,
+        message: `An account with this ${field} is already registered. Please sign in or use different details.`,
+      });
+    }
     return res.status(500).json({ success: false, message: "Registration failed.", error: error.message });
   }
 };
