@@ -15,6 +15,9 @@ export default function AuthRoutes() {
       <Route path="login" element={<LucoSigninSignup />} />
       <Route path="signup" element={<LucoSigninSignup />} />
       <Route path="signup/freelancer" element={<LucoSigninSignup />} />
+      <Route path="signup/candidate" element={<LucoSigninSignup />} />
+      <Route path="signup/recruiter" element={<LucoSigninSignup />} />
+      <Route path="signup/employer" element={<LucoSigninSignup />} />
       <Route path="signup/provider" element={<LucoSigninSignup />} />
       <Route path="register" element={<LucoSigninSignup />} />
       <Route path="auth-legacy" element={<AuthPage />} />

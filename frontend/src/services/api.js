@@ -159,6 +159,7 @@ export const authAPI = {
   sendRegistrationOtp: (data) => API.post("/auth/register/send-otp", data),
   verifyRegistrationOtp: (data) => API.post("/auth/register/verify-otp", data),
   registerFreelancer: (data) => API.post("/auth/register/freelancer", data),
+  registerRecruiter: (data) => API.post("/auth/register/recruiter", data),
   registerEmail: (data) => AUTH_API.post("/auth/register-email", data),
   sendRegistrationEmailOtp: (data) => API.post("/auth/register/send-otp", data),
   verifyEmailOtp: (data) => AUTH_API.post("/auth/verify-email-otp", data),

@@ -2968,10 +2968,137 @@ const registerFreelancerProfile = async (req, res) => {
   }
 };
 
+const registerRecruiterProfile = async (req, res) => {
+  try {
+    const {
+      name,
+      role,
+      email,
+      phone,
+      password,
+      companyName,
+      hiringType,
+      agencyLicense,
+      industry,
+      companySize,
+      city,
+      state,
+      companyWebsite,
+      documentType,
+      documentUrl,
+      companyLogo,
+      description,
+      termsAccepted,
+      mobileVerified,
+      emailVerified,
+    } = req.body;
+
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    const cleanPhone = (phone || "").replace(/\D/g, "").slice(-10);
+
+    if (!normalizedEmail) {
+      return res.status(400).json({ success: false, message: "Work email is required." });
+    }
+    if (!companyName || !companyName.trim()) {
+      return res.status(400).json({ success: false, message: "Company name is required." });
+    }
+
+    const OR = [{ email: normalizedEmail }];
+    if (cleanPhone) OR.push({ phone: cleanPhone });
+    let user = await User.findOne({ OR });
+
+    let isNewUser = false;
+    if (!user) {
+      isNewUser = true;
+      user = await User.create({
+        name: name || companyName,
+        email: normalizedEmail,
+        phone: cleanPhone,
+        fullPhone: cleanPhone,
+        password: password || undefined,
+        roles: ["recruiter"],
+        activeRole: "recruiter",
+        role: "recruiter",
+        roleIntent: "recruiter",
+        authProvider: "email",
+        isPhoneVerified: !!mobileVerified,
+        isEmailVerified: !!emailVerified,
+        termsAccepted: true,
+        approvalStatus: "approved",
+      });
+    } else {
+      if (password && !user.password) {
+        user.password = password;
+      }
+      if (!user.roles.includes("recruiter")) {
+        user.roles.push("recruiter");
+      }
+      user.activeRole = "recruiter";
+      user.role = "recruiter";
+      if (name) user.name = name;
+      if (cleanPhone && !user.phone) user.phone = cleanPhone;
+      if (mobileVerified) user.isPhoneVerified = true;
+      if (emailVerified) user.isEmailVerified = true;
+      await user.save();
+    }
+
+    let profile = await RecruiterProfile.findOne({ user: user._id });
+    if (!profile) {
+      profile = await RecruiterProfile.create({
+        user: user._id,
+        companyName: companyName.trim(),
+        contactPersonName: name || user.name || "",
+        designation: role || "",
+        city: city || "",
+        state: state || "",
+        profileExpiresAt: new Date(Date.now() + VALIDITY_DAYS * 24 * 60 * 60 * 1000),
+      });
+    }
+
+    if (companyName) profile.companyName = companyName.trim();
+    if (name) profile.contactPersonName = name.trim();
+    if (role) profile.designation = role.trim();
+    if (hiringType) profile.companyType = hiringType;
+    if (industry) profile.industry = industry;
+    if (companySize) profile.companySize = companySize;
+    if (city) profile.city = city.trim();
+    if (state) profile.state = state.trim();
+    if (companyWebsite) profile.companyWebsite = companyWebsite.trim();
+    if (companyLogo) profile.companyLogo = companyLogo;
+    if (description) profile.description = description.trim();
+    if (documentType) profile.gstNumber = documentType;
+    if (documentUrl) profile.isVerified = true;
+
+    await profile.save();
+
+    user.recruiterProfileId = profile._id;
+    await user.save();
+
+    await ensureRoleSubscription(user, "recruiter", { startDate: user.createdAt });
+
+    const authPayload = buildAuthPayload(user, {
+      recruiterProfileId: profile._id,
+      isNewUser,
+    }, "recruiter");
+
+    return res.status(201).json({
+      success: true,
+      message: "Recruiter profile created successfully!",
+      token: authPayload.token,
+      user: authPayload,
+      profile,
+    });
+  } catch (error) {
+    console.error("[registerRecruiterProfile] Error:", error);
+    return res.status(500).json({ success: false, message: "Registration failed.", error: error.message });
+  }
+};
+
 module.exports = {
   sendRegistrationOtpHandler,
   verifyRegistrationOtpHandler,
   registerFreelancerProfile,
+  registerRecruiterProfile,
   logFirebaseOtpAttempt,
   registerEmail,
   sendRegistrationEmailOtp,

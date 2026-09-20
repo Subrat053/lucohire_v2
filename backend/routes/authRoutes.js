@@ -4,6 +4,7 @@ const {
   sendRegistrationOtpHandler,
   verifyRegistrationOtpHandler,
   registerFreelancerProfile,
+  registerRecruiterProfile,
   registerEmail,
   sendRegistrationEmailOtp,
   confirmRegistrationEmailOtp,
@@ -37,6 +38,7 @@ router.patch("/switch-panel", protect, switchPanel);
 router.post("/register/send-otp", sendRegistrationOtpHandler);
 router.post("/register/verify-otp", verifyRegistrationOtpHandler);
 router.post("/register/freelancer", registerFreelancerProfile);
+router.post("/register/recruiter", registerRecruiterProfile);
 
 router.post("/register", registerEmail);
 router.post("/register/email-otp-legacy", sendRegistrationEmailOtp);

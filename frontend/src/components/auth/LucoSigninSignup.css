@@ -286,25 +286,38 @@ header.luco-hero::after {
 
 .luco-field input {
   width: 100%;
-  border: 1.4px solid var(--line);
-  border-radius: 11px;
-  background: #FBFAFE;
+  height: 48px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  background: #FFFFFF;
   font-family: 'Inter', sans-serif;
   font-size: 15px;
-  color: var(--ink);
-  padding: 13px 14px;
+  font-weight: 500;
+  color: #0F172A;
+  padding: 12px 14px;
   outline: none;
-  transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+
+.luco-field input:hover {
+  border-color: #94A3B8;
 }
 
 .luco-field input:focus {
   border-color: var(--blue);
-  background: var(--paper);
-  box-shadow: 0 0 0 3px rgba(27, 79, 224, 0.12);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3.5px rgba(27, 79, 224, 0.15);
+}
+
+.luco-field input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
 }
 
 .luco-field.error input {
   border-color: var(--error);
+  box-shadow: 0 0 0 3.5px rgba(179, 73, 47, 0.12);
 }
 
 .luco-field-msg {
@@ -742,9 +755,10 @@ p.luco-sub {
 }
 
 .luco-field-label label {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  color: #0F172A;
+  letter-spacing: -0.01em;
 }
 
 .luco-pts {
@@ -766,27 +780,116 @@ p.luco-sub {
 
 .luco-reg-field .hint {
   font-size: 12px;
-  color: var(--ink-faint);
-  margin-top: 0;
+  color: #64748B;
+  margin-top: 5px;
 }
 
+/* ==========================================================================
+   Universal Form Input & Field Clarity System
+   ========================================================================== */
+.luco-registration-screen input[type=text],
+.luco-registration-screen input[type=tel],
+.luco-registration-screen input[type=number],
+.luco-registration-screen input[type=email],
+.luco-registration-screen input[type=password],
+.luco-registration-screen input[type=url],
+.luco-registration-screen select,
+.luco-registration-screen textarea,
 .luco-reg-field input[type=text],
 .luco-reg-field input[type=tel],
 .luco-reg-field input[type=number],
 .luco-reg-field input[type=email],
 .luco-reg-field input[type=password],
+.luco-reg-field input[type=url],
 .luco-reg-field select,
-.luco-reg-field textarea {
+.luco-reg-field textarea,
+.luco-card-block input,
+.luco-card-block select,
+.luco-clear-input,
+.luco-skill-card input[type=text],
+.luco-skill-card input[type=number],
+.luco-skill-card select,
+.luco-entry-card input[type=text],
+.luco-entry-card select,
+.luco-entry-grid input,
+.luco-link-upload-row input,
+.luco-time-row select,
+.luco-lang-add-row select {
   width: 100%;
+  height: 48px;
   font-family: 'Inter', sans-serif;
-  font-size: 15px;
-  padding: 13px 14px;
-  border: 1px solid var(--line-reg);
-  border-radius: var(--radius-sm);
-  background: var(--paper);
-  color: var(--ink);
+  font-size: 14.5px;
+  font-weight: 500;
+  padding: 12px 14px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 9px;
+  background-color: #FFFFFF;
+  color: #0F172A;
   outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+  box-sizing: border-box;
+}
+
+.luco-registration-screen input[type=text]:hover,
+.luco-registration-screen input[type=tel]:hover,
+.luco-registration-screen input[type=number]:hover,
+.luco-registration-screen input[type=email]:hover,
+.luco-registration-screen input[type=password]:hover,
+.luco-registration-screen input[type=url]:hover,
+.luco-registration-screen select:hover,
+.luco-registration-screen textarea:hover,
+.luco-card-block input:hover,
+.luco-card-block select:hover,
+.luco-clear-input:hover,
+.luco-skill-card input:hover,
+.luco-skill-card select:hover,
+.luco-entry-card input:hover,
+.luco-entry-card select:hover,
+.luco-entry-grid input:hover {
+  border-color: #94A3B8;
+  background-color: #FFFFFF;
+}
+
+.luco-registration-screen input[type=text]:focus,
+.luco-registration-screen input[type=tel]:focus,
+.luco-registration-screen input[type=number]:focus,
+.luco-registration-screen input[type=email]:focus,
+.luco-registration-screen input[type=password]:focus,
+.luco-registration-screen input[type=url]:focus,
+.luco-registration-screen select:focus,
+.luco-registration-screen textarea:focus,
+.luco-card-block input:focus,
+.luco-card-block select:focus,
+.luco-clear-input:focus,
+.luco-skill-card input:focus,
+.luco-skill-card select:focus,
+.luco-entry-card input:focus,
+.luco-entry-card select:focus,
+.luco-entry-grid input:focus {
+  border-color: var(--teal);
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 3.5px rgba(76, 47, 217, 0.14), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.luco-registration-screen input::placeholder,
+.luco-registration-screen textarea::placeholder,
+.luco-card-block input::placeholder,
+.luco-clear-input::placeholder,
+.luco-skill-card input::placeholder,
+.luco-entry-card input::placeholder,
+.luco-entry-grid input::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+  opacity: 1;
+}
+
+.luco-registration-screen input:disabled,
+.luco-clear-input:disabled {
+  background-color: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #64748B;
+  cursor: not-allowed;
 }
 
 .luco-reg-field .luco-input-wrap {
@@ -800,37 +903,36 @@ p.luco-sub {
 
 .luco-reg-field .luco-input-wrap .luco-pw-toggle {
   color: var(--teal);
+  font-weight: 600;
 }
 
 .luco-reg-field .luco-input-wrap .luco-pw-toggle:hover {
   background: var(--teal-wash);
 }
 
-.luco-reg-field input:focus,
-.luco-reg-field select:focus,
-.luco-reg-field textarea:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px var(--teal-wash);
-}
-
 .luco-reg-field textarea {
-  min-height: 90px;
+  min-height: 96px;
+  height: auto;
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
-.luco-reg-field select {
+.luco-reg-field select,
+.luco-card-block select,
+.luco-skill-card select,
+.luco-entry-card select {
   appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235B6168' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
+  background-position: right 14px center;
+  padding-right: 38px;
+  cursor: pointer;
 }
 
 .luco-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 @media (max-width: 600px) {
@@ -839,47 +941,56 @@ p.luco-sub {
   }
 }
 
-/* Card Block */
+/* Card Block (Location, Travel Radius & Structured Groups) */
 .luco-card-block {
-  background: var(--paper);
-  border: 1px solid var(--line-reg);
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
   border-radius: var(--radius-lg);
-  padding: 18px;
-  margin-bottom: 22px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
 .luco-card-head-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .luco-card-head-row .left {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: 9px;
+  font-size: 15.5px;
   font-weight: 600;
-  color: var(--ink);
+  color: #0F172A;
 }
 
 .luco-smart-badge {
-  background: #F1F1EC;
-  color: var(--ink-soft);
-  font-size: 11.5px;
-  font-weight: 500;
+  background: #EEF2F6;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
   padding: 5px 12px;
   border-radius: 20px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
+.luco-card-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .luco-mini-label {
   display: block;
-  font-size: 11.5px;
-  color: var(--ink-faint);
+  font-size: 13px;
+  font-weight: 600;
+  color: #1E293B;
   margin-bottom: 6px;
+  letter-spacing: -0.01em;
 }
 
 .luco-range-head {
@@ -890,32 +1001,40 @@ p.luco-sub {
 }
 
 .luco-range-head span {
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E293B;
 }
 
 .luco-range-val-pill {
-  background: var(--teal-wash);
-  color: var(--teal-deep);
+  background: #EEF2FF;
+  color: #4338CA;
+  border: 1px solid #C7D2FE;
   font-size: 13px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 20px;
 }
 
-input[type=range] {
+input[type=range].luco-range-input {
   width: 100%;
-  accent-color: var(--teal);
-  height: 5px;
-  margin: 8px 0;
+  accent-color: #4C2FD9;
+  height: 6px;
+  border-radius: 6px;
+  background: #CBD5E1;
+  margin: 10px 0;
   cursor: pointer;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
 .luco-range-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 11.5px;
-  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748B;
   margin-bottom: 14px;
 }
 
@@ -1107,128 +1226,248 @@ input[type=range] {
 
 /* Repeatable Skill Cards */
 .luco-skill-card {
-  background: #FAFAF8;
-  border: 1px solid var(--line-reg);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  margin-bottom: 14px;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
 .luco-skill-card-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .luco-skill-card-head select {
   flex: 1;
-  background: #fff;
+  min-width: 0;
+  height: 48px;
+  background: #FFFFFF;
   font-size: 15px;
   font-weight: 600;
-  padding: 11px 12px;
+  padding: 11px 14px;
 }
 
+.luco-remove-skill,
 .luco-remove-btn {
-  width: 28px;
-  height: 28px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--ink-faint);
+  border: 1.5px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #64748B;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all .2s ease;
 }
 
+.luco-remove-skill:hover,
 .luco-remove-btn:hover {
-  background: var(--line-reg);
-  color: var(--ink);
+  background: #FEE2E2;
+  border-color: #FCA5A5;
+  color: #DC2626;
+  transform: scale(1.06);
 }
 
+.luco-skill-other-input {
+  width: 100%;
+  height: 48px;
+  margin-bottom: 14px;
+}
+
+/* Responsive 4-Column to 2-Column to 1-Column Skill Grid */
 .luco-skill-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.luco-skill-grid > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .luco-skill-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .luco-skill-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .luco-rate-input {
   position: relative;
+  width: 100%;
 }
 
 .luco-rate-input span {
   position: absolute;
-  left: 13px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--ink-faint);
-  font-size: 15px;
+  color: #475569;
+  font-size: 16px;
+  font-weight: 600;
   pointer-events: none;
+  z-index: 2;
 }
 
 .luco-rate-input input {
-  padding-left: 28px !important;
-  background: #fff;
+  padding-left: 32px !important;
+  background: #FFFFFF;
+  width: 100%;
+}
+
+/* Skill Supporting Proof (Document/Photo Upload & Link) */
+.luco-skill-proof {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #CBD5E1;
+}
+
+.luco-skill-proof .mini-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 10px;
+}
+
+.luco-skill-proof-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .luco-skill-proof-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.luco-mini-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: 9px;
+  background: #FFFFFF;
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.luco-mini-upload .luco-upload-txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.luco-mini-upload:hover {
+  border-color: var(--teal);
+  background: var(--teal-wash);
+  color: var(--teal-deep);
+}
+
+.luco-mini-upload.done {
+  border-style: solid;
+  border-color: #1FA854;
+  background: #E5F5EB;
+  color: #1FA854;
+  font-weight: 600;
+}
+
+.luco-mini-upload svg {
+  flex-shrink: 0;
 }
 
 .luco-headline-row {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--line-reg);
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #CBD5E1;
 }
 
-.luco-headline-row input {
-  width: 17px !important;
-  height: 17px !important;
+.luco-headline-row input[type=checkbox] {
+  width: 18px !important;
+  height: 18px !important;
   accent-color: var(--teal);
-  margin-top: 2px !important;
+  margin: 0 !important;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .luco-headline-row span {
-  font-size: 12px;
-  color: var(--ink-soft);
+  font-size: 12.5px;
+  color: #334155;
   line-height: 1.45;
 }
 
 .luco-headline-row span b {
-  color: var(--ink);
+  color: #0F172A;
   font-weight: 600;
 }
 
+.luco-add-skill-btn,
 .luco-add-btn {
   width: 100%;
-  padding: 13px;
-  border: 1.5px dashed var(--line-reg);
-  border-radius: var(--radius-md);
-  background: transparent;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--teal);
+  border-radius: 10px;
+  background: var(--teal-wash);
   color: var(--teal-deep);
   font-size: 14px;
   font-weight: 600;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
+  margin-top: 8px;
   margin-bottom: 12px;
   transition: all .2s ease;
 }
 
+.luco-add-skill-btn:hover,
 .luco-add-btn:hover {
-  border-color: var(--teal);
-  background: var(--teal-wash);
+  background: #DDD5FA;
+  border-color: var(--teal-deep);
 }
 
 /* Repeatable Entry Card (Edu/Work & Portfolio) */
 .luco-entry-card {
-  background: #FAFAF8;
-  border: 1px solid var(--line-reg);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  margin-bottom: 12px;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
 .luco-entry-card-head {
@@ -1240,21 +1479,272 @@ input[type=range] {
 
 .luco-entry-card-head select {
   flex: 1;
-  background: #fff;
+  background: #FFFFFF;
   margin-right: 8px;
 }
 
-/* Upload Box */
-.luco-upload-box {
-  border: 1.8px dashed var(--line-reg);
-  border-radius: var(--radius-md);
-  padding: 20px 16px;
+.luco-entry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .luco-entry-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.luco-link-upload-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .luco-link-upload-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Resume & Document Upload Section
+   ========================================================================== */
+.luco-resume-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  color: var(--ink-faint);
+  width: 100%;
+  padding: 36px 24px;
+  background: #F8FAFC;
+  border: 2px dashed #CBD5E1;
+  border-radius: 14px;
+  transition: all .2s ease;
+  box-sizing: border-box;
+  margin-bottom: 22px;
+}
+
+.luco-resume-dropzone:hover,
+.luco-resume-dropzone.drag-over {
+  border-color: var(--teal);
+  background: #ECE8FB;
+  box-shadow: 0 4px 16px rgba(76, 47, 217, 0.08);
+}
+
+.luco-dropzone-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.luco-dropzone-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0 0 6px 0;
+}
+
+.luco-dropzone-browse {
+  color: var(--teal);
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.luco-dropzone-sub {
+  font-size: 12.5px;
+  color: #64748B;
+  margin: 0 0 16px 0;
+}
+
+.luco-dropzone-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  color: var(--teal);
+  border: 1.5px solid var(--teal);
+  padding: 10px 22px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.luco-dropzone-btn:hover {
+  background: var(--teal);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(76, 47, 217, 0.2);
+}
+
+/* Uploaded Document Card */
+.luco-uploaded-doc-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #FFFFFF;
+  border: 1.5px solid #1FA854;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(31, 168, 84, 0.08);
+  box-sizing: border-box;
+  margin-bottom: 22px;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .luco-uploaded-doc-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+}
+
+.luco-doc-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.luco-doc-icon-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #E5F5EB;
+  border: 1px solid #BFE6CC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.luco-doc-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.luco-doc-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0 0 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.luco-doc-meta {
+  font-size: 12px;
+  color: #64748B;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.luco-doc-meta .dot {
+  font-size: 10px;
+  color: #94A3B8;
+}
+
+.luco-doc-meta .status {
+  color: #1FA854;
+  font-weight: 600;
+}
+
+.luco-doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .luco-doc-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.luco-doc-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #334155;
+  transition: all .15s ease;
+}
+
+.luco-doc-action-btn:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+}
+
+.luco-doc-action-btn.preview {
+  color: var(--teal);
+  border-color: #CBD5E1;
+}
+
+.luco-doc-action-btn.preview:hover {
+  background: var(--teal-wash);
+  border-color: var(--teal);
+}
+
+.luco-doc-action-btn.replace {
+  color: #0F172A;
+}
+
+.luco-doc-action-btn.delete {
+  padding: 8px 10px;
+  color: #DC2626;
+  border-color: #FECACA;
+  background: #FEF2F2;
+}
+
+.luco-doc-action-btn.delete:hover {
+  background: #FEE2E2;
+  border-color: #F87171;
+}
+
+/* Generic Upload Box (ID verification, etc.) */
+.luco-upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 2px dashed #CBD5E1;
+  border-radius: var(--radius-md);
+  padding: 24px 18px;
+  text-align: center;
+  color: #475569;
   margin-bottom: 22px;
   cursor: pointer;
   transition: all .2s ease;
-  background: #FBFAFE;
+  background: #F8FAFC;
+  box-sizing: border-box;
 }
 
 .luco-upload-box:hover {
@@ -1264,9 +1754,9 @@ input[type=range] {
 
 .luco-upload-box.done {
   border-style: solid;
-  border-color: var(--whatsapp);
+  border-color: #1FA854;
   background: #F3FBF5;
-  color: var(--whatsapp);
+  color: #1FA854;
 }
 
 .luco-upload-box svg {
@@ -1275,14 +1765,16 @@ input[type=range] {
 
 .luco-upload-box p {
   margin: 0;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0F172A;
 }
 
 .luco-upload-box p.small {
-  font-size: 11.5px;
+  font-size: 12px;
   margin-top: 4px;
-  color: var(--ink-faint);
+  color: #64748B;
+  font-weight: 400;
 }
 
 /* Tag Box for Languages */
@@ -1382,6 +1874,62 @@ input[type=range] {
 
 .luco-toggle-switch input:checked + .slider::before {
   transform: translateX(20px);
+}
+
+/* Info Card (Calendar, WhatsApp Availability, etc.) */
+.luco-info-card {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.luco-info-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 10px;
+}
+
+.luco-info-card-head .left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.luco-boost-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #E5F5EB;
+  color: #1FA854;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.luco-verify-card {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.luco-verify-card.done {
+  background: #E5F5EB;
+  border-color: #BFE6CC;
 }
 
 /* Day Pills & Time Range */
@@ -1830,7 +2378,7 @@ input[type=range] {
   opacity: 0;
   pointer-events: none;
   transition: opacity .25s ease, transform .25s ease;
-  z-index: 1100;
+  z-index: 1300;
   box-shadow: 0 10px 24px -6px rgba(20,20,20,.4);
   white-space: nowrap;
 }
@@ -1839,3 +2387,225 @@ input[type=range] {
   opacity: .96;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ==========================================================================
+   ROLE CHOOSER MODAL / SCREEN
+   ========================================================================== */
+.rc-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: linear-gradient(160deg, #241B85 0%, #4C2FD9 55%, #6C4CF0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: rcFadeIn .25s ease;
+}
+
+@keyframes rcFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.rc-screen.reg-hidden {
+  display: none;
+}
+
+.rc-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s ease, transform .15s ease;
+}
+
+.rc-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.05);
+}
+
+.rc-wrap {
+  width: 100%;
+  max-width: 400px;
+}
+
+.rc-eyebrow {
+  color: #C9BFFB;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.rc-title {
+  font-family: 'Fraunces', serif;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.rc-sub {
+  color: #D9D2FA;
+  font-size: 13.5px;
+  text-align: center;
+  margin: 0 0 28px;
+}
+
+.rc-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 18px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  box-shadow: 0 14px 30px -12px rgba(10, 12, 35, 0.35);
+  transition: transform .18s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.rc-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 18px 36px -10px rgba(10, 12, 35, 0.45);
+  background: #ffffff;
+}
+
+.rc-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.rc-card-ic {
+  flex: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: #F0ECFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.rc-card.recruiter .rc-card-ic {
+  background: #E6F7EC;
+}
+
+.rc-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rc-card-body b {
+  font-size: 16px;
+  color: #181B24;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+}
+
+.rc-card-body small {
+  font-size: 12.5px;
+  color: #6B7078;
+  line-height: 1.45;
+}
+
+.rc-card-arrow {
+  flex: none;
+  font-size: 20px;
+  color: #4C2FD9;
+  font-weight: 700;
+  transition: transform .2s ease;
+}
+
+.rc-card:hover .rc-card-arrow {
+  transform: translateX(3px);
+}
+
+.rc-card.recruiter .rc-card-arrow {
+  color: #1FA854;
+}
+
+/* ==========================================================================
+   RECRUITER FLOW SPECIALIZED STYLES
+   ========================================================================== */
+.agency-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--amber-wash);
+  border-radius: var(--radius-md);
+  padding: 13px 14px;
+  margin-top: 10px;
+  border: 1px solid #F5E0C2;
+}
+
+.agency-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--amber);
+}
+
+.agency-note p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #8A5E0F;
+  line-height: 1.5;
+}
+
+.role-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.role-badge {
+  background: var(--teal-wash);
+  color: var(--teal-deep);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.switch-role-link {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin: 14px 0 0;
+}
+
+.switch-role-link button,
+.switch-role-link a {
+  color: var(--teal-deep);
+  font-weight: 600;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 12.5px;
+  font-family: inherit;
+}
+
