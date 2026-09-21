@@ -149,11 +149,15 @@ async function createProviderProfile(data) {
 }
 
 async function ensureProviderProfile(userId, defaults = {}) {
-  const data = prepareProviderProfileData({ ...defaults, user: String(userId) });
-  return mapProviderRecord(await prisma.providerProfile.upsert({
+  const existing = await prisma.providerProfile.findUnique({
     where: { user: String(userId) },
-    create: data,
-    update: {},
+  });
+  if (existing) {
+    return mapProviderRecord(existing);
+  }
+  const data = prepareProviderProfileData({ ...defaults, user: String(userId) });
+  return mapProviderRecord(await prisma.providerProfile.create({
+    data,
   }));
 }
 

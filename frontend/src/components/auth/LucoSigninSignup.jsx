@@ -169,6 +169,8 @@ export default function LucoSigninSignup() {
   const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [emailOtp, setEmailOtp] = useState(["", "", "", ""]);
   const [emailVerified, setEmailVerified] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [travelRadius, setTravelRadius] = useState(80);
@@ -452,8 +454,8 @@ export default function LucoSigninSignup() {
       });
 
       const authData = res.data?.data || res.data;
-      const token = authData?.token;
-      const user = authData?.user;
+      const token = authData?.token || res.data?.token;
+      const user = authData?.user || res.data?.user || (token ? authData : null);
 
       if (token && user) {
         toast.success("Signed in successfully!");
@@ -462,7 +464,7 @@ export default function LucoSigninSignup() {
         } else if (login) {
           login(token, user);
         }
-        if (user?.roles?.includes("recruiter")) {
+        if (user?.roles?.includes("recruiter") || user?.role === "recruiter" || user?.activeRole === "recruiter") {
           navigate("/recruiter/dashboard");
         } else {
           navigate("/freelancer/dashboard");
@@ -489,13 +491,13 @@ export default function LucoSigninSignup() {
       return;
     }
     try {
-      await authAPI.sendRegistrationOtp({
+      const res = await authAPI.sendRegistrationOtp({
         targetType: "mobile",
         phone: cleanP,
         email: email.trim().toLowerCase() || undefined,
       });
       setMobileOtpSent(true);
-      toast.success("Verification OTP sent!");
+      toast.success(res.data?.message || "Verification OTP sent!");
     } catch {
       setMobileOtpSent(true);
       toast.success("OTP sent: Use 1234 in test mode");
@@ -625,13 +627,13 @@ export default function LucoSigninSignup() {
       return;
     }
     try {
-      await authAPI.sendRegistrationOtp({
+      const res = await authAPI.sendRegistrationOtp({
         targetType: "mobile",
         phone: cleanP,
         email: recEmail.trim().toLowerCase() || undefined,
       });
       setRecMobileOtpSent(true);
-      toast.success("OTP sent to your mobile!");
+      toast.success(res.data?.message || "OTP sent to your mobile!");
     } catch {
       setRecMobileOtpSent(true);
       toast.success("OTP sent! (Use 1234 in test mode)");
@@ -799,6 +801,11 @@ export default function LucoSigninSignup() {
       setCurrentStep(1);
       return;
     }
+    if (!password || password.length < 6) {
+      toast.error("Please set an account password of at least 6 characters in Step 1.");
+      setCurrentStep(1);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -806,6 +813,7 @@ export default function LucoSigninSignup() {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.replace(/\D/g, ""),
+        password: password.trim(),
         photo,
         professionalTitle: title.trim(),
         city: city.trim(),
@@ -865,10 +873,15 @@ export default function LucoSigninSignup() {
 
       if (res.data?.success) {
         toast.success("Profile created successfully!");
-        if (saveUserSession && res.data?.token && res.data?.user) {
-          saveUserSession({ token: res.data.token, user: res.data.user });
-        } else if (login) {
-          login(res.data.token, res.data.user);
+        const authData = res.data?.data || res.data;
+        const token = authData?.token || res.data?.token;
+        const user = authData?.user || res.data?.user || (token ? authData : null);
+        if (token && user) {
+          if (saveUserSession) {
+            saveUserSession({ token, user });
+          } else if (login) {
+            login(token, user);
+          }
         }
         document.body.style.overflow = "";
         navigate("/freelancer/dashboard");
@@ -899,6 +912,11 @@ export default function LucoSigninSignup() {
       setRecCurrentStep(1);
       return;
     }
+    if (!recPassword || recPassword.length < 6) {
+      toast.error("Please set an account password of at least 6 characters in Step 1.");
+      setRecCurrentStep(1);
+      return;
+    }
     if (!recCompanyName.trim()) {
       toast.error("Please enter your company name in Step 2.");
       setRecCurrentStep(2);
@@ -912,7 +930,7 @@ export default function LucoSigninSignup() {
         role: recRole.trim(),
         email: recEmail.trim().toLowerCase(),
         phone: recPhone.replace(/\D/g, ""),
-        password: recPassword || undefined,
+        password: recPassword.trim(),
         companyName: recCompanyName.trim(),
         hiringType: recHiringType,
         agencyLicense: recAgencyLicense.trim(),
@@ -934,8 +952,15 @@ export default function LucoSigninSignup() {
 
       if (res.data?.success) {
         toast.success("Employer account created successfully!");
-        if (login && res.data.token && res.data.user) {
-          login(res.data.token, res.data.user);
+        const authData = res.data?.data || res.data;
+        const token = authData?.token || res.data?.token;
+        const user = authData?.user || res.data?.user || (token ? authData : null);
+        if (token && user) {
+          if (saveUserSession) {
+            saveUserSession({ token, user });
+          } else if (login) {
+            login(token, user);
+          }
         }
         document.body.style.overflow = "";
         navigate("/recruiter/dashboard");
@@ -1503,6 +1528,28 @@ export default function LucoSigninSignup() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Account Password Setup */}
+                <div className="luco-reg-field">
+                  <div className="luco-field-label">
+                    <label>Set account password</label>
+                  </div>
+                  <div className="luco-input-wrap">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Minimum 6 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="luco-pw-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Location & Travel Radius Card */}

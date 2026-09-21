@@ -86,7 +86,7 @@ async function prepareUserData(source, { isNew = false } = {}) {
   if (data.phone === '') data.phone = null;
   if (data.phone) data.phone_hash = digest(String(data.phone).trim());
   if (data.password && !isBcryptHash(data.password)) {
-    data.password = await bcrypt.hash(data.password, 12);
+    data.password = await bcrypt.hash(data.password, 10);
     data.hasPassword = true;
   }
 

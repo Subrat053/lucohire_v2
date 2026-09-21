@@ -70,7 +70,7 @@ async function beforeSave(modelName, source, context = {}) {
 
   if (modelName === 'Admin') {
     if (modified.has('password') && data.password && !isBcryptHash(data.password)) {
-      data.password = await bcrypt.hash(data.password, 12);
+      data.password = await bcrypt.hash(data.password, 10);
     }
   }
 
@@ -109,7 +109,7 @@ async function beforeSave(modelName, source, context = {}) {
     if (data.phone === '') data.phone = undefined;
     if (!data.referralCode) data.referralCode = generateReferralCode();
     if (modified.has('password') && data.password && !isBcryptHash(data.password)) {
-      data.password = await bcrypt.hash(data.password, 12);
+      data.password = await bcrypt.hash(data.password, 10);
       data.hasPassword = true;
     }
     if (modified.has('phone') && data.phone) {

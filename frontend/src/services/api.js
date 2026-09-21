@@ -64,14 +64,14 @@ const shouldSkipAuthInvalidation = (url = "") => {
 // Base API for existing app routes (/api)
 const API = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   withCredentials: true,
 });
 
 // Auth-only API for v1 endpoints (/api/v1)
 const AUTH_API = axios.create({
   baseURL: AUTH_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
   withCredentials: true,
 });
 

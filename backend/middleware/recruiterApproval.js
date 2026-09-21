@@ -2,7 +2,7 @@ const { ensureRecruiterProfile } = require('../services/recruiterCompanyPersiste
 
 const ensureRecruiterApproved = async (req, res, next) => {
   try {
-    await ensureRecruiterProfile(req.user._id, {
+    const profile = await ensureRecruiterProfile(req.user._id, {
       isApproved: true,
       isVerified: true,
       approvalAction: 'approved',
@@ -11,7 +11,7 @@ const ensureRecruiterApproved = async (req, res, next) => {
       unlocksRemaining: 2,
       unlockPackSize: 2,
     });
-
+    req.recruiterProfile = profile;
     next();
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

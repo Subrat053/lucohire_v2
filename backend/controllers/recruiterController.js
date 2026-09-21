@@ -145,53 +145,75 @@ const ensureRecruiterMonthlyFreeQuota = async (profile) => {
 // @route   GET /api/recruiter/dashboard
 const getDashboard = async (req, res) => {
   try {
-    let profile = await ensureRecruiterProfile(req.user._id, {
-      freeViewResetAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      freeUnlockResetAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      unlocksRemaining: 2,
-      unlockPackSize: 2,
-    });
-
-    await ensureRecruiterMonthlyFreeQuota(profile);
-
-    const jobs = mapJobs(await prisma.jobPost.findMany({
-      where: { recruiter: String(req.user._id) },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }));
-    const recentUnlocks = (await prisma.lead.findMany({
-      where: { recruiter: String(req.user._id), isUnlocked: true },
-      include: { providerRecord: { select: { id: true, name: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    })).map(mapLead);
-
-    // Subscription data
-    let { subscription, plan } = await getActiveSubscription(
-      req.user._id,
-      "recruiter",
-    );
-    if (!plan) {
-      await assignFreePlan(req.user._id, "recruiter");
-      const refreshed = await getActiveSubscription(req.user._id, "recruiter");
-      subscription = refreshed.subscription;
-      plan = refreshed.plan;
-    }
+    const recruiterId = String(req.user._id);
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const jobsThisMonth = await prisma.jobPost.count({
-      where: { recruiter: String(req.user._id), createdAt: { gte: startOfMonth } },
-    });
-    const totalApplicationsReceived = await prisma.application.count({
-      where: { jobPost: { in: jobs.map((job) => String(job.id || job._id)) } },
-    });
-    const unlocksThisMonth = await prisma.lead.count({
-      where: {
-      recruiter: String(req.user._id),
-      type: 'contact_unlock',
-      createdAt: { gte: startOfMonth },
-      },
-    });
+
+    let profile = req.recruiterProfile;
+    if (!profile) {
+      profile = await ensureRecruiterProfile(req.user._id, {
+        freeViewResetAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        freeUnlockResetAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        unlocksRemaining: 2,
+        unlockPackSize: 2,
+      });
+    }
+
+    ensureRecruiterMonthlyFreeQuota(profile).catch((err) =>
+      console.error("[getDashboard] background free quota:", err.message)
+    );
+
+    const [
+      jobsRaw,
+      recentUnlocksRaw,
+      subData,
+      jobsThisMonth,
+      unlocksThisMonth,
+      platformCompanyDetailsSetting,
+    ] = await Promise.all([
+      prisma.jobPost.findMany({
+        where: { recruiter: recruiterId },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      prisma.lead.findMany({
+        where: { recruiter: recruiterId, isUnlocked: true },
+        include: { providerRecord: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      getActiveSubscription(req.user._id, "recruiter"),
+      prisma.jobPost.count({
+        where: { recruiter: recruiterId, createdAt: { gte: startOfMonth } },
+      }),
+      prisma.lead.count({
+        where: {
+          recruiter: recruiterId,
+          type: 'contact_unlock',
+          createdAt: { gte: startOfMonth },
+        },
+      }),
+      prisma.adminSetting.findUnique({
+        where: { key: 'admin_company_details' },
+      }),
+    ]);
+
+    const jobs = mapJobs(jobsRaw);
+    const recentUnlocks = recentUnlocksRaw.map(mapLead);
+
+    let { subscription, plan } = subData || {};
+    if (!plan) {
+      assignFreePlan(req.user._id, "recruiter").catch((err) =>
+        console.error("[getDashboard] background assignFreePlan:", err.message)
+      );
+    }
+
+    let totalApplicationsReceived = 0;
+    if (jobs.length > 0) {
+      totalApplicationsReceived = await prisma.application.count({
+        where: { jobPost: { in: jobs.map((job) => String(job.id || job._id)) } },
+      });
+    }
 
     const remainingPostLimit = plan
       ? plan.jobPostLimit === -1
@@ -205,9 +227,6 @@ const getDashboard = async (req, res) => {
         : Math.max(0, plan.unlockCredits - unlocksThisMonth)
       : 0;
 
-    const platformCompanyDetailsSetting = await prisma.adminSetting.findUnique({
-      where: { key: 'admin_company_details' },
-    });
     const platformCompanyDetails = platformCompanyDetailsSetting ? platformCompanyDetailsSetting.value : null;
 
     res.json({

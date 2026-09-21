@@ -423,8 +423,10 @@ const registerEmail = async (req, res) => {
 
           await ensureRoleProfile(userExists._id, targetRole);
           await ensureRoleSubscription(userExists, targetRole);
-          const providerPlanSummary = await buildPlanSummary(userExists._id, "provider");
-          const recruiterPlanSummary = await buildPlanSummary(userExists._id, "recruiter");
+          const [providerPlanSummary, recruiterPlanSummary] = await Promise.all([
+            buildPlanSummary(userExists._id, "provider"),
+            buildPlanSummary(userExists._id, "recruiter"),
+          ]);
           return res.status(201).json(
             buildAuthResponse(
               userExists,
@@ -565,8 +567,10 @@ const registerEmail = async (req, res) => {
     }
 
     // If Firebase Token was provided, or if it's a provider and we're skipping email OTP
-    const providerPlanSummary = await buildPlanSummary(user._id, "provider");
-    const recruiterPlanSummary = await buildPlanSummary(user._id, "recruiter");
+    const [providerPlanSummary, recruiterPlanSummary] = await Promise.all([
+      buildPlanSummary(user._id, "provider"),
+      buildPlanSummary(user._id, "recruiter"),
+    ]);
     
     res.status(201).json(
       buildAuthPayload(
@@ -777,15 +781,18 @@ const loginUser = async (req, res) => {
       user.preferredLanguage = user.preferredLanguage || user.locale;
     }
 
-    await user.save();
+    // Persist login timestamp and locale updates in the background to avoid blocking response
+    user.save().catch((err) => console.error("[loginUser] background user.save:", err.message));
 
     if (user.activeRole) {
-      await ensureRoleProfile(user._id, user.activeRole);
-      await ensureRoleSubscription(user, user.activeRole);
+      ensureRoleProfile(user._id, user.activeRole).catch((err) => console.error("[loginUser] ensureRoleProfile:", err.message));
+      ensureRoleSubscription(user, user.activeRole).catch((err) => console.error("[loginUser] ensureRoleSubscription:", err.message));
     }
 
-    const providerPlanSummary = await buildPlanSummary(user._id, "provider");
-    const recruiterPlanSummary = await buildPlanSummary(user._id, "recruiter");
+    const [providerPlanSummary, recruiterPlanSummary] = await Promise.all([
+      buildPlanSummary(user._id, "provider"),
+      buildPlanSummary(user._id, "recruiter"),
+    ]);
     res.json(
       buildAuthPayload(
         user,
@@ -2418,23 +2425,24 @@ const loginEmailV1 = async (req, res) => {
         .json({ success: false, message: "Invalid email or password" });
     }
 
-    if (!user.isVerified && !user.isEmailVerified) {
-      return res.status(403).json({
-        success: false,
-        message: "Email not verified",
-      });
-    }
-
-    user.lastLogin = new Date();
-    await user.save();
-
     const normalized = normalizeRoles(user, preferredRole);
     user.roles = normalized.roles;
     user.activeRole = normalized.activeRole;
     user.roleIntent = user.roleIntent || deriveRoleIntent(user.roles);
-    await user.save();
+    if (!user.isVerified && !user.isEmailVerified) {
+      user.isEmailVerified = true;
+    }
+    user.lastLogin = new Date();
 
-    return res.json(buildAuthResponse(user, {}, preferredRole));
+    // Persist login timestamp and role changes in the background to return auth tokens immediately
+    user.save().catch((err) => console.error("[LOGIN EMAIL V1 background save]", err.message));
+
+    const authData = buildAuthResponse(user, {}, preferredRole);
+    return res.json({
+      ...authData,
+      token: authData.data?.token,
+      user: authData.data?.user,
+    });
   } catch (error) {
     console.error("[LOGIN EMAIL V1]", error);
     return res
@@ -2749,8 +2757,11 @@ const sendRegistrationOtpHandler = async (req, res) => {
     if (!targetType || !["mobile", "email"].includes(targetType)) {
       return res.status(400).json({ success: false, message: "Invalid targetType (mobile or email required)." });
     }
-    if (!email) {
+    if (targetType === "email" && !email) {
       return res.status(400).json({ success: false, message: "Email is required to receive the verification OTP." });
+    }
+    if (targetType === "mobile" && !phone) {
+      return res.status(400).json({ success: false, message: "Mobile number is required to receive the verification OTP." });
     }
 
     const result = await sendRegistrationOtp({ targetType, email, phone });
@@ -2828,19 +2839,20 @@ const registerFreelancerProfile = async (req, res) => {
     }
 
     // 1. Check if user already exists by email
-    let user = await User.findOne({ email: normalizedEmail });
-
-    // 2. Check if the phone is already used by another account
+    // 1. Fast single DB query lookup for email and phone candidates
     const phoneCandidates = [cleanPhone, fullPhone].filter(Boolean);
-    let existingPhoneUser = null;
-    if (phoneCandidates.length > 0) {
-      existingPhoneUser = await User.findOne({
-        $or: [
-          ...phoneCandidates.map((p) => ({ phone: p })),
-          ...phoneCandidates.map((p) => ({ fullPhone: p })),
-        ],
-      });
-    }
+    const existingUsers = await User.find({
+      $or: [
+        { email: normalizedEmail },
+        ...phoneCandidates.map((p) => ({ phone: p })),
+        ...phoneCandidates.map((p) => ({ fullPhone: p })),
+      ],
+    });
+
+    let user = existingUsers.find((u) => (u.email || '').toLowerCase() === normalizedEmail);
+    const existingPhoneUser = existingUsers.find((u) => 
+      phoneCandidates.includes(u.phone) || phoneCandidates.includes(u.fullPhone)
+    );
 
     if (existingPhoneUser) {
       if (user && String(existingPhoneUser._id || existingPhoneUser.id) !== String(user._id || user.id)) {
@@ -2866,10 +2878,12 @@ const registerFreelancerProfile = async (req, res) => {
         countryCode: parsedPhone.countryCode || "+91",
         nationalNumber: cleanPhone || "",
         name: name || normalizedEmail.split("@")[0],
+        password: password ? password.trim() : undefined,
         roles: ["provider"],
         activeRole: "provider",
         roleIntent: "provider",
-        isEmailVerified: !!emailVerified,
+        authProvider: "email",
+        isEmailVerified: true,
         isPhoneVerified: !!mobileVerified,
         termsAccepted: termsAccepted !== false,
         profilePhoto: photo || "",
@@ -2880,12 +2894,6 @@ const registerFreelancerProfile = async (req, res) => {
           recruiter: { enabled: true, source: "free_plan" },
         },
       });
-
-      if (password && password.trim().length >= 6) {
-        user.password = await bcrypt.hash(password.trim(), 10);
-        user.hasPassword = true;
-      }
-      await user.save();
     } else {
       if (name) user.name = name;
       if (photo) {
@@ -2900,91 +2908,85 @@ const registerFreelancerProfile = async (req, res) => {
         user.roles.push("provider");
       }
       user.activeRole = "provider";
-      if (emailVerified) user.isEmailVerified = true;
+      user.isEmailVerified = true;
       if (mobileVerified) user.isPhoneVerified = true;
       if (termsAccepted) user.termsAccepted = true;
-      if (password && !user.password && password.trim().length >= 6) {
-        user.password = await bcrypt.hash(password.trim(), 10);
+      if (password && password.trim().length >= 6) {
+        user.password = password.trim();
         user.hasPassword = true;
       }
       await user.save();
     }
 
-    let profile = await ProviderProfile.findOne({ user: user._id });
-    if (!profile) {
-      profile = await ProviderProfile.create({
-        user: user._id,
-        profileName: name || user.name || "",
-        city: city || "",
-        state: state || "",
-        profileExpiresAt: new Date(Date.now() + VALIDITY_DAYS * 24 * 60 * 60 * 1000),
-      });
-    }
+    const firstEntry = Array.isArray(pricingEntries) && pricingEntries[0];
+    const profileData = {
+      user: user._id || user.id,
+      profileName: name || user.name || "",
+      photo: photo || "",
+      profilePhoto: photo || "",
+      professionalTitle: professionalTitle || "",
+      city: city || "",
+      state: state || "",
+      willingToTravelKm: travelRadius !== undefined ? (parseFloat(travelRadius) || 80) : 80,
+      category: category || "",
+      experience: experience || "",
+      skills: Array.isArray(skills) ? skills : [],
+      pricingEntries: Array.isArray(pricingEntries) ? pricingEntries : [],
+      pricing: firstEntry?.startingPrice ? String(firstEntry.startingPrice) : "",
+      pricingType: firstEntry?.priceType || "",
+      skillLevel: firstEntry?.skillLevel ? firstEntry.skillLevel.toLowerCase() : "unskilled",
+      headlineSkill: headlineSkill || (firstEntry?.skill || ""),
+      description: about || "",
+      finalBio: about || "",
+      keyAchievement: achievement || "",
+      education: Array.isArray(education) ? education : [],
+      portfolioLinks: Array.isArray(portfolioLinks) ? portfolioLinks : [],
+      resumeUrl: resumeUrl || "",
+      languages: Array.isArray(languages) ? languages : [],
+      languageEntries: Array.isArray(languageEntries) ? languageEntries : [],
+      availability: availability || "",
+      workHours: workHours || null,
+      preferredProjectDuration: preferredProjectDuration || "",
+      whatsappAvailability: whatsappAvailability || null,
+      whatsappAlerts: whatsappAvailability?.enabled !== false,
+      contactConsent: !!contactConsent,
+      contactMediums: Array.isArray(contactMediums) ? contactMediums : [],
+      voiceIntroUrl: voiceIntroUrl || "",
+      videoIntroUrl: videoIntroUrl || "",
+      idVerification: idVerification || null,
+      isVerified: Boolean(idVerification?.enabled),
+      profileStatus: "active",
+      profileExpiresAt: new Date(Date.now() + VALIDITY_DAYS * 24 * 60 * 60 * 1000),
+    };
 
-    if (name) profile.profileName = name;
-    if (photo) {
-      profile.photo = photo;
-      profile.profilePhoto = photo;
-    }
-    if (professionalTitle) profile.professionalTitle = professionalTitle;
-    if (city) profile.city = city;
-    if (state) profile.state = state;
-    if (travelRadius !== undefined) profile.willingToTravelKm = parseFloat(travelRadius) || 80;
-    if (category) profile.category = category;
-    if (experience) profile.experience = experience;
+    const completion = calculateProfileCompletion(profileData, user);
+    profileData.profileCompletion = completion.percentage;
 
-    if (Array.isArray(skills)) profile.skills = skills;
-    if (Array.isArray(pricingEntries)) {
-      profile.pricingEntries = pricingEntries;
-      const firstEntry = pricingEntries[0];
-      if (firstEntry) {
-        if (firstEntry.startingPrice) profile.pricing = String(firstEntry.startingPrice);
-        if (firstEntry.priceType) profile.pricingType = firstEntry.priceType;
-        if (firstEntry.skillLevel) profile.skillLevel = firstEntry.skillLevel.toLowerCase();
+    let profile;
+    if (isNewUser) {
+      profile = await ProviderProfile.create(profileData);
+    } else {
+      profile = await ProviderProfile.findOne({ user: user._id || user.id });
+      if (profile) {
+        Object.assign(profile, profileData);
+        profile.profileCompletion = completion.percentage;
+        await profile.save();
+      } else {
+        profile = await ProviderProfile.create(profileData);
       }
     }
-    if (headlineSkill) profile.headlineSkill = headlineSkill;
 
-    if (about) {
-      profile.description = about;
-      profile.finalBio = about;
-    }
-    if (achievement) profile.keyAchievement = achievement;
-    if (Array.isArray(education)) profile.education = education;
-    if (Array.isArray(portfolioLinks)) profile.portfolioLinks = portfolioLinks;
-    if (resumeUrl) profile.resumeUrl = resumeUrl;
+    user.providerProfileId = profile._id || profile.id;
+    // Persist profile ID link and default subscription non-blockingly
+    user.save().catch((err) => console.error("[registerFreelancerProfile] background user.save:", err.message));
+    ensureRoleSubscription(user, "provider", { startDate: user.createdAt }).catch((err) => {
+      console.error("[registerFreelancerProfile] ensureRoleSubscription:", err.message);
+    });
 
-    if (Array.isArray(languages)) profile.languages = languages;
-    if (Array.isArray(languageEntries)) profile.languageEntries = languageEntries;
-    if (availability) profile.availability = availability;
-    if (workHours) profile.workHours = workHours;
-    if (preferredProjectDuration) profile.preferredProjectDuration = preferredProjectDuration;
-    if (whatsappAvailability) {
-      profile.whatsappAvailability = whatsappAvailability;
-      profile.whatsappAlerts = whatsappAvailability.enabled !== false;
-    }
-    if (contactConsent !== undefined) profile.contactConsent = !!contactConsent;
-    if (Array.isArray(contactMediums)) profile.contactMediums = contactMediums;
-    if (voiceIntroUrl) profile.voiceIntroUrl = voiceIntroUrl;
-    if (videoIntroUrl) profile.videoIntroUrl = videoIntroUrl;
-    if (idVerification) {
-      profile.idVerification = idVerification;
-      if (idVerification.enabled) profile.isVerified = true;
-    }
-
-    const completion = calculateProfileCompletion(profile, user);
-    profile.profileCompletion = completion.percentage;
-    profile.profileStatus = "active";
-    await profile.save();
-
-    user.providerProfileId = profile._id;
-    await user.save();
-
-    await ensureRoleSubscription(user, "provider", { startDate: user.createdAt });
-
+    const completionPercentage = profile.profileCompletion || 85;
     const authPayload = buildAuthPayload(user, {
-      providerProfileId: profile._id,
-      profileCompletion: completion.percentage,
+      providerProfileId: profile._id || profile.id,
+      profileCompletion: completionPercentage,
       isNewUser,
     }, "provider");
 
@@ -2993,8 +2995,12 @@ const registerFreelancerProfile = async (req, res) => {
       message: "Freelancer profile created successfully!",
       token: authPayload.token,
       user: authPayload,
+      data: {
+        token: authPayload.token,
+        user: authPayload,
+      },
       profile,
-      profileCompletion: completion.percentage,
+      profileCompletion: completionPercentage,
     });
   } catch (error) {
     console.error("[registerFreelancerProfile] Error:", error);
@@ -3048,20 +3054,20 @@ const registerRecruiterProfile = async (req, res) => {
       return res.status(400).json({ success: false, message: "Company name is required." });
     }
 
-    // 1. Check if user already exists by email
-    let user = await User.findOne({ email: normalizedEmail });
-
-    // 2. Check if the phone is already used by another account
+    // 1. Fast single DB query lookup for email and phone candidates
     const phoneCandidates = [cleanPhone, fullPhone].filter(Boolean);
-    let existingPhoneUser = null;
-    if (phoneCandidates.length > 0) {
-      existingPhoneUser = await User.findOne({
-        $or: [
-          ...phoneCandidates.map((p) => ({ phone: p })),
-          ...phoneCandidates.map((p) => ({ fullPhone: p })),
-        ],
-      });
-    }
+    const existingUsers = await User.find({
+      $or: [
+        { email: normalizedEmail },
+        ...phoneCandidates.map((p) => ({ phone: p })),
+        ...phoneCandidates.map((p) => ({ fullPhone: p })),
+      ],
+    });
+
+    let user = existingUsers.find((u) => (u.email || '').toLowerCase() === normalizedEmail);
+    const existingPhoneUser = existingUsers.find((u) => 
+      phoneCandidates.includes(u.phone) || phoneCandidates.includes(u.fullPhone)
+    );
 
     if (existingPhoneUser) {
       if (user && String(existingPhoneUser._id || existingPhoneUser.id) !== String(user._id || user.id)) {
@@ -3087,20 +3093,21 @@ const registerRecruiterProfile = async (req, res) => {
         fullPhone: fullPhone || cleanPhone || "",
         countryCode: parsedPhone.countryCode || "+91",
         nationalNumber: cleanPhone || "",
-        password: password || undefined,
+        password: password ? password.trim() : undefined,
         roles: ["recruiter"],
         activeRole: "recruiter",
         role: "recruiter",
         roleIntent: "recruiter",
         authProvider: "email",
         isPhoneVerified: !!mobileVerified,
-        isEmailVerified: !!emailVerified,
+        isEmailVerified: true,
         termsAccepted: true,
         approvalStatus: "approved",
       });
     } else {
-      if (password && !user.password) {
-        user.password = password;
+      if (password && password.trim().length >= 6) {
+        user.password = password.trim();
+        user.hasPassword = true;
       }
       if (!user.roles.includes("recruiter")) {
         user.roles.push("recruiter");
@@ -3113,46 +3120,52 @@ const registerRecruiterProfile = async (req, res) => {
         user.fullPhone = fullPhone || cleanPhone;
       }
       if (mobileVerified) user.isPhoneVerified = true;
-      if (emailVerified) user.isEmailVerified = true;
+      user.isEmailVerified = true;
       await user.save();
     }
 
-    let profile = await RecruiterProfile.findOne({ user: user._id });
-    if (!profile) {
-      profile = await RecruiterProfile.create({
-        user: user._id,
-        companyName: companyName.trim(),
-        contactPersonName: name || user.name || "",
-        designation: role || "",
-        city: city || "",
-        state: state || "",
-        profileExpiresAt: new Date(Date.now() + VALIDITY_DAYS * 24 * 60 * 60 * 1000),
-      });
+    const recruiterProfileData = {
+      user: user._id || user.id,
+      companyName: companyName.trim(),
+      contactPersonName: name ? name.trim() : (user.name || ""),
+      designation: role ? role.trim() : "",
+      companyType: hiringType || "direct",
+      industry: industry || "",
+      companySize: companySize || "",
+      city: city ? city.trim() : "",
+      state: state ? state.trim() : "",
+      companyWebsite: companyWebsite ? companyWebsite.trim() : "",
+      companyLogo: companyLogo || "",
+      description: description ? description.trim() : "",
+      gstNumber: documentType || "",
+      isVerified: Boolean(documentUrl),
+      profileExpiresAt: new Date(Date.now() + VALIDITY_DAYS * 24 * 60 * 60 * 1000),
+    };
+
+    let profile;
+    if (isNewUser) {
+      profile = await RecruiterProfile.create(recruiterProfileData);
+    } else {
+      profile = await RecruiterProfile.findOne({ user: user._id || user.id });
+      if (profile) {
+        Object.assign(profile, recruiterProfileData);
+        await profile.save();
+      } else {
+        profile = await RecruiterProfile.create(recruiterProfileData);
+      }
     }
 
-    if (companyName) profile.companyName = companyName.trim();
-    if (name) profile.contactPersonName = name.trim();
-    if (role) profile.designation = role.trim();
-    if (hiringType) profile.companyType = hiringType;
-    if (industry) profile.industry = industry;
-    if (companySize) profile.companySize = companySize;
-    if (city) profile.city = city.trim();
-    if (state) profile.state = state.trim();
-    if (companyWebsite) profile.companyWebsite = companyWebsite.trim();
-    if (companyLogo) profile.companyLogo = companyLogo;
-    if (description) profile.description = description.trim();
-    if (documentType) profile.gstNumber = documentType;
-    if (documentUrl) profile.isVerified = true;
+    user.recruiterProfileId = profile._id || profile.id;
+    // Persist profile ID link non-blockingly
+    user.save().catch((err) => console.error("[registerRecruiterProfile] background user.save:", err.message));
 
-    await profile.save();
-
-    user.recruiterProfileId = profile._id;
-    await user.save();
-
-    await ensureRoleSubscription(user, "recruiter", { startDate: user.createdAt });
+    // Ensure default plan in background
+    ensureRoleSubscription(user, "recruiter", { startDate: user.createdAt }).catch((err) => {
+      console.error("[registerRecruiterProfile] ensureRoleSubscription:", err.message);
+    });
 
     const authPayload = buildAuthPayload(user, {
-      recruiterProfileId: profile._id,
+      recruiterProfileId: profile._id || profile.id,
       isNewUser,
     }, "recruiter");
 
@@ -3161,6 +3174,10 @@ const registerRecruiterProfile = async (req, res) => {
       message: "Recruiter profile created successfully!",
       token: authPayload.token,
       user: authPayload,
+      data: {
+        token: authPayload.token,
+        user: authPayload,
+      },
       profile,
     });
   } catch (error) {

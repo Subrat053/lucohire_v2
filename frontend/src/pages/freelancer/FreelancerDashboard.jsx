@@ -12,16 +12,28 @@ export default function FreelancerDashboard() {
   const [activeView, setActiveView] = useState("dashboard"); // 'dashboard' | 'leads'
   const [iframeView, setIframeView] = useState(null); // 'resume' | 'signup' | null
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Pre-load cached dashboard data for instantaneous first render
+  const cachedDash = (() => {
+    try {
+      const c = sessionStorage.getItem("lucohire_freelancer_dashboard");
+      return c ? JSON.parse(c) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [loading, setLoading] = useState(!cachedDash);
   const [savingSection, setSavingSection] = useState(null); // section index or string
   const [uploadingResume, setUploadingResume] = useState(false);
   const [sendingQuoteId, setSendingQuoteId] = useState(null);
 
   // Core Data States
-  const [profile, setProfile] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [subscription, setSubscription] = useState(null);
-  const [strengthPct, setStrengthPct] = useState(0);
+  const [profile, setProfile] = useState(cachedDash?.profile || null);
+  const [stats, setStats] = useState(cachedDash?.stats || null);
+  const [subscription, setSubscription] = useState(cachedDash?.subscription || null);
+  const [strengthPct, setStrengthPct] = useState(
+    cachedDash?.profile?.profileCompletion || cachedDash?.stats?.profileCompletion || 0
+  );
 
   // Resume conversion state
   const [convertedToResume, setConvertedToResume] = useState(false);
@@ -61,11 +73,15 @@ export default function FreelancerDashboard() {
   // Leads Filter State & Data
   const [selectedSkillFilter, setSelectedSkillFilter] = useState("All skills");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("All");
-  const [leads, setLeads] = useState([]);
+  const [leads, setLeads] = useState(Array.isArray(cachedDash?.leads) ? cachedDash.leads : []);
   const [openQuoteId, setOpenQuoteId] = useState(null);
 
   // File input ref for resume
   const resumeFileInputRef = useRef(null);
+
+  // User Account Menu Dropdown state (Mobile & Desktop)
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
   // Format today's date
   const formattedToday = new Date().toLocaleDateString("en-IN", {
@@ -74,36 +90,25 @@ export default function FreelancerDashboard() {
     month: "long",
   });
 
-  // Load Dashboard Data from Backend
+  // Load Dashboard Data from Backend (optimized: single endpoint with cached fallback)
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
-      const [dashRes, profileRes] = await Promise.allSettled([
-        providerAPI.getDashboard(),
-        providerAPI.getProfile(),
-      ]);
-
-      let profData = null;
-      let statsData = null;
-      let subData = null;
-      let leadsData = [];
-
-      if (profileRes.status === "fulfilled" && profileRes.value?.data?.profile) {
-        profData = profileRes.value.data.profile;
+      if (!cachedDash && !profile) {
+        setLoading(true);
       }
+      const dashRes = await providerAPI.getDashboard();
 
-      if (dashRes.status === "fulfilled" && dashRes.value?.data) {
-        const d = dashRes.value.data;
-        if (!profData && d.profile) profData = d.profile;
-        statsData = d.stats || null;
-        subData = d.subscription || null;
-        if (Array.isArray(d.leads)) leadsData = d.leads;
-      }
+      if (dashRes?.data) {
+        const d = dashRes.data;
+        const profData = d.profile || null;
+        const statsData = d.stats || null;
+        const subData = d.subscription || null;
+        const leadsData = Array.isArray(d.leads) ? d.leads : [];
 
-      if (profData) {
-        setProfile(profData);
-        const completion = profData.profileCompletion || statsData?.profileCompletion || 0;
-        setStrengthPct(completion);
+        if (profData) {
+          setProfile(profData);
+          const completion = profData.profileCompletion || statsData?.profileCompletion || 0;
+          setStrengthPct(completion);
 
         // Sync Skills & Pricing Entries
         if (Array.isArray(profData.pricingEntries) && profData.pricingEntries.length > 0) {
@@ -270,17 +275,43 @@ export default function FreelancerDashboard() {
           },
         ]);
       }
-    } catch (err) {
-      console.error("Failed to load freelancer dashboard:", err);
-      toast.error("Could not load latest profile data. Showing local session.");
-    } finally {
-      setLoading(false);
+      try {
+        sessionStorage.setItem("lucohire_freelancer_dashboard", JSON.stringify(d));
+      } catch {}
     }
+  } catch (err) {
+    console.error("Failed to load freelancer dashboard:", err);
+    toast.error("Could not load latest profile data. Showing local session.");
+  } finally {
+    setLoading(false);
+  }
   };
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Close user menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  const handleSignOut = () => {
+    setUserMenuOpen(false);
+    logout();
+    toast.success("Signed out successfully");
+    navigate("/auth");
+  };
 
   // Format relative time helper
   const formatTimeAgo = (dateStr) => {
@@ -557,10 +588,10 @@ export default function FreelancerDashboard() {
       {/* RESPONSIVE TOP NAVIGATION HEADER (MOBILE + TABLET + DESKTOP) */}
       {/* ========================================================================= */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#E4E3DD]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <div>
-            <p className="text-[12px] sm:text-[12.5px] text-[#9BA0A6] mb-[1px]">{formattedToday}</p>
-            <h1 className="font-['Fraunces',serif] font-medium text-[19px] sm:text-[23px] text-[#1B1F23] tracking-tight">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1 sm:flex-initial">
+            <p className="text-[11px] sm:text-[12.5px] text-[#9BA0A6] mb-[1px] truncate">{formattedToday}</p>
+            <h1 className="font-['Fraunces',serif] font-medium text-[18px] sm:text-[23px] text-[#1B1F23] tracking-tight truncate">
               Namaste, {displayName.split(" ")[0]}
             </h1>
           </div>
@@ -622,7 +653,7 @@ export default function FreelancerDashboard() {
           </nav>
 
           {/* Right Action Icons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setProfileModalOpen(true)}
@@ -645,19 +676,108 @@ export default function FreelancerDashboard() {
               <span className="absolute top-[8px] right-[8px] w-[7px] h-[7px] rounded-full bg-[#4C2FD9] border-[1.5px] border-white" />
             </button>
 
-            {/* User Avatar Chip */}
-            <button
-              type="button"
-              onClick={() => setProfileModalOpen(true)}
-              title="Account & profile preview"
-              className="w-[38px] h-[38px] rounded-full bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] text-[#F3F1FC] font-['Fraunces',serif] text-[15px] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity shadow-sm overflow-hidden"
-            >
-              {profilePhotoUrl ? (
-                <img src={profilePhotoUrl} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                initials
+            {/* User Avatar Chip & Dropdown Menu (All Devices) */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((prev) => !prev)}
+                title="Account menu & profile options"
+                aria-expanded={userMenuOpen}
+                className="w-[38px] h-[38px] sm:w-[40px] sm:h-[40px] rounded-full bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] text-[#F3F1FC] font-['Fraunces',serif] text-[15px] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity shadow-sm overflow-hidden border-2 border-white ring-1 ring-[#4C2FD9]/20"
+              >
+                {profilePhotoUrl ? (
+                  <img src={profilePhotoUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl border border-[#E4E3DD] shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {/* User details header */}
+                  <div className="p-3 bg-[#F6F6F3] rounded-xl mb-2 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] text-white font-['Fraunces',serif] text-[16px] flex items-center justify-center shrink-0">
+                      {profilePhotoUrl ? (
+                        <img src={profilePhotoUrl} alt={displayName} className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        initials
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[14px] font-bold text-[#1B1F23] truncate m-0">{displayName}</p>
+                      <p className="text-[11.5px] text-[#5B6168] truncate m-0">{user?.email || "Candidate"}</p>
+                      <span className="inline-block text-[10px] font-semibold text-[#1FA854] bg-[#E5F5EB] px-2 py-0.5 rounded-full mt-1">
+                        Candidate / Freelancer
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick menu navigation items */}
+                  <div className="space-y-1 text-[13px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setProfileModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#1B1F23] hover:bg-[#F6F6F3] transition-colors cursor-pointer text-left"
+                    >
+                      <span className="text-[16px]">👁️</span>
+                      <span>Preview Profile as Client</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setActiveView("leads");
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[#1B1F23] hover:bg-[#F6F6F3] transition-colors cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-[16px]">💼</span>
+                        <span>Direct Recruiter Leads</span>
+                      </div>
+                      <span className="text-[11px] font-bold bg-[#ECE8FB] text-[#2A1B85] px-2 py-0.5 rounded-full">
+                        {leads.length}
+                      </span>
+                    </button>
+
+                    <Link
+                      to="/provider/plans"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#1B1F23] hover:bg-[#F6F6F3] transition-colors cursor-pointer"
+                    >
+                      <span className="text-[16px]">💎</span>
+                      <span>Manage / Upgrade Subscription</span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setIframeView("resume");
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#1B1F23] hover:bg-[#F6F6F3] transition-colors cursor-pointer text-left"
+                    >
+                      <span className="text-[16px]">📄</span>
+                      <span>Resume Journey &amp; AI Score</span>
+                    </button>
+
+                    <div className="border-t border-[#E4E3DD] my-1 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left font-semibold"
+                      >
+                        <span className="text-[16px]">🚪</span>
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </div>
       </header>
@@ -665,33 +785,33 @@ export default function FreelancerDashboard() {
       {/* ========================================================================= */}
       {/* MAIN RESPONSIVE CONTENT AREA */}
       {/* ========================================================================= */}
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-12 flex-1">
+      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-12 flex-1">
         {/* ========================================================================= */}
         {/* VIEW 1: CANDIDATE / FREELANCER DASHBOARD */}
         {/* ========================================================================= */}
         {activeView === "dashboard" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-6 items-start">
             
-            {/* LEFT / MAIN COLUMN (lg:col-span-8) */}
-            <div className="lg:col-span-8 space-y-6">
+            {/* LEFT / MAIN COLUMN (md:col-span-7 lg:col-span-8) */}
+            <div className="md:col-span-7 lg:col-span-8 space-y-5 sm:space-y-6">
               
               {/* Profile Strength Banner */}
-              <div className="bg-white border border-[#E4E3DD] rounded-[18px] p-[16px_18px] sm:p-5 flex items-center gap-[14px] sm:gap-5 shadow-xs">
+              <div className="bg-white border border-[#E4E3DD] rounded-[16px] sm:rounded-[18px] p-3.5 sm:p-5 flex items-center gap-3 sm:gap-5 shadow-xs">
                 <div
-                  className="w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full shrink-0 flex items-center justify-center transition-all duration-1000 ease-out"
+                  className="w-[46px] h-[46px] sm:w-[58px] sm:h-[58px] rounded-full shrink-0 flex items-center justify-center transition-all duration-1000 ease-out"
                   style={{
                     background: `conic-gradient(#4C2FD9 ${strengthPct * 3.6}deg, #ECE8FB 0deg)`,
                   }}
                 >
-                  <div className="w-[40px] h-[40px] sm:w-[46px] sm:h-[46px] rounded-full bg-white flex items-center justify-center text-[13px] sm:text-[14px] font-bold text-[#1B1F23]">
+                  <div className="w-[36px] h-[36px] sm:w-[46px] sm:h-[46px] rounded-full bg-white flex items-center justify-center text-[12px] sm:text-[14px] font-bold text-[#1B1F23]">
                     {strengthPct}%
                   </div>
                 </div>
-                <div className="space-y-[3px] flex-1">
-                  <p className="text-[14px] sm:text-[15px] font-semibold text-[#1B1F23] m-0">
+                <div className="space-y-[2px] sm:space-y-[3px] flex-1 min-w-0">
+                  <p className="text-[13.5px] sm:text-[15px] font-semibold text-[#1B1F23] m-0 truncate">
                     Your profile is {strengthPct}% complete
                   </p>
-                  <p className="text-[12.5px] sm:text-[13px] text-[#5B6168] leading-[1.5] m-0">
+                  <p className="text-[11.5px] sm:text-[13px] text-[#5B6168] leading-[1.45] sm:leading-[1.5] m-0">
                     {strengthPct < 50 ? (
                       <>Add your <b className="text-[#2A1B85] font-semibold">top skills</b> and starting rates to begin receiving direct leads.</>
                     ) : strengthPct < 85 ? (
@@ -704,44 +824,44 @@ export default function FreelancerDashboard() {
               </div>
 
               {/* Candidate / Freelancer Hero Card */}
-              <div className="bg-white border border-[#E4E3DD] rounded-[20px] p-5 sm:p-7 shadow-[0_18px_40px_-22px_rgba(42,27,133,0.25)]">
+              <div className="bg-white border border-[#E4E3DD] rounded-[18px] sm:rounded-[20px] p-4 sm:p-7 shadow-[0_18px_40px_-22px_rgba(42,27,133,0.2)]">
                 {/* Header Row */}
-                <div className="flex gap-4 sm:gap-5 items-start">
+                <div className="flex gap-3 sm:gap-5 items-start">
                   <div className="relative shrink-0">
-                    <div className="w-[58px] h-[58px] sm:w-[68px] sm:h-[68px] rounded-[16px] sm:rounded-[20px] bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[21px] sm:text-[24px] text-[#F3F1FC] shadow-sm overflow-hidden">
+                    <div className="w-[54px] h-[54px] sm:w-[68px] sm:h-[68px] rounded-[16px] sm:rounded-[20px] bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] flex items-center justify-center font-['Fraunces',serif] text-[20px] sm:text-[24px] text-[#F3F1FC] shadow-sm overflow-hidden">
                       {profilePhotoUrl ? (
                         <img src={profilePhotoUrl} alt={displayName} className="w-full h-full object-cover" />
                       ) : (
                         initials
                       )}
                     </div>
-                    <span className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 bg-[#1FA854] text-white text-[8.5px] sm:text-[9.5px] font-bold py-[3px] px-[8px] rounded-full whitespace-nowrap shadow-[0_2px_6px_rgba(31,168,84,0.35)]">
+                    <span className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 bg-[#1FA854] text-white text-[8px] sm:text-[9.5px] font-bold py-[2px] sm:py-[3px] px-[6px] sm:px-[8px] rounded-full max-w-[85px] sm:max-w-none truncate shadow-[0_2px_6px_rgba(31,168,84,0.35)]">
                       {availabilityMode || "Available Now"}
                     </span>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-[6px] sm:gap-2 flex-wrap">
-                      <span className="font-['Fraunces',serif] font-medium text-[20px] sm:text-[24px] text-[#1B1F23]">
+                      <span className="font-['Fraunces',serif] font-medium text-[18px] sm:text-[24px] text-[#1B1F23] truncate">
                         {displayName}
                       </span>
                       {(profile?.isVerified || profile?.idVerification?.status === "verified") && (
-                        <span className="w-[18px] h-[18px] rounded-full bg-[#1FA854] flex items-center justify-center shrink-0" title="Identity verified">
+                        <span className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px] rounded-full bg-[#1FA854] flex items-center justify-center shrink-0" title="Identity verified">
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
                         </span>
                       )}
                     </div>
-                    <p className="text-[13.5px] sm:text-[14.5px] text-[#5B6168] mt-[2px] m-0">{displayTitle}</p>
-                    <p className="text-[12px] sm:text-[13px] text-[#9BA0A6] mt-[6px] flex items-center gap-[8px] flex-wrap m-0">
+                    <p className="text-[13px] sm:text-[14.5px] text-[#5B6168] mt-[2px] m-0 truncate">{displayTitle}</p>
+                    <p className="text-[11.5px] sm:text-[13px] text-[#9BA0A6] mt-[4px] sm:mt-[6px] flex items-center gap-x-[8px] gap-y-[3px] flex-wrap m-0">
                       <span>📍 {displayLocation}</span>
                       <span className="w-[3px] h-[3px] rounded-full bg-[#9BA0A6]" />
                       <span>🌐 Remote OK</span>
                     </p>
                   </div>
 
-                  {/* Profile Strength Mini Chip */}
+                  {/* Profile Strength Mini Chip (tablet & desktop) */}
                   <div className="ml-auto text-center bg-[#F6F6F3] border border-[#E4E3DD] rounded-[12px] p-[8px_14px] shrink-0 hidden sm:block">
                     <div className="text-[18px] font-bold text-[#1FA854] font-['Fraunces',serif] leading-none">
                       {strengthPct}%
@@ -754,27 +874,27 @@ export default function FreelancerDashboard() {
                 </div>
 
                 {/* Candidate Stats Row */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 my-5 py-4 border-y border-[#E4E3DD]">
-                  <div className="text-center">
-                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">{profile?.experience || "3–5 yrs"}</div>
-                    <div className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-[2px]">Experience</div>
+                <div className="grid grid-cols-3 gap-1 sm:gap-4 my-4 sm:my-5 py-3 sm:py-4 border-y border-[#E4E3DD]">
+                  <div className="text-center px-1">
+                    <div className="text-[13.5px] sm:text-[17px] font-bold text-[#1B1F23] truncate">{profile?.experience || "3–5 yrs"}</div>
+                    <div className="text-[10px] sm:text-[12px] text-[#9BA0A6] mt-[2px] truncate">Experience</div>
                   </div>
-                  <div className="text-center border-l border-[#E4E3DD]">
-                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">{availabilityMode || "Full-time"}</div>
-                    <div className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-[2px]">Availability</div>
+                  <div className="text-center border-l border-[#E4E3DD] px-1">
+                    <div className="text-[13.5px] sm:text-[17px] font-bold text-[#1B1F23] truncate">{availabilityMode || "Full-time"}</div>
+                    <div className="text-[10px] sm:text-[12px] text-[#9BA0A6] mt-[2px] truncate">Availability</div>
                   </div>
-                  <div className="text-center border-l border-[#E4E3DD]">
-                    <div className="text-[15px] sm:text-[17px] font-bold text-[#1B1F23]">{startTimeline || "Today"}</div>
-                    <div className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-[2px]">Available to start</div>
+                  <div className="text-center border-l border-[#E4E3DD] px-1">
+                    <div className="text-[13.5px] sm:text-[17px] font-bold text-[#1B1F23] truncate">{startTimeline || "Today"}</div>
+                    <div className="text-[10px] sm:text-[12px] text-[#9BA0A6] mt-[2px] truncate">Available to start</div>
                   </div>
                 </div>
 
                 {/* Top Skills */}
-                <div className="mb-5">
-                  <p className="text-[12px] font-semibold text-[#9BA0A6] mb-2.5 m-0">Top Skills &amp; Rates</p>
-                  <div className="flex flex-wrap gap-2 sm:gap-2.5">
+                <div className="mb-4 sm:mb-5">
+                  <p className="text-[11.5px] sm:text-[12px] font-semibold text-[#9BA0A6] mb-2 sm:mb-2.5 m-0">Top Skills &amp; Rates</p>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2.5">
                     {skillsList.slice(0, 4).map((skill) => (
-                      <span key={skill.id} className="inline-flex items-center gap-[7px] px-3.5 py-2 rounded-full border border-[#E4E3DD] text-[12.5px] sm:text-[13px] text-[#1B1F23] bg-[#F6F6F3]">
+                      <span key={skill.id} className="inline-flex items-center gap-[6px] px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full border border-[#E4E3DD] text-[11.5px] sm:text-[13px] text-[#1B1F23] bg-[#F6F6F3]">
                         {skill.title} <span className="text-[#2A1B85] font-semibold">₹{Number(skill.price || 0).toLocaleString("en-IN")}/{skill.type}</span>
                       </span>
                     ))}
@@ -782,19 +902,19 @@ export default function FreelancerDashboard() {
                 </div>
 
                 {/* Highlights */}
-                <div className="mb-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="mb-4 sm:mb-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div className="flex items-center gap-3 p-3 sm:p-3.5 rounded-xl bg-[#E5F5EB]">
                       <span className="text-[20px] shrink-0">💰</span>
-                      <div>
-                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight">₹{startingRate}</b>
+                      <div className="min-w-0">
+                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight truncate">₹{startingRate}</b>
                         <span className="text-[10px] sm:text-[11px] text-[#9BA0A6]">Starting rate</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 sm:p-3.5 rounded-xl bg-[#FBF0DF]">
                       <span className="text-[20px] shrink-0">🗣️</span>
-                      <div>
-                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight">
+                      <div className="min-w-0">
+                        <b className="block text-[13.5px] sm:text-[14px] text-[#1B1F23] leading-tight truncate">
                           {langTags.map((l) => l.lang).slice(0, 2).join(", ") || "Hindi, English"}
                         </b>
                         <span className="text-[10px] sm:text-[11px] text-[#9BA0A6]">{langTags.length} Languages</span>
@@ -806,7 +926,7 @@ export default function FreelancerDashboard() {
                 {/* Verifications Checklist */}
                 <div className="mb-0">
                   <div className="flex flex-wrap gap-2.5 sm:gap-6">
-                    <div className="flex items-center gap-2 text-[12px] sm:text-[12.5px] text-[#5B6168]">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11.5px] sm:text-[12.5px] text-[#5B6168]">
                       <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${profile?.resumeUrl ? "bg-[#1FA854]" : "bg-gray-300"}`}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
                           <polyline points="20 6 9 17 4 12" />
@@ -814,7 +934,7 @@ export default function FreelancerDashboard() {
                       </span>
                       Resume {profile?.resumeUrl ? "Uploaded" : "Pending"}
                     </div>
-                    <div className="flex items-center gap-2 text-[12px] sm:text-[12.5px] text-[#5B6168]">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11.5px] sm:text-[12.5px] text-[#5B6168]">
                       <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${user?.isPhoneVerified || user?.phone ? "bg-[#1FA854]" : "bg-gray-300"}`}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
                           <polyline points="20 6 9 17 4 12" />
@@ -822,7 +942,7 @@ export default function FreelancerDashboard() {
                       </span>
                       Mobile Verified
                     </div>
-                    <div className="flex items-center gap-2 text-[12px] sm:text-[12.5px] text-[#5B6168]">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11.5px] sm:text-[12.5px] text-[#5B6168]">
                       <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${user?.isEmailVerified ? "bg-[#1FA854]" : "bg-gray-300"}`}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5">
                           <polyline points="20 6 9 17 4 12" />
@@ -831,17 +951,17 @@ export default function FreelancerDashboard() {
                       Email Verified
                     </div>
                   </div>
-                  <p className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-3 m-0">
+                  <p className="text-[11px] sm:text-[12px] text-[#9BA0A6] mt-2.5 sm:mt-3 m-0">
                     Profile status: Active in Recruiter Directory
                   </p>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2.5 sm:gap-3.5 mt-5">
+                {/* Action Buttons (Responsive on Mobile + Desktop) */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-5">
                   <button
                     type="button"
                     onClick={() => setProfileModalOpen(true)}
-                    className="flex-1 text-center py-3 px-4 rounded-xl text-[13.5px] font-semibold bg-white text-[#1B1F23] border border-[#E4E3DD] cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
+                    className="flex-1 text-center py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-[13px] sm:text-[13.5px] font-semibold bg-white text-[#1B1F23] border border-[#E4E3DD] cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
                   >
                     👁️ View Profile
                   </button>
@@ -849,7 +969,7 @@ export default function FreelancerDashboard() {
                     href={`https://wa.me/?text=Hi,%20view%20my%20freelancer%20profile%20on%20LucoHire:%20${window.location.origin}/freelancer/dashboard`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 text-center py-3 px-4 rounded-xl text-[13.5px] font-semibold bg-[#1FA854] text-white border border-transparent cursor-pointer hover:bg-[#198f46] transition-colors shadow-xs flex items-center justify-center gap-1.5"
+                    className="flex-1 text-center py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl text-[13px] sm:text-[13.5px] font-semibold bg-[#1FA854] text-white border border-transparent cursor-pointer hover:bg-[#198f46] transition-colors shadow-xs flex items-center justify-center gap-1.5"
                   >
                     💬 Share on WhatsApp
                   </a>
@@ -857,9 +977,9 @@ export default function FreelancerDashboard() {
                     type="button"
                     onClick={() => toast.success(`Contact verified: ${user?.phone || user?.email}`)}
                     title="Verified Contact"
-                    className="w-[46px] py-3 rounded-xl bg-white text-[#1B1F23] border border-[#E4E3DD] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shadow-xs"
+                    className="w-full sm:w-[46px] py-2.5 sm:py-3 rounded-xl bg-white text-[#1B1F23] border border-[#E4E3DD] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors shadow-xs shrink-0"
                   >
-                    📞
+                    📞 <span className="sm:hidden ml-2 text-[12.5px] font-semibold">Contact Info</span>
                   </button>
                 </div>
               </div>
@@ -1731,11 +1851,11 @@ export default function FreelancerDashboard() {
 
             </div>
 
-            {/* RIGHT / SIDEBAR COLUMN (lg:col-span-4) */}
-            <div className="lg:col-span-4 space-y-6">
+            {/* RIGHT / SIDEBAR COLUMN (md:col-span-5 lg:col-span-4) */}
+            <div className="md:col-span-5 lg:col-span-4 space-y-5 sm:space-y-6 lg:sticky lg:top-20">
               
               {/* Metrics Strip */}
-              <div className="grid grid-cols-3 lg:grid-cols-1 gap-3">
+              <div className="grid grid-cols-3 md:grid-cols-1 gap-2.5 sm:gap-3">
                 <div className="bg-white border border-[#E4E3DD] rounded-[16px] p-4 shadow-xs">
                   <div className="text-[20px] sm:text-[22px] font-bold text-[#1B1F23] font-['Fraunces',serif]">
                     {profile?.profileViews || stats?.profileViews || 128}
@@ -2273,29 +2393,28 @@ export default function FreelancerDashboard() {
       )}
 
       {/* ========================================================================= */}
-      {/* MOBILE BOTTOM NAVIGATION BAR (md:hidden - only shown on mobile devices) */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (md:hidden - optimized for all mobile phones) */}
       {/* ========================================================================= */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E4E3DD] flex gap-1 p-2 px-3 pb-[calc(10px+env(safe-area-inset-bottom))] shadow-[0_-8px_20px_rgba(20,15,60,0.06)] z-20">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#E4E3DD] flex items-center justify-around gap-1 p-2 px-3 pb-[calc(10px+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_24px_rgba(20,15,60,0.08)] z-40">
         <button
           type="button"
           onClick={() => {
             setActiveView("dashboard");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-2xl text-[11px] font-semibold transition-all duration-200 cursor-pointer ${
+          className={`flex-1 min-h-[46px] flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all duration-200 cursor-pointer ${
             activeView === "dashboard"
               ? "text-white bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] shadow-xs"
               : "text-[#9BA0A6] hover:text-[#1B1F23]"
           }`}
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="3" width="7" height="9" rx="1.5" />
             <rect x="14" y="3" width="7" height="5" rx="1.5" />
             <rect x="14" y="12" width="7" height="9" rx="1.5" />
             <rect x="3" y="16" width="7" height="5" rx="1.5" />
           </svg>
           Dashboard
-          {activeView === "dashboard" && <span className="w-1 h-1 rounded-full bg-white mt-0.5" />}
         </button>
 
         <button
@@ -2304,30 +2423,46 @@ export default function FreelancerDashboard() {
             setActiveView("leads");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-2xl text-[11px] font-semibold transition-all duration-200 cursor-pointer ${
+          className={`flex-1 min-h-[46px] flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-semibold transition-all duration-200 cursor-pointer relative ${
             activeView === "leads"
               ? "text-white bg-gradient-to-br from-[#4C2FD9] to-[#2A1B85] shadow-xs"
               : "text-[#9BA0A6] hover:text-[#1B1F23]"
           }`}
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
-            <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4H12a8.7 8.7 0 0 1-4-1L3 20l1.2-3.6a8.3 8.3 0 0 1-1.2-4.4A8.4 8.4 0 0 1 11.5 3h.5a8.4 8.4 0 0 1 8.4 8Z" />
-          </svg>
-          Leads
-          {activeView === "leads" && <span className="w-1 h-1 rounded-full bg-white mt-0.5" />}
+          <div className="relative">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4H12a8.7 8.7 0 0 1-4-1L3 20l1.2-3.6a8.3 8.3 0 0 1-1.2-4.4A8.4 8.4 0 0 1 11.5 3h.5a8.4 8.4 0 0 1 8.4 8Z" />
+            </svg>
+            {leads.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#1FA854] border border-white" />
+            )}
+          </div>
+          Leads ({leads.length})
         </button>
 
         <button
           type="button"
           onClick={() => setIframeView("resume")}
-          className="flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-2xl text-[11px] font-semibold text-[#9BA0A6] hover:text-[#1B1F23] transition-all duration-200 cursor-pointer"
+          className="flex-1 min-h-[46px] flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-semibold text-[#9BA0A6] hover:text-[#1B1F23] transition-all duration-200 cursor-pointer"
         >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
             <path d="M14 2v6h6" />
             <path d="M9 13h6M9 17h6" />
           </svg>
-          Resume Journey
+          Resume
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setProfileModalOpen(true)}
+          className="flex-1 min-h-[46px] flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-semibold text-[#9BA0A6] hover:text-[#1B1F23] transition-all duration-200 cursor-pointer"
+        >
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          Preview
         </button>
       </nav>
     </div>

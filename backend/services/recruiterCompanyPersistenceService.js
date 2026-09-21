@@ -111,11 +111,15 @@ async function createRecruiterProfile(data) {
 }
 
 async function ensureRecruiterProfile(userId, defaults = {}) {
-  const data = prepareRecruiterProfileData({ ...defaults, user: String(userId) });
-  return withLegacyId(await prisma.recruiterProfile.upsert({
+  const existing = await prisma.recruiterProfile.findUnique({
     where: { user: String(userId) },
-    create: data,
-    update: {},
+  });
+  if (existing) {
+    return withLegacyId(existing);
+  }
+  const data = prepareRecruiterProfileData({ ...defaults, user: String(userId) });
+  return withLegacyId(await prisma.recruiterProfile.create({
+    data,
   }));
 }
 

@@ -2,13 +2,13 @@ const { ensureProviderProfile } = require('../services/providerProfilePersistenc
 
 const ensureProviderApproved = async (req, res, next) => {
   try {
-    await ensureProviderProfile(req.user._id, {
+    const profile = await ensureProviderProfile(req.user._id, {
       isApproved: true,
       isVerified: true,
       approvalAction: 'approved',
       profileExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
     });
-
+    req.providerProfile = profile;
     next();
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
