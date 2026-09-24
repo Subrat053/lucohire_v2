@@ -1315,7 +1315,33 @@ const getDashboard = async (req, res) => {
     ] = await Promise.all([
       prisma.lead.findMany({
         where: { provider: providerId },
-        include: { recruiterRecord: { select: { id: true, name: true, email: true } } },
+        include: {
+          recruiterRecord: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              avatar: true,
+              profilePhoto: true,
+            },
+          },
+          jobPostRecord: {
+            select: {
+              id: true,
+              title: true,
+              skill: true,
+              city: true,
+              budgetMin: true,
+              budgetMax: true,
+              minBudget: true,
+              maxBudget: true,
+              currency: true,
+              description: true,
+              jobType: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         take: 20,
       }),
@@ -1652,8 +1678,31 @@ const getMyLeads = async (req, res) => {
     const leads = (await prisma.lead.findMany({
       where: { provider: String(req.user._id) },
       include: {
-        recruiterRecord: { select: { id: true, name: true, email: true, phone: true } },
-        jobPostRecord: { select: { id: true, title: true, skill: true, city: true } },
+        recruiterRecord: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            avatar: true,
+            profilePhoto: true,
+          },
+        },
+        jobPostRecord: {
+          select: {
+            id: true,
+            title: true,
+            skill: true,
+            city: true,
+            budgetMin: true,
+            budgetMax: true,
+            minBudget: true,
+            maxBudget: true,
+            currency: true,
+            description: true,
+            jobType: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })).map(mapLeadRecord);
@@ -1672,9 +1721,22 @@ const updateLeadStatus = async (req, res) => {
     if (String(lead.provider) !== String(req.user._id)) {
       return res.status(403).json({ message: "Not authorized" });
     }
+    const updateData = {};
+    if (req.body.status) updateData.status = req.body.status;
+    if (req.body.notes !== undefined) {
+      if (typeof req.body.notes === 'string') {
+        try {
+          updateData.notes = JSON.parse(req.body.notes);
+        } catch (_) {
+          updateData.notes = req.body.notes;
+        }
+      } else {
+        updateData.notes = req.body.notes;
+      }
+    }
     const updatedLead = await prisma.lead.update({
       where: { id: lead.id },
-      data: { status: req.body.status || lead.status },
+      data: updateData,
     });
     res.json(withLegacyId(updatedLead));
   } catch (error) {

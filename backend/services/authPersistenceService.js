@@ -128,7 +128,138 @@ async function saveUser(user) {
 }
 
 async function deleteUser(id) {
-  return toAuthUser(await prisma.user.delete({ where: { id: String(id) } }));
+  const uid = String(id);
+
+  // 1. Break the circular FK reference on User and unbind self-references on other users
+  await Promise.all([
+    prisma.user.update({
+      where: { id: uid },
+      data: { providerProfileId: null, recruiterProfileId: null },
+    }).catch(() => {}),
+    prisma.user.updateMany({ where: { referredBy: uid }, data: { referredBy: null } }).catch(() => {}),
+    prisma.user.updateMany({ where: { createdByPartnerId: uid }, data: { createdByPartnerId: null } }).catch(() => {}),
+    prisma.user.updateMany({ where: { referredByPartnerId: uid }, data: { referredByPartnerId: null } }).catch(() => {}),
+    prisma.user.updateMany({ where: { approvedBy: uid }, data: { approvedBy: null } }).catch(() => {}),
+  ]);
+
+  // 2. Find provider profiles to clean up child relations
+  const providerProfiles = await prisma.providerProfile.findMany({
+    where: { user: uid },
+    select: { id: true },
+  });
+  const ppIds = providerProfiles.map((p) => p.id);
+
+  if (ppIds.length > 0) {
+    await Promise.all([
+      prisma.aiEvaluation.deleteMany({ where: { candidateId: { in: ppIds } } }).catch(() => {}),
+      prisma.candidateCareerVersion.deleteMany({ where: { providerId: { in: ppIds } } }).catch(() => {}),
+      prisma.contactClickLog.deleteMany({ where: { provider: { in: ppIds } } }).catch(() => {}),
+      prisma.recruiterCvViewTracker.deleteMany({ where: { candidateId: { in: ppIds } } }).catch(() => {}),
+      prisma.recruiterLeadTracker.deleteMany({ where: { candidateId: { in: ppIds } } }).catch(() => {}),
+      prisma.visitHistory.deleteMany({ where: { visitedProfile: { in: ppIds } } }).catch(() => {}),
+    ]);
+  }
+
+  // 3. Delete provider & recruiter profiles
+  await Promise.all([
+    prisma.providerProfile.deleteMany({ where: { user: uid } }).catch(() => {}),
+    prisma.recruiterProfile.deleteMany({ where: { user: uid } }).catch(() => {}),
+  ]);
+
+  // 4. Delete dependent usages & plans before subscriptions
+  await Promise.all([
+    prisma.providerUsage.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.providerAiUsage.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.recruiterAiUsage.deleteMany({ where: { recruiterId: uid } }).catch(() => {}),
+    prisma.customVisibilityPlan.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.refundRequest.deleteMany({ where: { userId: uid } }).catch(() => {}),
+  ]);
+
+  // 5. In parallel, delete all direct user foreign keys
+  await Promise.all([
+    prisma.lead.deleteMany({ where: { OR: [{ provider: uid }, { recruiter: uid }] } }).catch(() => {}),
+    prisma.review.deleteMany({ where: { OR: [{ provider: uid }, { recruiter: uid }, { reviewerId: uid }, { revieweeId: uid }] } }).catch(() => {}),
+    prisma.application.deleteMany({ where: { provider: uid } }).catch(() => {}),
+    prisma.jobPost.deleteMany({ where: { recruiter: uid } }).catch(() => {}),
+    prisma.savedJob.deleteMany({ where: { provider: uid } }).catch(() => {}),
+    prisma.providerSubscription.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.recruiterSubscription.deleteMany({ where: { recruiterId: uid } }).catch(() => {}),
+    prisma.userSubscription.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.providerServiceArea.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.providerAvailability.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.providerEmbedding.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.providerMetrics.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.recruiterHireEmbedding.deleteMany({ where: { recruiterId: uid } }).catch(() => {}),
+    prisma.recruiterSearchLog.deleteMany({ where: { OR: [{ recruiterId: uid }, { hiredProviderId: uid }] } }).catch(() => {}),
+    prisma.trustScore.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.repeatHireInsight.deleteMany({ where: { OR: [{ recruiterId: uid }, { providerId: uid }] } }).catch(() => {}),
+    prisma.resumeAccessLog.deleteMany({ where: { OR: [{ recruiterId: uid }, { candidateId: uid }] } }).catch(() => {}),
+    prisma.skillGapReport.deleteMany({ where: { candidateId: uid } }).catch(() => {}),
+    prisma.candidateJobMatch.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.candidateDigestLog.deleteMany({ where: { candidate: uid } }).catch(() => {}),
+    prisma.jobMatch.deleteMany({ where: { providerId: uid } }).catch(() => {}),
+    prisma.jobSearchIntent.deleteMany({ where: { sourceUserId: uid } }).catch(() => {}),
+    prisma.jobAnalyticsEvent.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.leadDistributionLog.deleteMany({ where: { OR: [{ providerId: uid }, { recruiterId: uid }] } }).catch(() => {}),
+    prisma.leadEvent.deleteMany({ where: { actorId: uid } }).catch(() => {}),
+    prisma.matchLog.deleteMany({ where: { OR: [{ providerId: uid }, { recruiterId: uid }] } }).catch(() => {}),
+    prisma.profileShareToken.deleteMany({ where: { OR: [{ candidateId: uid }, { createdByUserId: uid }] } }).catch(() => {}),
+    prisma.freelancerContactConsentRequest.deleteMany({ where: { OR: [{ freelancerId: uid }, { requesterId: uid }] } }).catch(() => {}),
+    prisma.documentVerificationResult.deleteMany({ where: { OR: [{ providerId: uid }, { reviewedBy: uid }] } }).catch(() => {}),
+    prisma.fraudFlag.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.incomePathCache.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.outreachCampaign.deleteMany({ where: { recruiterId: uid } }).catch(() => {}),
+    prisma.partnerBankAccount.deleteMany({ where: { partnerId: uid } }).catch(() => {}),
+    prisma.payoutMethod.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.payoutRequest.deleteMany({ where: { partnerId: uid } }).catch(() => {}),
+    prisma.task.deleteMany({ where: { recruiterId: uid } }).catch(() => {}),
+    prisma.workspaceChat.deleteMany({ where: { recruiterId: uid } }).catch(() => {}),
+    prisma.aiAnalysisResult.deleteMany({ where: { user_id: uid } }).catch(() => {}),
+    prisma.aIInteractionLog.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.aiUsageLog.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.visitHistory.deleteMany({ where: { OR: [{ user: uid }, { visitedUser: uid }] } }).catch(() => {}),
+    prisma.profileUnlock.deleteMany({ where: { OR: [{ recruiterId: uid }, { providerId: uid }] } }).catch(() => {}),
+    prisma.chatMessage.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.chatConversation.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.contactClickLog.deleteMany({ where: { user: uid } }).catch(() => {}),
+    prisma.notification.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.otp.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.payment.deleteMany({ where: { user: uid } }).catch(() => {}),
+    prisma.walletTransaction.deleteMany({ where: { OR: [{ userId: uid }, { sourceUserId: uid }] } }).catch(() => {}),
+    prisma.providerWalletTransaction.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.providerWallet.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.providerWithdrawal.deleteMany({ where: { OR: [{ userId: uid }, { processedBy: uid }] } }).catch(() => {}),
+    prisma.withdrawalRequest.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.supportTicket.deleteMany({ where: { user: uid } }).catch(() => {}),
+    prisma.whatsappLog.deleteMany({ where: { user: uid } }).catch(() => {}),
+    prisma.partnerProfile.deleteMany({ where: { userId: uid } }).catch(() => {}),
+    prisma.partnerReward.deleteMany({ where: { OR: [{ partner: uid }, { referredUser: uid }] } }).catch(() => {}),
+    prisma.referral.deleteMany({ where: { OR: [{ referrerId: uid }, { referredUserId: uid }] } }).catch(() => {}),
+    prisma.auditEvent.deleteMany({ where: { actorId: uid } }).catch(() => {}),
+    prisma.approvalLog.deleteMany({ where: { OR: [{ actorId: uid }, { targetUserId: uid }] } }).catch(() => {}),
+  ]);
+
+  // 6. Clean rotation pools
+  try {
+    const pools = await prisma.rotationPool.findMany();
+    for (const p of pools) {
+      if (Array.isArray(p.providers)) {
+        const filtered = p.providers.filter((item) => {
+          const pid = typeof item === 'string' ? item : item?.provider?.id || item?.provider?._id || item?.provider;
+          return pid !== uid;
+        });
+        if (filtered.length !== p.providers.length) {
+          await prisma.rotationPool.update({
+            where: { id: p.id },
+            data: { providers: filtered },
+          });
+        }
+      }
+    }
+  } catch (_) {}
+
+  // 7. Finally delete the User row
+  return toAuthUser(await prisma.user.delete({ where: { id: uid } }));
 }
 
 async function verifyPassword(user, password) {

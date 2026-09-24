@@ -21,7 +21,10 @@ const RecruiterRoutes = lazy(() => import("./routes/RecruiterRoutes"));
 const AdminRoutes = lazy(() => import("./routes/AdminRoutes"));
 const PartnerRoutes = lazy(() => import("./routes/PartnerRoutes"));
 const DashboardRedirect = lazy(() => import("./components/common/DashboardRedirect"));
-const FreelancerDashboard = lazy(() => import("./pages/freelancer/FreelancerDashboard"));
+const FreelancerLayout = lazy(() => import("./layouts/FreelancerLayout"));
+const FreelancerDashboardPage = lazy(() => import("./pages/freelancer/FreelancerDashboardPage"));
+const FreelancerLeadsPage = lazy(() => import("./pages/freelancer/FreelancerLeadsPage"));
+const FreelancerResumeJourneyPage = lazy(() => import("./pages/freelancer/FreelancerResumeJourneyPage"));
 import LandingPageSkeleton from './components/landing/LandingPageSkeleton';
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
@@ -124,13 +127,19 @@ function App() {
           {/* CATEGORY 1: FREELANCER & CANDIDATE SUITE                                  */}
           {/* ========================================================================= */}
           <Route
-            path="/freelancer/dashboard"
+            path="/freelancer"
             element={
               <ProtectedRoute allowedRoles={["provider"]}>
-                <FreelancerDashboard />
+                <FreelancerLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<FreelancerDashboardPage />} />
+            <Route path="leads" element={<FreelancerLeadsPage />} />
+            <Route path="resume" element={<FreelancerResumeJourneyPage />} />
+            <Route path="resume-journey" element={<Navigate to="resume" replace />} />
+          </Route>
           <Route
             path="/candidate/dashboard"
             element={<Navigate to="/freelancer/dashboard" replace />}

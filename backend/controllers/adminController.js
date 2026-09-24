@@ -1954,41 +1954,11 @@ const deleteUser = async (req, res) => {
     if (!userRaw) return res.status(404).json({ message: "User not found" });
     const user = withLegacyId(userRaw);
 
-    const userRoles = Array.isArray(user.roles) ? user.roles : [];
-    const effectiveRole = user.activeRole || user.role || userRoles[0];
-
-    // Delete associated profiles
-    if (effectiveRole === "provider") {
-      await prisma.providerProfile.deleteMany({ where: { user: String(user.id) } });
-      await deleteApplicationDataForUser(user.id);
-      await prisma.review.deleteMany({
-        where: {
-          OR: [
-            { provider: String(user.id) },
-            { revieweeId: String(user.id) },
-            { reviewerId: String(user.id) },
-          ],
-        },
-      });
-    } else if (effectiveRole === "recruiter") {
-      await prisma.recruiterProfile.deleteMany({ where: { user: String(user.id) } });
-      await deleteApplicationDataForUser(user.id);
-      await prisma.jobPost.deleteMany({ where: { recruiter: String(user.id) } });
-      await prisma.review.deleteMany({
-        where: {
-          OR: [
-            { recruiter: String(user.id) },
-            { revieweeId: String(user.id) },
-            { reviewerId: String(user.id) },
-          ],
-        },
-      });
-    }
-
-    // Delete user
+    // Delete user and all associated profiles/records with full cascade
     await deleteUserRecord(user.id);
     res.json({ message: "User deleted successfully" });
   } catch (error) {
+    console.error("Error in deleteUser:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -2001,43 +1971,12 @@ const deleteProvider = async (req, res) => {
     if (!profile)
       return res.status(404).json({ message: "Provider not found" });
 
-    // Delete associated data
-    await prisma.lead.deleteMany({ where: { provider: String(profile.user) } });
-    await prisma.review.deleteMany({
-      where: {
-        OR: [
-          { provider: String(profile.user) },
-          { revieweeId: String(profile.user) },
-          { reviewerId: String(profile.user) },
-        ],
-      },
-    });
-
-    // Remove from rotation pools
-    const allPools = await prisma.rotationPool.findMany();
-    for (const p of allPools) {
-      if (Array.isArray(p.providers)) {
-        const filtered = p.providers.filter(item => {
-          const pid = typeof item === 'string' ? item : item?.provider?.id || item?.provider?._id || item?.provider;
-          return pid !== profile._id && pid !== profile.id;
-        });
-        if (filtered.length !== p.providers.length) {
-          await prisma.rotationPool.update({
-            where: { id: p.id },
-            data: { providers: filtered },
-          });
-        }
-      }
-    }
-
-    // Delete provider profile
-    await prisma.providerProfile.delete({ where: { id: String(req.params.id) } });
-
-    // Delete user account
+    // Delete user account and associated provider profile with full cascade
     await deleteUserRecord(profile.user);
 
     res.json({ message: "Provider deleted successfully" });
   } catch (error) {
+    console.error("Error in deleteProvider:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -2052,25 +1991,12 @@ const deleteRecruiter = async (req, res) => {
     if (!profile)
       return res.status(404).json({ message: "Recruiter not found" });
 
-    await deleteApplicationDataForUser(profile.user);
-    await prisma.jobPost.deleteMany({ where: { recruiter: String(profile.user) } });
-    await prisma.review.deleteMany({
-      where: {
-        OR: [
-          { recruiter: String(profile.user) },
-          { revieweeId: String(profile.user) },
-          { reviewerId: String(profile.user) },
-        ],
-      },
-    });
-
-    await prisma.recruiterProfile.delete({ where: { id: String(req.params.id) } });
-
-    // Delete user account
+    // Delete user account and associated recruiter profile with full cascade
     await deleteUserRecord(profile.user);
 
     res.json({ message: "Recruiter deleted successfully" });
   } catch (error) {
+    console.error("Error in deleteRecruiter:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
