@@ -1,10 +1,19 @@
 import React from 'react';
 import { useResumeJourney } from '../../context/ResumeJourneyContext';
-import { TRACKS } from '../../data/padhaaoData';
+import { TRACKS as FALLBACK_TRACKS } from '../../data/padhaaoData';
 
 export default function ChapterCardList({ onOpenLesson }) {
-  const { activeTrack, completedChapters, toggleChapterComplete } = useResumeJourney();
-  const track = TRACKS[activeTrack];
+  const { activeTrack, completedChapters, toggleChapterComplete, padhaaoSyllabus } = useResumeJourney();
+
+  // Resolve track with fallback and alias normalization (basic <-> qw, medium <-> fp, premium <-> pm)
+  const tracks = padhaaoSyllabus?.tracks || FALLBACK_TRACKS;
+  const track =
+    tracks[activeTrack] ||
+    (activeTrack === 'basic' ? tracks.qw : activeTrack === 'qw' ? tracks.basic : null) ||
+    (activeTrack === 'medium' ? tracks.fp : activeTrack === 'fp' ? tracks.medium : null) ||
+    (activeTrack === 'premium' ? tracks.pm : activeTrack === 'pm' ? tracks.premium : null) ||
+    FALLBACK_TRACKS[activeTrack] ||
+    FALLBACK_TRACKS.qw;
 
   if (!track) return null;
 
@@ -17,13 +26,17 @@ export default function ChapterCardList({ onOpenLesson }) {
 
       {/* Chapters Grid */}
       <div className="space-y-3">
-        {track.chapters.map((chapter, idx) => {
-          const chapterKey = `${activeTrack}-${idx}`;
-          const isDone = completedChapters.includes(chapterKey);
+        {track.chapters?.map((chapter, idx) => {
+          const chapterKey = chapter.key || chapter.id || `${activeTrack}-${idx}`;
+          const isDone =
+            completedChapters.includes(chapterKey) ||
+            (chapter.id && completedChapters.includes(chapter.id)) ||
+            (chapter.key && completedChapters.includes(chapter.key)) ||
+            completedChapters.includes(`${activeTrack}-${idx}`);
 
           return (
             <div
-              key={idx}
+              key={chapter.id || chapterKey || idx}
               className={`p-4 sm:p-5 rounded-2xl border transition-all ${
                 isDone
                   ? 'bg-[#F7FBF9] border-[#0E8F5F]/40'
@@ -50,6 +63,11 @@ export default function ChapterCardList({ onOpenLesson }) {
                       <span className="text-[14.5px] font-bold text-[#141A33]">
                         {chapter.name}
                       </span>
+                      {chapter.isCvGap && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#D9381E] bg-[#FDF2F0] border border-[#F6D0CA] px-2 py-0.5 rounded">
+                          🎯 CV Gap
+                        </span>
+                      )}
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#5B21D6] bg-[#F0EDFC] px-2 py-0.5 rounded">
                         {chapter.tagLbl || chapter.tag}
                       </span>
@@ -82,3 +100,4 @@ export default function ChapterCardList({ onOpenLesson }) {
     </div>
   );
 }
+

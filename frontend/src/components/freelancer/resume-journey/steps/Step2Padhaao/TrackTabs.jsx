@@ -1,23 +1,38 @@
 import React from 'react';
 import { useResumeJourney } from '../../context/ResumeJourneyContext';
-import { TRACKS, TRACK_ORDER } from '../../data/padhaaoData';
+import { TRACKS as FALLBACK_TRACKS, TRACK_ORDER as FALLBACK_ORDER } from '../../data/padhaaoData';
 
 export default function TrackTabs({ layout = 'horizontal' }) {
-  const { activeTrack, setActiveTrack, completedChapters } = useResumeJourney();
+  const { activeTrack, setActiveTrack, completedChapters, padhaaoSyllabus } = useResumeJourney();
+
+  const tracks = padhaaoSyllabus?.tracks || FALLBACK_TRACKS;
+  const trackOrder = padhaaoSyllabus?.trackOrder || FALLBACK_ORDER;
+
+  const isTrackActive = (tk) => {
+    if (activeTrack === tk) return true;
+    if (tk === 'basic' && activeTrack === 'qw') return true;
+    if (tk === 'medium' && activeTrack === 'fp') return true;
+    if (tk === 'premium' && activeTrack === 'pm') return true;
+    if (tk === 'qw' && activeTrack === 'basic') return true;
+    if (tk === 'fp' && activeTrack === 'medium') return true;
+    if (tk === 'pm' && activeTrack === 'premium') return true;
+    return false;
+  };
 
   if (layout === 'vertical') {
     return (
       <div className="space-y-3">
-        {TRACK_ORDER.map((tk) => {
-          const track = TRACKS[tk];
+        {trackOrder.map((tk) => {
+          const track = tracks[tk];
           if (!track) return null;
 
-          const totalChapters = track.chapters.length;
-          const doneCount = track.chapters.filter((_, idx) =>
-            completedChapters.includes(`${tk}-${idx}`)
-          ).length;
-          const pct = Math.round((doneCount / totalChapters) * 100);
-          const isActive = activeTrack === tk;
+          const totalChapters = track.chapters?.length || 0;
+          const doneCount = (track.chapters || []).filter((ch, idx) => {
+            const key = ch.key || `${tk}-${idx}`;
+            return completedChapters.includes(key) || (ch.id && completedChapters.includes(ch.id));
+          }).length;
+          const pct = totalChapters > 0 ? Math.round((doneCount / totalChapters) * 100) : 0;
+          const isActive = isTrackActive(tk);
 
           return (
             <button
@@ -65,16 +80,17 @@ export default function TrackTabs({ layout = 'horizontal' }) {
   // Horizontal Grid (Mobile / Compact)
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-      {TRACK_ORDER.map((tk) => {
-        const track = TRACKS[tk];
+      {trackOrder.map((tk) => {
+        const track = tracks[tk];
         if (!track) return null;
 
-        const totalChapters = track.chapters.length;
-        const doneCount = track.chapters.filter((_, idx) =>
-          completedChapters.includes(`${tk}-${idx}`)
-        ).length;
-        const pct = Math.round((doneCount / totalChapters) * 100);
-        const isActive = activeTrack === tk;
+        const totalChapters = track.chapters?.length || 0;
+        const doneCount = (track.chapters || []).filter((ch, idx) => {
+          const key = ch.key || `${tk}-${idx}`;
+          return completedChapters.includes(key) || (ch.id && completedChapters.includes(ch.id));
+        }).length;
+        const pct = totalChapters > 0 ? Math.round((doneCount / totalChapters) * 100) : 0;
+        const isActive = isTrackActive(tk);
 
         return (
           <button

@@ -385,6 +385,9 @@ app.use('/api/otp', otpRoutes);
 // Automated Job Pipeline & Freelancer Core
 app.use('/api/v1/admin/pipeline', require('./routes/pipeline.routes'));
 app.use('/api/freelancer', require('./routes/freelancer.routes'));
+app.use('/api/v2/freelancer/journey', require('./routes/resumeJourney.routes'));
+app.use('/api/v2/verify', require('./routes/certificateVerification.routes'));
+app.use('/api/verify', require('./routes/certificateVerification.routes'));
 
 // Sitemap XML routes
 const sitemapController = require('./controllers/sitemapController');

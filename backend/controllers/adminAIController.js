@@ -34,6 +34,7 @@ const AI_FEATURE_KEYS = {
   embeddingsEnabled: 'ai.feature.embeddings',
   ocrEnabled: 'ai.feature.ocr',
   fraudEnabled: 'ai.feature.fraud',
+  padhaaoTutorEnabled: 'ai.feature.padhaao_tutor',
 };
 
 

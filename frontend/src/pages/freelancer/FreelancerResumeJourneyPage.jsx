@@ -14,8 +14,15 @@ import BataDoStep from '../../components/freelancer/resume-journey/steps/Step5Ba
 
 function ResumeJourneyContent() {
   const navigate = useNavigate();
-  const { resumeFileInputRef, handleResumeUpload, uploadingResume, profile } = useFreelancer();
-  const { activeStep } = useResumeJourney();
+  const { profile } = useFreelancer();
+  const {
+    activeStep,
+    resumeFileInputRef,
+    handleResumeUpload,
+    uploadingResume,
+    hasResume,
+    currentResume,
+  } = useResumeJourney();
 
   return (
     <div className="space-y-4">

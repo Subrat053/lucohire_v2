@@ -28,6 +28,7 @@ const LockedResults = lazy(() => import("../pages/candidate/LockedResults"));
 const RecruiterDiscovery = lazy(() => import("../pages/recruiter/RecruiterDiscovery"));
 const RecruiterLockedResults = lazy(() => import("../pages/recruiter/RecruiterLockedResults"));
 const PublicJobDetail = lazy(() => import("../pages/PublicJobDetail"));
+const CertificateVerificationPage = lazy(() => import("../pages/CertificateVerificationPage"));
 
 function MainLayout({ children }) {
   const location = useLocation();
@@ -61,7 +62,8 @@ function MainLayout({ children }) {
     publicPaths.includes(location.pathname) ||
     isPublicProviderProfile ||
     isSharedProfile ||
-    location.pathname.startsWith("/job/");
+    location.pathname.startsWith("/job/") ||
+    location.pathname.startsWith("/verify");
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -84,6 +86,8 @@ export default function PublicRoutes() {
       <Route path="external-match" element={wrap(<ExternalMatch />)} />
       <Route path="p/:id" element={wrap(<ProviderPublicProfile />)} />
       <Route path="job/:id" element={wrap(<PublicJobDetail />)} />
+      <Route path="verify/certificate/:verificationId" element={wrap(<CertificateVerificationPage />)} />
+      <Route path="verify/:verificationId" element={wrap(<CertificateVerificationPage />)} />
       <Route path="faq" element={wrap(<FaqPage />)} />
       <Route path="terms" element={wrap(<TermsPage />)} />
       <Route path="privacy" element={wrap(<PrivacyPage />)} />

@@ -8,13 +8,11 @@ export default function VerdictHeroCard() {
   const activePathId = selectedPaths[0] || 'p1';
   const roleInfo = ROLE_BY_PATH[activePathId] || ROLE_BY_PATH.p1;
 
-  const testPct = testState?.score !== null && testState?.total
-    ? Math.round((testState.score / testState.total) * 100)
-    : 75;
+  const hasTestData = testState?.score !== null && testState?.total && testState?.total > 0;
+  const testPct = hasTestData ? Math.round((testState.score / testState.total) * 100) : null;
 
-  const practicePct = practiceState?.pScore && practiceState?.pTotal
-    ? Math.round((practiceState.pScore / practiceState.pTotal) * 100)
-    : 80;
+  const hasPracticeData = Boolean(practiceState?.pTotal && practiceState?.pTotal > 0);
+  const practicePct = hasPracticeData ? Math.round((practiceState.pScore / practiceState.pTotal) * 100) : null;
 
   return (
     <div className="bg-white border border-[#E6E3F7] rounded-2xl p-5 sm:p-7 shadow-xs">
@@ -75,10 +73,12 @@ export default function VerdictHeroCard() {
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px]">
                   <span className="text-[#767B8A]">Practice Reps</span>
-                  <span className="font-bold text-[#0E8F5F]">{practicePct}%</span>
+                  <span className="font-bold text-[#0E8F5F]">
+                    {hasPracticeData ? `${practicePct}%` : 'Pending'}
+                  </span>
                 </div>
                 <div className="w-full bg-[#ECEAF9] h-1.5 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#0E8F5F]" style={{ width: `${practicePct}%` }} />
+                  <div className="h-full bg-[#0E8F5F]" style={{ width: `${practicePct || 0}%` }} />
                 </div>
               </div>
 
@@ -86,10 +86,12 @@ export default function VerdictHeroCard() {
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px]">
                   <span className="text-[#767B8A]">Timed Test</span>
-                  <span className="font-bold text-[#1B4FE0]">{testPct}%</span>
+                  <span className="font-bold text-[#1B4FE0]">
+                    {hasTestData ? `${testPct}%` : 'Pending'}
+                  </span>
                 </div>
                 <div className="w-full bg-[#ECEAF9] h-1.5 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#1B4FE0]" style={{ width: `${testPct}%` }} />
+                  <div className="h-full bg-[#1B4FE0]" style={{ width: `${testPct || 0}%` }} />
                 </div>
               </div>
             </div>

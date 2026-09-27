@@ -10,7 +10,7 @@ const STEPS = [
 ];
 
 export default function JourneyStepper() {
-  const { activeStep, goToStep, highestUnlockedStep, testState } = useResumeJourney();
+  const { activeStep, goToStep, highestUnlockedStep, testState, serverData, readinessVerdict } = useResumeJourney();
 
   return (
     <div className="w-full bg-white border border-[#E6E3F7] rounded-2xl p-3 sm:p-4 shadow-xs">
@@ -18,7 +18,10 @@ export default function JourneyStepper() {
       <div className="hidden md:grid grid-cols-5 gap-2">
         {STEPS.map((s) => {
           const isActive = activeStep === s.id;
-          const isDone = activeStep > s.id || (s.id === 4 && testState?.status === 'submitted');
+          const isDone =
+            activeStep > s.id ||
+            (s.id === 4 && activeStep === 4 && testState?.status === 'submitted') ||
+            (s.id === 5 && activeStep === 5 && (serverData?.certificate || readinessVerdict?.compositeScore >= 70));
           const isUnlocked = s.id <= (highestUnlockedStep || 1);
 
           return (
@@ -83,18 +86,25 @@ export default function JourneyStepper() {
             Step {activeStep} of 5 · {STEPS[activeStep - 1]?.title}
           </div>
           <div className="flex items-center justify-center gap-1.5 mt-1.5">
-            {STEPS.map((s) => (
-              <span
-                key={s.id}
-                className={`h-1.5 rounded-full transition-all ${
-                  activeStep === s.id
-                    ? 'w-6 bg-[#5B21D6]'
-                    : activeStep > s.id
-                    ? 'w-2 bg-[#0E8F5F]'
-                    : 'w-2 bg-[#ECEAF9]'
-                }`}
-              />
-            ))}
+            {STEPS.map((s) => {
+              const isStepDone =
+                activeStep > s.id ||
+                (s.id === 4 && activeStep === 4 && testState?.status === 'submitted') ||
+                (s.id === 5 && activeStep === 5 && (serverData?.certificate || readinessVerdict?.compositeScore >= 70));
+
+              return (
+                <span
+                  key={s.id}
+                  className={`h-1.5 rounded-full transition-all ${
+                    activeStep === s.id
+                      ? 'w-6 bg-[#5B21D6]'
+                      : isStepDone
+                      ? 'w-2 bg-[#0E8F5F]'
+                      : 'w-2 bg-[#ECEAF9]'
+                  }`}
+                />
+              );
+            })}
           </div>
         </div>
 

@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useResumeJourney } from '../../context/ResumeJourneyContext';
 import { TEST_QUESTION_BANK, SECONDS_PER_QUESTION } from '../../data/testData';
+import { resumeJourneyAPI } from '../../../../../services/resumeJourneyAPI';
 import TestRunnerCard from './TestRunnerCard';
 import TestSubmitModal from './TestSubmitModal';
 import TestResultsCard from './TestResultsCard';
 
 export default function TestStep() {
-  const { goToStep, selectedPaths, updateTestResults, testState } = useResumeJourney();
+  const { goToStep, selectedPaths, updateTestResults, testState, refreshJourneyState } = useResumeJourney();
 
   const [viewState, setViewState] = useState(
     testState?.status === 'submitted' ? 'results' : 'intro'
@@ -16,9 +17,12 @@ export default function TestStep() {
   const [flags, setFlags] = useState({});
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [startTime, setStartTime] = useState(null);
+  const [attemptId, setAttemptId] = useState(null);
+  const [serverQuestions, setServerQuestions] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Extract test questions for selected career path(s)
-  const questions = useMemo(() => {
+  const fallbackQuestions = useMemo(() => {
     let pool = [];
     selectedPaths.forEach((pathId) => {
       const pack = TEST_QUESTION_BANK[pathId];
@@ -32,28 +36,111 @@ export default function TestStep() {
     return pool;
   }, [selectedPaths]);
 
+  const questions = serverQuestions && serverQuestions.length > 0 ? serverQuestions : fallbackQuestions;
+
   const totalTimeSeconds = questions.length * (SECONDS_PER_QUESTION || 90);
 
-  const handleStartTest = () => {
+  const handleStartTest = async () => {
     setAnswers({});
     setFlags({});
     setCurrentQIndex(0);
     setStartTime(Date.now());
+
+    // Try starting server-authoritative assessment attempt
+    try {
+      const res = await resumeJourneyAPI.startAssessment(selectedPaths[0] || 'p1');
+      if (res?.data?.success && res.data.data) {
+        setAttemptId(res.data.data.attemptId);
+        if (Array.isArray(res.data.data.questions) && res.data.data.questions.length > 0) {
+          setServerQuestions(
+            res.data.data.questions.map((q) => ({
+              id: q.id,
+              scenario: q.text || q.scenario,
+              options: q.options || [],
+              topic: q.topicName || q.topic || 'Architecture',
+              codeSnippet: q.codeSnippet,
+            }))
+          );
+        }
+      }
+    } catch {
+      // Local fallback in case of network issue
+    }
+
     setViewState('running');
   };
 
   const handlePickAnswer = (qIdx, optIdx) => {
     setAnswers((prev) => ({ ...prev, [qIdx]: optIdx }));
+
+    // Sync answer to server attempt if attemptId exists
+    const q = questions[qIdx];
+    if (attemptId && q?.id) {
+      resumeJourneyAPI.saveAssessmentAnswer({
+        attemptId,
+        questionId: q.id,
+        selectedOptionIndex: optIdx,
+        isFlagged: !!flags[qIdx],
+      }).catch(() => {});
+    }
   };
 
   const handleToggleFlag = (qIdx) => {
-    setFlags((prev) => ({ ...prev, [qIdx]: !prev[qIdx] }));
+    const nextFlag = !flags[qIdx];
+    setFlags((prev) => ({ ...prev, [qIdx]: nextFlag }));
+
+    const q = questions[qIdx];
+    if (attemptId && q?.id) {
+      resumeJourneyAPI.saveAssessmentAnswer({
+        attemptId,
+        questionId: q.id,
+        selectedOptionIndex: answers[qIdx] ?? null,
+        isFlagged: nextFlag,
+      }).catch(() => {});
+    }
   };
 
-  const handleConfirmSubmit = () => {
+  const handleConfirmSubmit = async () => {
     setShowSubmitModal(false);
+    setIsSubmitting(true);
 
-    // Calculate score & topic breakdown
+    const timeUsed = startTime ? Math.round((Date.now() - startTime) / 1000) : 180;
+
+    // Try server assessment submission first
+    if (attemptId) {
+      try {
+        const payloadAnswers = {};
+        questions.forEach((q, idx) => {
+          if (q.id && answers[idx] !== undefined) {
+            payloadAnswers[q.id] = answers[idx];
+          }
+        });
+
+        const res = await resumeJourneyAPI.submitAssessment({
+          attemptId,
+          answers: payloadAnswers,
+        });
+
+        if (res?.data?.success && res.data.data) {
+          const d = res.data.data;
+          updateTestResults({
+            score: d.score,
+            total: d.totalQuestions || questions.length,
+            timeUsed: d.timeUsedSeconds || timeUsed,
+            topicBreakdown: d.topicBreakdown || {},
+            weakTopics: d.weakTopics || [],
+          });
+          refreshJourneyState?.();
+          setIsSubmitting(false);
+          setViewState('results');
+          return;
+        }
+      } catch {
+        // Fallback to client-side scoring
+      }
+    }
+
+    // Client-side fallback scoring
     let correctCount = 0;
     const topicBreakdown = {};
     const weakTopics = [];
@@ -74,8 +161,6 @@ export default function TestStep() {
       }
     });
 
-    const timeUsed = startTime ? Math.round((Date.now() - startTime) / 1000) : 180;
-
     updateTestResults({
       score: correctCount,
       total: questions.length,
@@ -84,6 +169,7 @@ export default function TestStep() {
       weakTopics: [...new Set(weakTopics)],
     });
 
+    setIsSubmitting(false);
     setViewState('results');
   };
 

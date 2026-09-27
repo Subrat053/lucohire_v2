@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { FIXES } from '../../data/resumeStep1Data';
+import { useResumeJourney } from '../../context/ResumeJourneyContext';
+import { FIXES as FALLBACK_FIXES } from '../../data/resumeStep1Data';
 import { toast } from 'react-hot-toast';
 
 export default function LineFixesList() {
+  const { atsAuditData } = useResumeJourney();
+  const fixes = atsAuditData?.fixes && atsAuditData.fixes.length > 0
+    ? atsAuditData.fixes
+    : FALLBACK_FIXES;
+
   const [openIndex, setOpenIndex] = useState(0);
 
   const copyToClipboard = (text, e) => {
     e.stopPropagation();
     navigator.clipboard.writeText(text);
-    toast.success('Improved bullet copied to clipboard!');
+    toast.success('High-impact bullet copied to clipboard!');
   };
 
   const getTagColor = (tag) => {
@@ -16,6 +22,7 @@ export default function LineFixesList() {
       case 'Rewrite': return 'bg-[#F0EDFC] text-[#5B21D6] border-[#D8D2FA]';
       case 'Remove': return 'bg-[#FBEAE8] text-[#B3492F] border-[#FBEAE8]';
       case 'Add': return 'bg-[#E5F6EE] text-[#0E8F5F] border-[#E5F6EE]';
+      case 'Quantify': return 'bg-[#E5F6EE] text-[#0E8F5F] border-[#E5F6EE]';
       case 'Reorder': return 'bg-[#FBF1DF] text-[#B9791A] border-[#FBF1DF]';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
@@ -33,16 +40,16 @@ export default function LineFixesList() {
           </h3>
         </div>
         <span className="text-[12px] text-[#767B8A] hidden sm:inline-block">
-          5 high-impact line improvements
+          {fixes.length} personalized improvements from your resume
         </span>
       </div>
 
       <p className="text-[12.5px] text-[#767B8A] m-0">
-        Recruiters and ATS parsers scan for measurable outcomes and action verbs rather than passive duties.
+        Our system scanned your resume bullets and identified passive duties that lower ATS scores. Replace them with quantified outcomes:
       </p>
 
       <div className="space-y-3 pt-1">
-        {FIXES.map((fix, idx) => {
+        {fixes.map((fix, idx) => {
           const isOpen = openIndex === idx;
 
           return (
@@ -64,7 +71,7 @@ export default function LineFixesList() {
                       {fix.tag}
                     </span>
                     <span className="text-[12px] font-semibold text-[#141A33] truncate">
-                      Line Fix #{idx + 1}
+                      Fix #{idx + 1}
                     </span>
                   </div>
                   <div className="text-[12.5px] text-[#767B8A] line-clamp-1 italic">

@@ -1,24 +1,38 @@
 import React from 'react';
 import { useResumeJourney } from '../../context/ResumeJourneyContext';
-import { SALARY } from '../../data/resumeStep1Data';
 
 export default function SkillsMatrixCard() {
-  const { skillsAnalysis } = useResumeJourney();
-  const { outdatedFound, fadingFound, risingAnalyzed } = skillsAnalysis;
+  const { skillsAnalysis, runAtsAudit, isLoadingAts, selectedPaths } = useResumeJourney();
+  const {
+    outdatedFound = [],
+    fadingFound = [],
+    risingAnalyzed = [],
+  } = skillsAnalysis || {};
 
   return (
     <div id="secSkillsMatrix" className="bg-white border border-[#E6E3F7] rounded-2xl p-4 sm:p-6 shadow-xs space-y-6">
       {/* Header */}
-      <div>
-        <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B21D6] bg-[#F0EDFC] px-2.5 py-0.5 rounded-full">
-          Market Intelligence
-        </span>
-        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#141A33] mt-1 m-0" style={{ fontFamily: 'Fraunces, serif' }}>
-          Skills Matrix: What to Drop vs. What to Learn
-        </h3>
-        <p className="text-[12.5px] text-[#767B8A] mt-1 m-0">
-          Cross-referenced against current hiring trends across 18,000+ job listings in India.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B21D6] bg-[#F0EDFC] px-2.5 py-0.5 rounded-full">
+            Market Intelligence
+          </span>
+          <h3 className="text-[18px] sm:text-[20px] font-bold text-[#141A33] mt-1 m-0" style={{ fontFamily: 'Fraunces, serif' }}>
+            Skills Matrix: What to Drop vs. What to Learn
+          </h3>
+          <p className="text-[12.5px] text-[#767B8A] mt-1 m-0">
+            Cross-referenced against current hiring trends across 18,000+ job listings in India.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => runAtsAudit(selectedPaths[0] || 'p1')}
+          disabled={isLoadingAts}
+          className="self-start sm:self-auto py-1.5 px-3 rounded-xl border border-[#D8D2FA] text-[11.5px] font-semibold text-[#5B21D6] bg-[#FAF9FE] hover:bg-[#F0EDFC] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+        >
+          {isLoadingAts ? 'Refreshing...' : '✨ Refresh Market Data'}
+        </button>
       </div>
 
       {/* 1. Skills to Drop */}
@@ -61,7 +75,7 @@ export default function SkillsMatrixCard() {
               </div>
               {item.inProfile && (
                 <div className="mt-1 text-[9.5px] font-bold uppercase tracking-wider text-[#B3492F] bg-[#FBEAE8] px-1.5 py-0.5 rounded text-center">
-                  Found in your profile
+                  Detected in your resume
                 </div>
               )}
             </div>
@@ -148,34 +162,15 @@ export default function SkillsMatrixCard() {
                   {item.acquired ? '✓ Verified in profile' : '⚡ Unlocks high-paying leads'}
                 </span>
                 <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    item.acquired ? 'bg-[#0E8F5F] text-white' : 'bg-[#F0EDFC] text-[#5B21D6]'
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    item.acquired
+                      ? 'bg-[#E5F6EE] text-[#0E8F5F]'
+                      : 'bg-[#F0EDFC] text-[#5B21D6]'
                   }`}
                 >
                   {item.status}
                 </span>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Salary Tiers */}
-      <div className="p-4 bg-[#F7F6FF] border border-[#D8D2FA] rounded-xl space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h4 className="text-[13px] font-bold text-[#141A33] m-0">
-            Higher Salary Unlocks (15+ LPA Bracket)
-          </h4>
-          <span className="text-[11px] font-bold text-[#5B21D6]">
-            System Design &amp; AI
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {SALARY.map((s, idx) => (
-            <div key={idx} className="p-2.5 bg-white rounded-lg border border-[#E6E3F7]">
-              <div className="text-[12px] font-bold text-[#141A33]">{s.title}</div>
-              <div className="text-[10.5px] text-[#0E8F5F] font-semibold">{s.jobs}</div>
-              <div className="text-[10px] text-[#767B8A] mt-1 line-clamp-2">{s.add}</div>
             </div>
           ))}
         </div>
