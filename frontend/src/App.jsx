@@ -8,23 +8,36 @@ import NotFound from "./components/common/NotFound";
 import PwaInstallPrompt from "./components/common/PwaInstallPrompt";
 import { useAuth } from "./context/AuthContext";
 
+import PrivacyNoticeBanner from "./components/common/PrivacyNoticeBanner";
+
+// Helper for resilient lazy imports
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      console.warn("Dynamic import failed, retrying once...", error);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      return await componentImport();
+    }
+  });
+
 // Lazy-loaded global modals/widgets
-const WhatsAppNumberModal = lazy(() => import("./components/common/WhatsAppNumberModal"));
-const Agentation = import.meta.env.DEV ? lazy(() => import("agentation").then(module => ({ default: module.Agentation }))) : () => null;
-const CookieConsent = lazy(() => import("./components/common/CookieConsent"));
-const AIChatWidget = lazy(() => import("./components/common/AIChatWidget"));
+const WhatsAppNumberModal = lazyWithRetry(() => import("./components/common/WhatsAppNumberModal"));
+const Agentation = import.meta.env.DEV ? lazyWithRetry(() => import("agentation").then(module => ({ default: module.Agentation }))) : () => null;
+const AIChatWidget = lazyWithRetry(() => import("./components/common/AIChatWidget"));
 
 // Route Groups
-const AuthRoutes = lazy(() => import("./routes/AuthRoutes"));
-const ProviderRoutes = lazy(() => import("./routes/ProviderRoutes"));
-const RecruiterRoutes = lazy(() => import("./routes/RecruiterRoutes"));
-const AdminRoutes = lazy(() => import("./routes/AdminRoutes"));
-const PartnerRoutes = lazy(() => import("./routes/PartnerRoutes"));
-const DashboardRedirect = lazy(() => import("./components/common/DashboardRedirect"));
-const FreelancerLayout = lazy(() => import("./layouts/FreelancerLayout"));
-const FreelancerDashboardPage = lazy(() => import("./pages/freelancer/FreelancerDashboardPage"));
-const FreelancerLeadsPage = lazy(() => import("./pages/freelancer/FreelancerLeadsPage"));
-const FreelancerResumeJourneyPage = lazy(() => import("./pages/freelancer/FreelancerResumeJourneyPage"));
+const AuthRoutes = lazyWithRetry(() => import("./routes/AuthRoutes"));
+const ProviderRoutes = lazyWithRetry(() => import("./routes/ProviderRoutes"));
+const RecruiterRoutes = lazyWithRetry(() => import("./routes/RecruiterRoutes"));
+const AdminRoutes = lazyWithRetry(() => import("./routes/AdminRoutes"));
+const PartnerRoutes = lazyWithRetry(() => import("./routes/PartnerRoutes"));
+const DashboardRedirect = lazyWithRetry(() => import("./components/common/DashboardRedirect"));
+const FreelancerLayout = lazyWithRetry(() => import("./layouts/FreelancerLayout"));
+const FreelancerDashboardPage = lazyWithRetry(() => import("./pages/freelancer/FreelancerDashboardPage"));
+const FreelancerLeadsPage = lazyWithRetry(() => import("./pages/freelancer/FreelancerLeadsPage"));
+const FreelancerResumeJourneyPage = lazyWithRetry(() => import("./pages/freelancer/FreelancerResumeJourneyPage"));
 import LandingPageSkeleton from './components/landing/LandingPageSkeleton';
 import ProtectedRoute from "./components/common/ProtectedRoute";
 
@@ -117,9 +130,7 @@ function App() {
       <Suspense fallback={null}>
         <WhatsAppNumberModal isOpen={showWhatsAppPrompt} onClose={() => setShowWhatsAppPrompt(false)} />
       </Suspense>
-      <Suspense fallback={null}>
-        <CookieConsent />
-      </Suspense>
+      <PrivacyNoticeBanner />
 
       <Suspense fallback={<SuspenseFallback />}>
         <Routes>

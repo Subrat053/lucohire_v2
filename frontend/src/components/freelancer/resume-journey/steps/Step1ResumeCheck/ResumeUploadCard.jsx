@@ -203,14 +203,14 @@ export default function ResumeUploadCard() {
         ) : (
           <button
             type="button"
-            onClick={handleStartAutoFix}
+            onClick={fixedAts && optimizationReport ? () => setShowReportModal(true) : handleStartAutoFix}
             className={`w-full py-2 px-3 rounded-xl text-[12px] font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
               fixedAts
-                ? 'bg-[#E5F6EE] text-[#0E8F5F] border border-[#0E8F5F]/30'
+                ? 'bg-[#E5F6EE] text-[#0E8F5F] border border-[#0E8F5F]/30 hover:bg-[#D4F3E4]'
                 : 'bg-[#5B21D6] text-white hover:bg-[#4A3AE0] shadow-xs'
             }`}
           >
-            <span>{fixedAts ? '✓ View Optimization Report' : '⚡ Auto-Fix ATS Score Now'}</span>
+            <span>{fixedAts ? '✓ View Optimization Report' : '⚡ Auto-Fix & Refine ATS Score Now'}</span>
           </button>
         )}
       </div>

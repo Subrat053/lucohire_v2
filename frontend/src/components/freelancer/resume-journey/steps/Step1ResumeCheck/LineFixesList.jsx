@@ -30,12 +30,19 @@ export default function LineFixesList() {
 
   return (
     <div id="secLineFixes" className="bg-white border border-[#E6E3F7] rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B21D6] bg-[#F0EDFC] px-2.5 py-0.5 rounded-full">
-            Actionable Rewrites
-          </span>
-          <h3 className="text-[18px] sm:text-[20px] font-bold text-[#141A33] mt-1 m-0" style={{ fontFamily: 'Fraunces, serif' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B21D6] bg-[#F0EDFC] px-2.5 py-0.5 rounded-full">
+              Actionable Rewrites
+            </span>
+            {atsAuditData?.fixes?.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                <span>✨</span> AI Analyzed from your CV
+              </span>
+            )}
+          </div>
+          <h3 className="text-[18px] sm:text-[20px] font-bold text-[#141A33] mt-1.5 m-0" style={{ fontFamily: 'Fraunces, serif' }}>
             Yeh mat likho, yeh likho
           </h3>
         </div>
@@ -45,7 +52,7 @@ export default function LineFixesList() {
       </div>
 
       <p className="text-[12.5px] text-[#767B8A] m-0">
-        Our system scanned your resume bullets and identified passive duties that lower ATS scores. Replace them with quantified outcomes:
+        Our AI scanned your resume sentences and identified passive duties that lower ATS scores. Replace them with quantified outcomes:
       </p>
 
       <div className="space-y-3 pt-1">
@@ -92,7 +99,7 @@ export default function LineFixesList() {
                   {/* Before Box */}
                   <div className="p-3 rounded-lg bg-[#FBEAE8]/40 border border-[#FBEAE8] space-y-1">
                     <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#B3492F] flex items-center gap-1">
-                      <span>✕ Yeh mat likho (Current / Passive)</span>
+                      <span>✕ Yeh mat likho (From your uploaded CV)</span>
                     </div>
                     <div className="text-[12.5px] text-[#181B24] leading-relaxed">
                       "{fix.before}"
@@ -103,7 +110,7 @@ export default function LineFixesList() {
                   <div className="p-3 rounded-lg bg-[#E5F6EE]/50 border border-[#E5F6EE] space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#0E8F5F] flex items-center gap-1">
-                        <span>✓ Yeh likho (High-Impact / Quantified)</span>
+                        <span>✓ Yeh likho (Targeting Professional Job Roles)</span>
                       </div>
                       <button
                         type="button"

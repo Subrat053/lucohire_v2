@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { HiShieldCheck, HiX } from 'react-icons/hi';
 import useTranslation from '../../hooks/useTranslation';
 
-const CookieConsent = () => {
+const PrivacyNoticeBanner = () => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
@@ -91,4 +91,4 @@ const CookieConsent = () => {
   );
 };
 
-export default CookieConsent;
+export default PrivacyNoticeBanner;

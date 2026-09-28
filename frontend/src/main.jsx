@@ -28,15 +28,36 @@ createRoot(document.getElementById('root')).render(
   </HelmetProvider>
 );
 
-// Register Service Worker for PWA
+// Register Service Worker for PWA (Production Only)
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('SW registered: ', registration);
-      })
-      .catch(registrationError => {
-        console.log('SW registration failed: ', registrationError);
+  if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+          console.log('SW registered: ', registration);
+        })
+        .catch(registrationError => {
+          console.log('SW registration failed: ', registrationError);
+        });
+    });
+  } else {
+    // In development mode, ensure any existing service workers are unregistered
+    // to prevent caching/intercepting Vite dynamic imports & HMR modules
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      for (const registration of registrations) {
+        registration.unregister().then(unregistered => {
+          if (unregistered) {
+            console.log('Development mode: Unregistered leftover service worker');
+          }
+        });
+      }
+    });
+    // Clear caches in dev mode to prevent stale chunk errors
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        keys.forEach(key => caches.delete(key));
       });
-  });
+    }
+  }
 }
+

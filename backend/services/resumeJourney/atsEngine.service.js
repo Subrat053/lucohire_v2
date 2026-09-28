@@ -1,17 +1,56 @@
 const prisma = require('../../config/prisma');
 const { evaluateScoringRules, normalizeStr } = require('../rulesEngine/ruleEvaluator');
 const { PATH_SPECIFICATIONS, calculatePathMatchProbability } = require('./careerPath.service');
+const { generateDynamicResumeRewrites } = require('../ai/resumeRewriteLLM.service');
 
 // ─── High-Concurrency In-Memory Cache (TTL: 10 minutes) ─────────────────────
 let cachedTaxonomy = null;
 let cachedTaxonomyExpiry = 0;
 const atsConfigCache = new Map();
+const careerPathCache = new Map();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function invalidateAtsCache() {
   cachedTaxonomy = null;
   cachedTaxonomyExpiry = 0;
   atsConfigCache.clear();
+  careerPathCache.clear();
+}
+
+async function getCachedCareerPath(slug) {
+  const cached = careerPathCache.get(slug);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.data;
+  }
+  const path = await prisma.careerPath.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      subTitle: true,
+      badge: true,
+      isRecommended: true,
+      atcScoringConfigs: {
+        where: { status: 'PUBLISHED' },
+        orderBy: { version: 'desc' },
+        take: 1,
+        select: {
+          id: true,
+          baseScore: true,
+          maxScore: true,
+          rules: {
+            where: { isEnabled: true },
+            orderBy: { priority: 'asc' },
+          },
+        },
+      },
+    },
+  });
+  if (path) {
+    careerPathCache.set(slug, { data: path, expiry: Date.now() + CACHE_TTL_MS });
+  }
+  return path;
 }
 
 async function getCachedSkillTaxonomy() {
@@ -351,87 +390,65 @@ async function calculateAtsAnalysis({
   userId,
   careerPathSlug = 'p1',
   customScoreOverride = null,
+  rawTextOverride = null,
+  canonicalDataOverride = null,
 }) {
-  // 1. Fetch Career Path and Published ATS Config (Cached)
-  const careerPath = await prisma.careerPath.findUnique({
-    where: { slug: careerPathSlug },
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      subTitle: true,
-      badge: true,
-      isRecommended: true,
-      atcScoringConfigs: {
-        where: { status: 'PUBLISHED' },
-        orderBy: { version: 'desc' },
-        take: 1,
-        select: {
-          id: true,
-          baseScore: true,
-          maxScore: true,
-          rules: {
-            where: { isEnabled: true },
-            orderBy: { priority: 'asc' },
-          },
-        },
+  // 1 & 2. Concurrently fetch CareerPath (cached), Profile, and LatestResume in parallel
+  const [careerPath, profile, latestResume, allSkills] = await Promise.all([
+    getCachedCareerPath(careerPathSlug),
+    prisma.providerProfile.findUnique({
+      where: { user: userId },
+      select: {
+        user: true,
+        profileName: true,
+        professionalTitle: true,
+        description: true,
+        experience: true,
+        skills: true,
+        resumeUrl: true,
+        profileCompletion: true,
+        parsedResumeData: true,
       },
-    },
-  });
+    }),
+    rawTextOverride
+      ? Promise.resolve(null)
+      : prisma.candidateResume.findFirst({
+          where: { userId, isActive: true },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            storageUrl: true,
+            originalFilename: true,
+            fileSizeBytes: true,
+            createdAt: true,
+            versions: {
+              orderBy: { versionNumber: 'desc' },
+              take: 1,
+              select: {
+                id: true,
+                versionNumber: true,
+                rawText: true,
+                canonicalData: true,
+                targetRole: true,
+              },
+            },
+          },
+        }),
+    getCachedSkillTaxonomy(),
+  ]);
 
   if (!careerPath) {
     throw new Error(`Career path ${careerPathSlug} not found.`);
   }
 
-  // 2. Fetch User Profile and Latest Resume Data (Lean Query)
-  const profile = await prisma.providerProfile.findUnique({
-    where: { user: userId },
-    select: {
-      user: true,
-      profileName: true,
-      professionalTitle: true,
-      description: true,
-      experience: true,
-      skills: true,
-      resumeUrl: true,
-      profileCompletion: true,
-      parsedResumeData: true,
-    },
-  });
-
-  const latestResume = await prisma.candidateResume.findFirst({
-    where: { userId, isActive: true },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      storageUrl: true,
-      originalFilename: true,
-      fileSizeBytes: true,
-      createdAt: true,
-      versions: {
-        orderBy: { versionNumber: 'desc' },
-        take: 1,
-        select: {
-          id: true,
-          versionNumber: true,
-          rawText: true,
-          canonicalData: true,
-          targetRole: true,
-        },
-      },
-    },
-  });
-
   const version = latestResume?.versions?.[0];
-  const canonicalData = version?.canonicalData || profile?.parsedResumeData || {};
-  const rawText = version?.rawText || '';
+  const canonicalData = canonicalDataOverride || version?.canonicalData || profile?.parsedResumeData || {};
+  const rawText = rawTextOverride || version?.rawText || '';
 
   const candidateSkills = Array.isArray(canonicalData.skills) && canonicalData.skills.length > 0
     ? canonicalData.skills
     : (profile?.skills || ['JavaScript', 'HTML5', 'CSS3']);
 
-  // 3. Match against Cached SkillTaxonomy
-  const allSkills = await getCachedSkillTaxonomy();
   const normCandidateSkills = candidateSkills.map(normalizeStr).filter(Boolean);
 
   const isMatched = (skillItem) => {
@@ -502,8 +519,25 @@ async function calculateAtsAnalysis({
     });
   }
 
-  // 5. Generate Dynamic Line Fixes & Roadmap
-  const dynamicFixes = generateDynamicLineFixes(canonicalData, profile || {}, careerPath.title);
+  // 5. Generate Dynamic AI Line Fixes & Roadmap
+  let dynamicFixes = [];
+  if (rawText && rawText.length >= 50) {
+    try {
+      dynamicFixes = await generateDynamicResumeRewrites({
+        rawText,
+        targetRole: careerPath.title,
+        careerPathSlug,
+      });
+    } catch (aiErr) {
+      console.warn('[AtsEngine] AI resume rewrite generation failed, falling back to heuristics:', aiErr.message);
+    }
+  }
+
+  // Fallback to heuristic line fixes if resume text was empty or AI was unavailable
+  if (!Array.isArray(dynamicFixes) || dynamicFixes.length === 0) {
+    dynamicFixes = generateDynamicLineFixes(canonicalData, profile || {}, careerPath.title);
+  }
+
   const dynamicRoadmap = generateDynamicRoadmap(canonicalData, careerPathSlug);
 
   // 6. Calculate Heuristic Path Match Probability
@@ -615,6 +649,30 @@ async function optimizeAtsAnalysis({ userId, careerPathSlug = 'p1' }) {
     console.warn('[AtsEngine.optimize] Journey state save error:', err.message);
   }
 
+  // Construct complete, instant optimized ATS audit object so frontend never needs to make a second request
+  const optimizedComponents = [
+    ...(currentAnalysis.components || []),
+    {
+      category: 'Optimized',
+      label: 'AI Keyword & Metric Optimizer',
+      score: 18,
+      max: 20,
+      passed: true,
+      note: 'Applied auto-fix keyword and verb enhancements.',
+    },
+  ];
+
+  const optimizedAtsAudit = {
+    ...currentAnalysis,
+    atsScore: optimizedScore,
+    components: optimizedComponents,
+    scoreRating: optimizedScore >= 75 ? 'Strong Match' : 'Competitive',
+    fixes: (currentAnalysis.fixes || []).map((f) => ({
+      ...f,
+      status: 'Optimized',
+    })),
+  };
+
   return {
     success: true,
     previousScore: currentScore,
@@ -624,10 +682,8 @@ async function optimizeAtsAnalysis({ userId, careerPathSlug = 'p1' }) {
     targetTitle: spec.targetTitle,
     fixesApplied,
     injectedKeywords: missingSkills,
-    optimizedLineFixes: currentAnalysis.fixes.map((f) => ({
-      ...f,
-      status: 'Optimized',
-    })),
+    atsAudit: optimizedAtsAudit,
+    optimizedLineFixes: optimizedAtsAudit.fixes,
   };
 }
 

@@ -85,29 +85,22 @@ exports.uploadResume = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
 
-    const result = await resumeIntelService.processResumeUpload({
+    const careerPathSlug = req.body?.careerPathSlug || 'p1';
+
+    // High-performance pipelined upload, parse, and ATS benchmarking
+    const { uploadResult, atsAudit } = await resumeIntelService.processResumeUploadAndAudit({
       userId,
       fileBuffer: req.file.buffer,
       originalFilename: req.file.originalname,
       mimeType: req.file.mimetype,
+      careerPathSlug,
     });
-
-    // Automatically execute dynamic ATS audit on the newly uploaded document
-    let atsAudit = null;
-    try {
-      atsAudit = await atsEngineService.calculateAtsAnalysis({
-        userId,
-        careerPathSlug: req.body?.careerPathSlug || 'p1',
-      });
-    } catch (atsErr) {
-      console.warn('[ResumeJourney.uploadResume] ATS audit computation deferred:', atsErr.message);
-    }
 
     res.json({
       success: true,
       message: 'Resume uploaded, parsed, and benchmarked successfully.',
       data: {
-        ...result,
+        ...uploadResult,
         atsAudit,
       },
     });

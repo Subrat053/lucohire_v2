@@ -5,13 +5,32 @@
  */
 
 const path = require('path');
+let pdfParse = null;
+let mammoth = null;
+let WordExtractor = null;
+
+function getPdfParse() {
+  if (!pdfParse) pdfParse = require('pdf-parse');
+  return pdfParse;
+}
+
+function getMammoth() {
+  if (!mammoth) mammoth = require('mammoth');
+  return mammoth;
+}
+
+function getWordExtractor() {
+  if (!WordExtractor) WordExtractor = require('word-extractor');
+  return WordExtractor;
+}
 
 // ─── PDF extraction ───────────────────────────────────────────────────────────
+const PDF_RENDER_OPTIONS = { normalizeWhitespace: false, disableCombineTextItems: false };
+
 async function extractFromPdf(buffer) {
-  const pdfParse = require('pdf-parse');
+  const parser = getPdfParse();
   const render_page = async function(pageData) {
-    let render_options = { normalizeWhitespace: false, disableCombineTextItems: false };
-    let textContent = await pageData.getTextContent(render_options);
+    let textContent = await pageData.getTextContent(PDF_RENDER_OPTIONS);
     let textString = textContent.items.map(i => i.str).join(' ');
 
     try {
@@ -23,19 +42,19 @@ async function extractFromPdf(buffer) {
         textString += '\n--- EMBEDDED LINKS ---\n' + links.join('\n') + '\n';
       }
     } catch(e) {
-      console.warn('Could not extract PDF annotations:', e.message);
+      // Non-critical: suppress annotation error for speed
     }
     return textString;
   };
 
-  const parserResult = await pdfParse(buffer, { pagerender: render_page });
+  const parserResult = await parser(buffer, { pagerender: render_page });
   return (parserResult?.text || '').trim();
 }
 
 // ─── DOCX extraction ─────────────────────────────────────────────────────────
 async function extractFromDocx(buffer) {
-  const mammoth = require('mammoth');
-  const result = await mammoth.extractRawText({ buffer });
+  const docxParser = getMammoth();
+  const result = await docxParser.extractRawText({ buffer });
   return result.value || '';
 }
 

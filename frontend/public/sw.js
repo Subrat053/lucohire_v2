@@ -12,11 +12,11 @@ const URLS_TO_CACHE = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(URLS_TO_CACHE);
+      .then(cache => cache.addAll(URLS_TO_CACHE))
+      .catch(err => {
+        console.warn('SW cache.addAll failed:', err);
       })
   );
-  // Force the waiting service worker to become the active service worker.
   self.skipWaiting();
 });
 
@@ -33,7 +33,6 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  // Claim all clients to ensure the new service worker controls them immediately
   self.clients.claim();
 });
 
@@ -41,42 +40,69 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  const requestUrl = new URL(event.request.url);
-
-  // Ignore external API calls to avoid CORS errors (like restcountries.com)
-  if (requestUrl.origin !== self.location.origin && requestUrl.pathname.includes('/v3.1/all')) {
+  let requestUrl;
+  try {
+    requestUrl = new URL(event.request.url);
+  } catch {
     return;
   }
 
-  // For API requests, try network first, then cache if offline (GET requests only)
-  if ((requestUrl.pathname.startsWith('/api/') || requestUrl.pathname.startsWith('/auth/')) && event.request.method === 'GET') {
+  // 1. Only handle standard HTTP/HTTPS schemes (skip chrome-extension, blob, data, etc.)
+  if (!requestUrl.protocol.startsWith('http')) return;
+
+  // 2. Do not intercept cross-origin requests (e.g., clarity.ms, razorpay, analytics, Google fonts)
+  // Let the browser handle external requests directly so ad-blockers / network failures don't reject SW promises
+  if (requestUrl.origin !== self.location.origin) return;
+
+  // 3. Skip Vite dev server and HMR requests during local development
+  if (
+    requestUrl.pathname.startsWith('/@') ||
+    requestUrl.pathname.startsWith('/src/') ||
+    requestUrl.pathname.startsWith('/node_modules/') ||
+    requestUrl.search.includes('t=')
+  ) {
+    return;
+  }
+
+  // 4. API requests: network first, cache fallback (GET requests only)
+  if (requestUrl.pathname.startsWith('/api/') || requestUrl.pathname.startsWith('/auth/')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Clone the response and cache it for offline use
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            }).catch(() => {});
+          }
           return response;
         })
         .catch(() => {
-          return caches.match(event.request);
+          return caches.match(event.request).then(cached => cached || Response.error());
         })
     );
-  } else {
-    // For static assets, try cache first, then network
-    event.respondWith(
-      caches.match(event.request)
-        .then(response => {
-          if (response) {
-            return response;
-          }
-          return fetch(event.request).then(networkResponse => {
-            // Optional: cache dynamic assets here
-            return networkResponse;
-          });
-        })
-    );
+    return;
   }
+
+  // 5. Static assets: cache first, network fallback with error catch
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request).catch(err => {
+          console.debug('SW fetch fallback for:', event.request.url, err);
+          // Return cached index.html for navigation or empty response
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+          return Response.error();
+        });
+      })
+      .catch(() => {
+        return caches.match('/index.html');
+      })
+  );
 });
+

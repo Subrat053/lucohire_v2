@@ -13,8 +13,6 @@
 
     <!-- Primary SEO -->
     <title data-rh="true">Lucohire | AI-Powered Jobs and Hiring Platform in India</title>
-    <!-- Razorpay SDK -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="author" content="Lucohire" />
     <meta name="geo.region" content="IN" />
@@ -89,16 +87,28 @@
     }
     </script>
 
-     <!-- Google Analytics GA4 (Commented out temporarily to fix 404 console error)  -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5NLH5Q1M72"></script>
+    <!-- Analytics & Tracking (Production Only) -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-5NLH5Q1M72');
-    </script>
-    <!-- Microsoft Clarity (Deferred) -->
-    <script>
+      (function() {
+        var isLocal = Boolean(
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname === '[::1]' ||
+          window.location.hostname.endsWith('.local')
+        );
+        if (isLocal) return;
+
+        // Google Analytics GA4
+        var gaScript = document.createElement('script');
+        gaScript.async = true;
+        gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-5NLH5Q1M72';
+        document.head.appendChild(gaScript);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-5NLH5Q1M72');
+
+        // Microsoft Clarity (Deferred)
         window.addEventListener('load', function() {
           setTimeout(function() {
             (function(c,l,a,r,i,t,y){
@@ -108,6 +118,7 @@
             })(window, document, "clarity", "script", "xtwymtc9b2");
           }, 2000); // Wait 2s after load to prevent blocking interaction
         });
+      })();
     </script>
 
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs.txt">

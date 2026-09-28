@@ -230,7 +230,12 @@ export function ResumeJourneyProvider({ children }) {
       if (res?.data?.success && res.data.data) {
         const d = res.data.data;
         setCustomAtsScore(d.optimizedScore);
-        await runAtsAudit(slug, d.optimizedScore);
+        // Instant update: use the pre-computed optimized audit directly
+        if (d.atsAudit) {
+          setAtsAuditData(d.atsAudit);
+        } else {
+          await runAtsAudit(slug, d.optimizedScore);
+        }
         return d;
       }
       throw new Error('Auto-fix did not return data');
