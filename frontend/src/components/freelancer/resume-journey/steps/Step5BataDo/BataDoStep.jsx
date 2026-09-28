@@ -8,10 +8,30 @@ import JobReadyCertificate from './JobReadyCertificate';
 
 export default function BataDoStep() {
   const navigate = useNavigate();
-  const { goToStep, resetJourney } = useResumeJourney();
+  const { goToStep, resetJourney, loadReadinessVerdict, isLoadingReadiness } = useResumeJourney();
 
   return (
     <div className="space-y-6">
+      {/* Top Banner with Refresh Status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#0E8F5F] animate-pulse" />
+          <span className="text-[12px] font-semibold text-[#141A33]">
+            Step 5: Dynamic Job-Ready Assessment &amp; Action Plan
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => loadReadinessVerdict(true)}
+          disabled={isLoadingReadiness}
+          className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[#5B21D6] hover:text-[#4A3AE0] bg-[#F0EDFC] hover:bg-[#E6E0FA] px-3 py-1.5 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+        >
+          <span className={isLoadingReadiness ? 'animate-spin' : ''}>🔄</span>
+          <span>{isLoadingReadiness ? 'Recalculating...' : 'Recalculate Verdict'}</span>
+        </button>
+      </div>
+
       {/* Tier 1: Full-Width Top Executive Verdict Hero */}
       <VerdictHeroCard />
 
@@ -84,3 +104,4 @@ export default function BataDoStep() {
     </div>
   );
 }
+

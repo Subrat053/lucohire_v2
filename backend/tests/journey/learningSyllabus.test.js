@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   synthesizeDynamicSyllabus,
   getAiExplanationForTopic,
+  getRecruiterQuestionsForTopic,
   setAiTutorFeatureOverride,
   TOPIC_KNOWLEDGE_BASE,
 } = require('../../services/resumeJourney/learning.service');
@@ -125,6 +126,73 @@ describe('Step 2 Padhaao Dynamic Syllabus & AI Learning Tests', () => {
     assert.ok(disabledResult.explanation.includes('paused in administrator settings'));
 
     // Reset override
+    setAiTutorFeatureOverride(null);
+  });
+
+  test('getRecruiterQuestionsForTopic returns varied questions with category, difficulty and tips', async () => {
+    setAiTutorFeatureOverride(null);
+    const result = await getRecruiterQuestionsForTopic({
+      chapterKey: 'basic-0',
+      topicName: 'Git & GitHub Collaborative Workflow',
+      count: 3,
+    });
+
+    assert.ok(result, 'Result should exist');
+    assert.equal(result.isFeatureDisabled, false);
+    assert.equal(result.topic, 'Git & GitHub Collaborative Workflow');
+    assert.ok(Array.isArray(result.questions));
+    assert.equal(result.questions.length, 3);
+
+    for (const q of result.questions) {
+      assert.ok(q.question && typeof q.question === 'string');
+      assert.ok(q.category, 'Question must have category');
+      assert.ok(q.difficulty, 'Question must have difficulty');
+      assert.ok(q.recruiterTip, 'Question must have recruiterTip');
+      assert.ok(q.sampleAnswerHook, 'Question must have sampleAnswerHook');
+    }
+  });
+
+  test('getRecruiterQuestionsForTopic excludes previously seen questions correctly', async () => {
+    setAiTutorFeatureOverride(null);
+    const batch1 = await getRecruiterQuestionsForTopic({
+      chapterKey: 'basic-0',
+      topicName: 'Git & GitHub Collaborative Workflow',
+      count: 3,
+      excludeQuestions: [],
+    });
+
+    const seenQuestions = batch1.questions.map((q) => q.question);
+
+    const batch2 = await getRecruiterQuestionsForTopic({
+      chapterKey: 'basic-0',
+      topicName: 'Git & GitHub Collaborative Workflow',
+      count: 3,
+      excludeQuestions: seenQuestions,
+    });
+
+    assert.ok(batch2.questions.length > 0);
+    for (const q of batch2.questions) {
+      assert.ok(
+        !seenQuestions.includes(q.question),
+        `Question "${q.question}" should not have been repeated from batch 1`
+      );
+    }
+  });
+
+  test('getRecruiterQuestionsForTopic respects admin feature flag when disabled', async () => {
+    setAiTutorFeatureOverride(false);
+
+    const disabledResult = await getRecruiterQuestionsForTopic({
+      chapterKey: 'basic-0',
+      topicName: 'Git & GitHub Collaborative Workflow',
+      count: 3,
+    });
+
+    assert.ok(disabledResult);
+    assert.equal(disabledResult.isFeatureDisabled, true);
+    assert.ok(disabledResult.questions.length > 0);
+    assert.ok(disabledResult.message.includes('paused'));
+
     setAiTutorFeatureOverride(null);
   });
 });

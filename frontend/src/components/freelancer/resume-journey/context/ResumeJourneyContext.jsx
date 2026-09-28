@@ -8,10 +8,10 @@ import { resumeJourneyAPI } from '../../../../services/resumeJourneyAPI';
 const ResumeJourneyContext = createContext(null);
 
 const STORAGE_KEY = 'luco_resume_journey_v2';
-const ALLOW_FREE_NAVIGATION = true; // Set to true per user request for smooth Step 1-5 testing
+const ALLOW_FREE_NAVIGATION = false; // Set to true per user request for smooth Step 1-5 testing
 
 export function ResumeJourneyProvider({ children }) {
-  const { profile, loadDashboardData } = useFreelancer();
+  const { profile, user, displayName, loadDashboardData } = useFreelancer();
 
   // Load cached progress from localStorage
   const savedState = useMemo(() => {
@@ -137,6 +137,9 @@ export function ResumeJourneyProvider({ children }) {
   );
 
   const [serverData, setServerData] = useState(null);
+  const [serverReadiness, setServerReadiness] = useState(null);
+  const [serverCertificate, setServerCertificate] = useState(null);
+  const [isLoadingReadiness, setIsLoadingReadiness] = useState(false);
 
   // Run ATS audit against backend
   const runAtsAudit = useCallback(async (pathSlug, overrideScore = null) => {
@@ -287,16 +290,70 @@ export function ResumeJourneyProvider({ children }) {
     loadPadhaaoSyllabus(selectedPaths[0] || 'p1');
   }, [selectedPaths, atsAuditData, loadPadhaaoSyllabus]);
 
-  // Step 5 Dynamic Readiness Verdict
+  // Step 5 Dynamic Readiness Verdict: Combine client formula with server authoritative payload
+  const loadReadinessVerdict = useCallback(async (forceRefresh = false) => {
+    const slug = selectedPaths[0] || 'p1';
+    setIsLoadingReadiness(true);
+    try {
+      const res = await resumeJourneyAPI.getReadiness(slug, { forceRefresh });
+      if (res?.data?.success && res.data.data) {
+        setServerReadiness(res.data.data);
+        if (res.data.data.certificate) {
+          setServerCertificate(res.data.data.certificate);
+        } else if (res.data.data.combinedScore >= 70) {
+          try {
+            const certRes = await resumeJourneyAPI.getCertificate(slug);
+            if (certRes?.data?.success && certRes.data.data) {
+              setServerCertificate(certRes.data.data);
+            }
+          } catch {
+            // Certificate unlock pending
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[ResumeJourney] Load readiness verdict fallback:', err.message);
+    } finally {
+      setIsLoadingReadiness(false);
+    }
+  }, [selectedPaths]);
+
+  // Load readiness automatically on Step 5
+  useEffect(() => {
+    if (activeStep === 5) {
+      loadReadinessVerdict();
+    }
+  }, [activeStep, loadReadinessVerdict]);
+
   const readinessVerdict = useMemo(() => {
-    return calculateCompositeReadiness({
+    const clientComputed = calculateCompositeReadiness({
       atsScore,
       testScore: testState?.score,
       testTotal: testState?.total,
       practiceScore: practiceState?.pScore,
       practiceTotal: practiceState?.pTotal,
     });
-  }, [atsScore, testState?.score, testState?.total, practiceState?.pScore, practiceState?.pTotal]);
+
+    if (serverReadiness) {
+      return {
+        ...clientComputed,
+        combinedScore: serverReadiness.combinedScore ?? clientComputed.combinedScore,
+        bandClass: serverReadiness.bandClass ?? clientComputed.bandClass,
+        bandLabel: serverReadiness.bandLabel ?? clientComputed.bandLabel,
+        percentile: serverReadiness.percentile ?? clientComputed.percentile,
+        rankText: serverReadiness.rankText ?? clientComputed.rankText,
+        planA: serverReadiness.planA,
+        planB: serverReadiness.planB,
+        actionPlan: serverReadiness.actionPlan,
+        lessonsCompleted: serverReadiness.lessonsCompleted,
+        totalLessons: serverReadiness.totalLessons,
+        practiceReps: serverReadiness.practiceReps,
+        isCached: serverReadiness.isCached,
+      };
+    }
+
+    return clientComputed;
+  }, [atsScore, testState?.score, testState?.total, practiceState?.pScore, practiceState?.pTotal, serverReadiness]);
 
   // Save to localStorage
   useEffect(() => {
@@ -389,6 +446,10 @@ export function ResumeJourneyProvider({ children }) {
       weakTopics: weakTopics || [],
     });
     setHighestUnlockedStep(5);
+    // Pre-warm server readiness verdict
+    setTimeout(() => {
+      loadReadinessVerdict(true);
+    }, 300);
   };
 
   const resetJourney = async () => {
@@ -449,6 +510,12 @@ export function ResumeJourneyProvider({ children }) {
     resetJourney,
     serverData,
     refreshJourneyState,
+    user,
+    displayName,
+    serverReadiness,
+    serverCertificate,
+    isLoadingReadiness,
+    loadReadinessVerdict,
   };
 
   return (

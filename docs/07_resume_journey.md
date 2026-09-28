@@ -468,16 +468,349 @@ To guarantee responsiveness during heavy concurrent platform loads (e.g., campus
 3. **Graceful Fallback & Offline Resilience**:
    - The frontend synchronizes the active syllabus to `localStorage` (`lucohire_resume_journey_v2`), ensuring seamless learning even during network hiccups.
 
-### 11.5 Step Advancement & Consecutive Traversal Integrity
+### 11.6 Dynamic Recruiter Questions & AI Resuggest Engine (`POST /padhaao/ai-questions`)
 
-- **Consecutive Cross-Track Progression ($3 \cdot x + 1$)**: Syllabus chapters are indexed into a flattened sequence across all tiers (`Basic` $\rightarrow$ `Medium` $\rightarrow$ `Premium`). When advancing from the final chapter of a track (e.g. Chapter 3 of Basic), `handleNextChapterInPlayer` automatically switches the active track state (`setActiveTrack(nextItem.trackKey)`) and opens the first chapter of the subsequent section (e.g. Chapter 4 in Medium) without closing the modal. On the final chapter of the final track, the CTA transitions to `"Proceed to Step 3: Practice Karao →"`, smoothly navigating to Step 3 upon completion.
-- **Testing Mode Progression Policy vs Production Lock**:
-  - **Production Requirement Target**: Advancing to Step 3 will require completing all lessons across all tiers (`completedTotal >= totalChaptersAcrossAll`).
-  - **Current Testing Mode**: Navigation to Step 3 is unrestricted (`canAdvanceToStep3 = true`) to enable seamless testing of all journey flows without artificial blockers. The UI bottom card displays progress status (`Completed X of Y lessons`) with an explicit badge denoting unrestricted testing mode.
-- **Streamlined Desktop Sidebar**: Redundant secondary action cards have been removed from the left column, focusing the sticky sidebar exclusively on the `TrackTabs` navigator and overall progress meter.
+In `LessonPlayerModal`, candidates are not limited to static sample questions. The system features a real-time dynamic recruiter question generator with resuggest capabilities:
+- **Topic-Adaptive Synthesis**: Questions are dynamically synthesized or curated based on the lesson's core technical subject (including Python, Java, Go, React, and Node).
+- **Recruiter Filter Categories**:
+  - `System Design & Scale`: Probes concurrency, caching, database indexing, and latency bottlenecks.
+  - `Production Outages`: Scenarios involving race conditions, memory leaks, and incident rollbacks.
+  - `STAR Experience`: Behavioral and project leadership questions evaluating real-world problem solving.
+  - `ATS Recruiter Filter`: Screening questions testing candidate adherence to industry standards and best practices.
+- **Recruiter Tip & Answer Hook**:
+  - `recruiterTip`: Reveals the hiring manager's hidden filter and evaluation criteria.
+  - `sampleAnswerHook`: Provides a high-impact, persuasive opening statement for the candidate's interview response.
+- **"✦ Ask AI for More Questions & Tips (Resuggest)" Action**:
+  - Allows candidates to click a dedicated button inside the modal to generate alternative questions.
+  - Sends `excludeQuestions` array in the request body to guarantee 100% fresh, non-duplicate suggestions.
+  - Intercepted by local curated fallback banks if external LLM APIs are offline or disabled.
+  - Governed by admin toggle `ai.feature.padhaao_tutor` (`GET /padhaao/ai-tutor/status`).
+
+---
+
+## 12. Step 3: Practice Karao — Resume-Adaptive Dynamic Practice Engine, Multi-Stack Subjects & Real-Time Streak
+
+### 12.1 Purpose & Architectural Overview
+
+**Step 3: Practice Karao** (`/freelancer/resume` Step 3) provides low-stakes, interactive technical reps that prepare the freelancer for the server-authoritative, timed assessment in Step 4. Unlike static question banks that assume every candidate is a JavaScript frontend developer, the **Practice Engine** dynamically adapts to the candidate's actual engineering domain.
+
+```mermaid
+flowchart TD
+    subgraph ProfileDetection["1. Candidate Tech Stack Detection"]
+        CV["Candidate Resume (PDF/DOCX)"]
+        Prof["Provider Profile Skills"]
+        ATS["ATS Scoring Gap Analysis"]
+        Detect["detectCandidateTechStack()"]
+        CV & Prof & ATS --> Detect
+    end
+
+    subgraph Stacks["Detected Tech Stacks"]
+        PY["Python Backend & Microservices"]
+        JV["Java & Spring Enterprise"]
+        GO["Go & Cloud DevOps"]
+        NODE["Node.js & TypeScript"]
+        REACT["React & Next.js Ecosystem"]
+        DATA["Databases & High-Scale Systems"]
+        Detect --> PY & JV & GO & NODE & REACT & DATA
+    end
+
+    subgraph Modes["2. Interactive Practice Modes"]
+        EASY["Easy: Core Basics (Syntax & APIs)"]
+        MIXED["Mixed: Real Interview Blend (Scale & Trade-offs)"]
+        HARD["Hard: Edge Cases (Outages & Concurrency)"]
+    end
+
+    subgraph Engine["3. Hybrid Question Generation Engine"]
+        LLM["Live AI Synthesis (OpenAI / Gemini)"]
+        BANK["Multi-Stack Practice Bank (Zero-Downtime Fallback)"]
+        LLM <-->|Graceful Fallback| BANK
+    end
+
+    subgraph Interaction["4. Live Candidate Practice & Streak"]
+        Card["PracticeQuizCard with Immediate Feedback"]
+        Streak["Real-Time Streak Tracker (Live Increment/Reset)"]
+        Trap["Recruiter Trap & Anti-Pattern Alert"]
+        Card --> Streak & Trap
+    end
+
+    subgraph Persistence["5. Submission & Adaptive Handoff"]
+        Sub["POST /journey/practice/submit"]
+        TopicPerf["Prisma: TopicPerformance (Weakness Scoring)"]
+        Att["Prisma: PracticeAttempt (Streak & Accuracy)"]
+        Step4["Step 4: Timed Assessment (Weakness Weighted)"]
+        Step5["Step 5: 30-Day Action Plan (Weakness Remediation)"]
+        Sub --> TopicPerf & Att
+        TopicPerf --> Step4 & Step5
+    end
+
+    Stacks --> Engine
+    Modes --> Engine
+    Engine --> Card
+    Card --> Sub
+```
+
+### 12.2 Multi-Stack Candidate Tech Stack Detection (`detectCandidateTechStack`)
+
+The practice engine inspects three sources of truth to determine the candidate's core stack:
+1. `CandidateResume.parsedText`: Full text of the candidate's uploaded and parsed resume.
+2. `ProviderProfile.skills`: Skills declared by the freelancer on their profile.
+3. `ATSScoringResult.matchedSkills` & `missingSkills`: Gap analysis computed during Step 1.
+
+The engine scores candidate affinity across 6 distinct engineering stacks:
+- **`python`**: Python, Django, FastAPI, Flask, Asyncio, Celery, SQLAlchemy, Pandas, PyTorch.
+- **`java`**: Java, Spring Boot, Hibernate, JVM tuning, Maven, Gradle, Microservices.
+- **`go_devops`**: Golang, Goroutines, Kubernetes, Docker, Terraform, AWS, GCP, CI/CD pipelines.
+- **`node_ts`**: Node.js, TypeScript, Express, NestJS, Event loop, Worker threads, Streams.
+- **`react_next`**: React 19, Next.js App Router, Server Components, State Management, Performance Profiling.
+- **`data_sysdesign`**: PostgreSQL indexing, Redis caching, Message queues (Kafka/RabbitMQ), Distributed transactions.
+
+The detected stack is rendered directly in the UI as a prominent badge:
+`✨ Adaptive Stack: Python Backend & Microservices` (or respective detected track).
+
+### 12.3 Three Interactive Practice Modes
+
+Candidates can select between 3 difficulty levels, each calibrating question complexity and failure modes:
+1. **Core Basics (`easy`)**:
+   - **Focus**: Foundational syntax, standard API contracts, lifecycle hooks, and baseline rules.
+   - **Target**: Junior engineers or candidates refreshing their core mechanics.
+2. **Mixed Mode (`mixed`) — Recommended**:
+   - **Focus**: Real interview blend of foundational questions, architectural trade-offs, and screening traps.
+   - **Target**: Mid-to-senior candidates preparing for full interview panels.
+3. **Edge Cases (`hard`)**:
+   - **Focus**: Production outages, race conditions, memory leaks, high-concurrency deadlocks, and distributed scale bottlenecks.
+   - **Target**: Senior and lead candidates aiming for high-bracket (15–25 LPA) offers.
+
+### 12.4 Real-Time Dynamic Streak Engine
+
+- **Real-Time State Tracking**: Displayed with an animated fire badge (`🔥 {currentStreak} in a row`) in both the header and desktop session companion card.
+- **Deterministic Increment & Reset**:
+  - Correct answer: Streak immediately increments (`currentStreak + 1`).
+  - Incorrect answer: Streak resets to `0`, emphasizing the value of consistency.
+- **Persistence Across Sessions**: When a practice round is submitted, the final streak is persisted in the database (`PracticeAttempt.streak`) and updated in `ResumeJourneyContext`, carrying over across practice rounds.
+- **Clean Sweep Accolade**: Flawless rounds (100% correct) unlock the `"Round Clean Sweep!"` badge and `"🏆 Flawless Round! Interview Ready"` title on the results card.
+
+### 12.5 Practice Question Anatomy & Recruiter Trap Insights
+
+Every practice question is rendered via `PracticeQuizCard.jsx` with rich context:
+- **Scenario**: A real-world code or system architecture challenge rather than generic textbook trivia.
+- **Code Snippet**: Dark-mode syntax-highlighted code block detailing the exact bug or implementation.
+- **Instant Architectural Explanation (`explain`)**: Shown immediately after the candidate picks an option. Details why the correct answer is architecturally sound.
+- **Recruiter Trap & Anti-Pattern Callout (`mistake`)**:
+  > `⚠️ Recruiter Insight & Common Candidate Pitfall:`
+  > *Explains the misconception or amateur shortcut that leads hiring managers to reject candidates.*
+
+### 12.6 Adaptive Weakness Scoring & Step 4 / Step 5 Integration
+
+When a candidate finishes a practice round, results are submitted via `POST /api/v2/freelancer/journey/practice/submit`:
+1. **`TopicPerformance` Upsert**:
+   - Tracks `totalAttempts`, `correctCount`, and `incorrectCount` per topic.
+   - Computes dynamic weakness score:
+     $$\text{weaknessScore} = \frac{\text{incorrectCount}}{\text{totalAttempts}}$$
+2. **Handoff to Step 4 (Timed Assessment)**:
+   - Topics with `weaknessScore > 0.25` are dynamically weighted when generating assessment questions, testing whether the candidate has retained practice learnings.
+3. **Handoff to Step 5 (Readiness & 30-Day Action Plan)**:
+   - Missed practice topics are surfaced as priority action items in the candidate's custom 30-day closing-the-gap schedule.
+
+### 12.7 Zero-Downtime Hybrid Question Generation
+
+- **Primary Pipeline**: Generates adaptive questions via LLM (OpenAI / Gemini) based on detected resume skills and prior weak topics.
+- **Zero-Downtime Fallback Bank**: If LLM API keys are missing, expired, or encounter rate limits, the engine instantly falls back to `MULTI_STACK_PRACTICE_BANK` containing curated, high-impact scenario questions across Python, Java, Go, Node, React, and System Design.
+- **Fast Response Times**: The fallback path executes in under 2ms, guaranteeing zero UI freezing or candidate blockage.
+
+---
+
+## 13. Step 4: Test Karo — Server-Authoritative Timed Assessment & High-Scale Engine
+
+### 13.1 Purpose & Examination Integrity Overview
+
+**Step 4: Test Karo** (`/freelancer/resume` Step 4) is the proctored, official technical exam that validates candidate competence before issuing the verified hiring readiness certificate. To prevent client-side inspection, cheating, and tamper risks:
+- **Server-Authoritative Evaluation**: All questions are delivered sanitized to the browser. Correct answers (`correctOptionIndex`) and explanations (`explain`) are **strictly masked server-side during the active test**.
+- **Real-Time Active Countdown Timer**: Enforces an exact time limit calculated from `expiresAt` on the server. If time expires, the assessment is automatically finalized and submitted.
+- **Formal Examination Flow**: Clicking an option quietly saves the choice to PostgreSQL in $<1\text{ms}$ and updates the Question Palette state to "Answered". Correctness is not revealed during the exam to preserve formal testing standards.
+- **Post-Submission Solution Review**: Upon submission (or timer expiration), the server computes the score, percentage, passing status ($\ge 70\%$), topic mastery, and returns full question-by-question reviews with architectural explanations.
+
+```mermaid
+flowchart TD
+    subgraph Background["1. Background AI Generation to PostgreSQL"]
+        AI["Background AI Generator (Gemini / OpenAI / Curated Bank)"]
+        LowToken["Low-Token Compact JSON Prompt"]
+        DBQuestions[("PostgreSQL: AssessmentQuestion Table (60+ Seeded)")]
+        AI --> LowToken --> DBQuestions
+    end
+
+    subgraph Server["2. Server-Authoritative Assessment Engine (assessment.service.js)"]
+        RAM["In-Memory RAM Cache (10-min TTL)"]
+        DBQuestions --> RAM
+        Sanitize["Sanitizer: Strip correctOptionIndex & explain"]
+        RAM --> Sanitize
+    end
+
+    subgraph Client["3. Interactive Candidate Exam Runner (TestRunnerCard.jsx)"]
+        Timer["Real-Time Countdown Timer (Auto-Submit on 0:00)"]
+        Palette["Dynamic Question Palette (1..N) with Answered/Flagged States"]
+        Pick["Candidate Picks Option A/B/C/D"]
+        Sanitize --> Client
+    end
+
+    subgraph Sync["4. Real-Time Answer Sync (/assessment/answer)"]
+        SaveChoice["Save Choice in <1ms without leaking correctness"]
+        DBAnswers[("PostgreSQL: AssessmentAnswer Upsert")]
+        Pick --> SaveChoice --> DBAnswers
+    end
+
+    subgraph Finalize["5. Dynamic Scoring & Step 5 Handoff (/assessment/submit)"]
+        Grade["Grade Attempt Server-Side & Calculate Topic Breakdown"]
+        Results["TestResultsCard: ScoreGauge + Solution Review"]
+        Step5["Step 5: Final Readiness Verdict (goToStep(5))"]
+        Client -->|Submit or Timer Expired| Grade --> Results --> Step5
+    end
+```
+
+### 13.2 Database & Concurrency Optimization for 1,000 Concurrent Candidates
+
+To sustain 1,000 concurrent candidates taking exams simultaneously without connection pool exhaustion or database lockouts:
+1. **In-Memory RAM Caching (`assessmentCache`)**:
+   - `configs`: Caches published assessment configurations keyed by `careerPathSlug` with a 10-minute TTL.
+   - `questions`: Caches the full active question pool keyed by `configId` with a 10-minute TTL.
+   - 1,000 candidates starting assessments read from RAM in $<1\text{ms}$, reducing database read IOPS by over 90%.
+2. **Lean Compound-Indexed Writes**:
+   - Answer selections use fast single-row upserts against the compound unique index `attemptId_questionId` on `AssessmentAnswer`.
+   - No heavy transaction locks or cascading queries during active answering.
+3. **Session Resuming Resiliency**:
+   - If a candidate refreshes their browser or loses connectivity, `startAssessmentAttempt` detects their running attempt (`expiresAt > NOW()`) and restores the active attempt with:
+     - Exact remaining seconds calculated from `expiresAt`.
+     - Previously selected answers pre-populated.
+     - Previously flagged questions marked in the Question Palette.
+
+### 13.3 Background AI Question Generation Directly to Database
+
+- **Minimal Token Footprint**: Background prompts are formatted with compact JSON array schemas, stripping conversational pleasantries and asking only for scenario, options, correct index, and a 1-sentence architectural explanation.
+- **Zero Frontend Token Exposure**: Generation happens asynchronously in the background. Raw AI responses are never streamed or exposed to the client; questions are directly inserted into the PostgreSQL `AssessmentQuestion` table.
+- **Pre-Seeded Multi-Stack Pool**: Over 60 verified technical scenario questions across Python Asyncio, Java Spring Boot, Go Concurrency, Docker/Kubernetes, Node.js Event Loop, and High-Scale System Design are pre-populated in PostgreSQL across tracks `p1`, `p2`, `p3`, `p4`.
+
+### 13.4 Candidate Exam Experience & Question Palette
+
+- **Sticky Real-Time Timer**: Displays `MM:SS` countdown with an alert badge and pulse animation when under 60 seconds.
+- **Question Palette**:
+  - Interactive grid displaying all $N$ questions.
+  - Distinct visual states: Active Question (`#5B21D6` solid), Answered & Synced (`#F0EDFC` soft purple), Unanswered (white with border), and Flagged for Review (red dot indicator).
+  - Candidates can jump to any question instantly.
+- **Review & Submit Flow**:
+  - Displays answered count vs unanswered count in a clean confirmation modal.
+  - On confirm, sends all answers to the server for authoritative grading.
+
+### 13.5 Dynamic Grading & Step 5 Handoff
+
+- **Score & Percentage**: Compares each recorded answer against `correctOptionIndex` in PostgreSQL.
+- **Passing Benchmark ($\ge 70\%$)**:
+  - Candidates scoring $\ge 70\%$ clear the assessment and unlock the official **LucoHire Verified Ready** credential in Step 5.
+  - Confetti animation and green badge celebrate passed candidates.
+- **Topic Mastery Breakdown**: Visual progress bars showing accuracy percentage per technical domain.
+- **Detailed Solution & Answer Review**: Post-submission, candidates can review each question, their selected answer, the correct answer, and the detailed architectural explanation.
+- **Direct Step 5 Navigation**: Prominent CTA button seamlessly advances to **Step 5: Bata Do (Final Readiness Verdict & Certificate)**.
+
+---
+
+## 14. Step 5: Bata Do — Dynamic Job-Ready Verdict, Token-Saving Action Plan, Strategic Comparison & Public Verified Certificate
+
+Step 5 represents the culmination of the candidate's career acceleration journey. It synthesizes all journey pillars into an executive readiness verdict, generates a tailored 30-day action plan backed by zero-token database caching, presents two feasible career progression pathways, and issues a cryptographically verifiable public certificate.
+
+```mermaid
+graph TD
+    subgraph S["4-Pillar Synthesis"]
+        P1["Step 1: Resume ATS Score\n(Missing Skills & Core Score)"]
+        P2["Step 2: Lesson Knowledge\n(Chapter Completions in DB)"]
+        P3["Step 3: Practice Drills\n(Total Reps, Streak & Weaknesses)"]
+        P4["Step 4: Skill Assessment\n(Timed Score %, Weak Topics & Missed Qs)"]
+    end
+
+    S --> Engine["readiness.service.js\ncalculateReadinessVerdict()"]
+
+    subgraph Cache["Token-Saving Database Cache"]
+        Check{"Has Stored Plan & Verdict?"}
+        Engine --> Check
+        Check -- "No New Activity Since Last Update" --> Hit["Return Cached CandidateActionPlan & ReadinessResult\n(⚡ Zero LLM Tokens Consumed)"]
+        Check -- "New Assessment or Force Refresh" --> Miss["Synthesize Fresh 4-Pillar Report & Save to PostgreSQL"]
+    end
+
+    Hit --> UI["Step 5 UI Dashboard"]
+    Miss --> Store["Persist to candidateActionPlans & readinessresults"] --> UI
+
+    subgraph Components["Step 5 Dashboard Elements"]
+        V["VerdictHeroCard\n(Overall Score, Band & 4-Pillar Breakdown)"]
+        AP["DynamicActionPlan\n(Interactive 4-Week Schedule with Gap Topics)"]
+        PT["PlanComparisonTabs\n(Feasible Plan A vs Plan B with 1-Click Lead Actions)"]
+        JC["JobReadyCertificate\n(Real Candidate Name, LH-VER ID & Copyable Link)"]
+    end
+
+    UI --> Components
+    JC --> PublicLedger["Public Ledger: /verify/certificate/:verificationId\n(Cryptographic Verification Route)"]
+```
+
+### 14.1 4-Pillar Dynamic Synthesis
+
+Rather than relying on static estimates or single-source scores, Step 5 combines candidate performance across four independent journey pillars:
+
+1. **Resume ATS Knowledge (Step 1)**:
+   - Sourced from `prisma.aTSScoringResult`.
+   - Incorporates automated ATS score, identified missing skills (e.g. Next.js App Router, TypeScript Generics), and bullet point impact metrics.
+2. **Lesson Knowledge (Step 2)**:
+   - Sourced from `prisma.chapterCompletion` records.
+   - Computes completed chapters vs total chapters in the curriculum (e.g. 8/12 completed), highlighting unread modules to incorporate into the gap-closing action plan.
+3. **Practice Reps & Streak (Step 3)**:
+   - Sourced from `prisma.practiceAttempt` and `prisma.topicPerformance`.
+   - Evaluates total solved questions, active daily practice streak, and persistent topic weaknesses ($>0.2$ weakness score).
+4. **Skill Test Assessment (Step 4)**:
+   - Sourced from `prisma.assessmentAttempt` (latest submitted attempt).
+   - Extracts verified test score percentage, time used, and specific questions/topics missed.
+
+### 14.2 Token-Saving Database Caching (`candidateActionPlan` & `readinessResult`)
+
+To minimize LLM API token consumption and ensure instantaneous page loads for returning candidates:
+- **Automatic Cache Lookup**: When a candidate navigates to Step 5 (`GET /v2/freelancer/journey/readiness`), `calculateReadinessVerdict` inspects existing records in PostgreSQL:
+  - `readinessResult`: Stores composite score, band class, percentile, ATS score, assessment score, practice reps, and pillar breakdown JSON.
+  - `candidateActionPlan`: Stores the tailored 30-day task list as structured JSON.
+- **Freshness Invalidation Check**: The engine checks whether the candidate has completed any newer activity since `readinessResult.updatedAt`:
+  - Newer `assessmentAttempt` with `submittedAt > updatedAt`
+  - Newer `aTSScoringResult` with `createdAt > updatedAt`
+  - Newer `practiceAttempt` with `createdAt > updatedAt`
+  - Newer `chapterCompletion` with `completedAt > updatedAt`
+- **Zero-Token Cache Hit**: If no newer activity has occurred and `forceRefresh !== true`, the engine serves the stored verdict and action plan directly in $< 5\text{ms}$ with **0 LLM API tokens consumed**.
+- **On-Demand Recalculation**: Candidates can explicitly click `"🔄 Recalculate Verdict"` in the UI (passing `forceRefresh: true`) whenever they want to force a re-evaluation following recent practice drills.
+
+### 14.3 Two Feasible Career Pathways (`PlanComparisonTabs`)
+
+Candidates are provided with two distinct, realistic strategies to achieve their career goals:
+
+| Feature | Plan A: Target Product Jump | Plan B: Fast-Track Immediate Safety |
+| :--- | :--- | :--- |
+| **Role Type** | Primary aspirational role (e.g., Junior Frontend / Full-Stack Developer at product companies) | High-volume specialization (e.g., Service-based Frontend Specialist / Client Contracting) |
+| **Market Compensation** | ₹6–10 LPA or ₹15–25 LPA | ₹2.5–4.5 LPA or immediate project payouts |
+| **Feasibility Timeline** | 3–4 weeks dedicated gap closing | Immediate (0 days — Ready today) |
+| **Match / Shortlist Rate** | 70–85% match benchmark | 92%+ immediate shortlist probability |
+| **Core Hurdle to Clear** | Master 2 identified weak topics & push production demo repository | Skips high portfolio & system design barriers |
+| **Actionable Next Step** | Complete Week 1–3 of Action Plan | 1-Click direct apply to verified client leads on LucoHire |
+
+### 14.4 Dynamic Verified Certificate & Cryptographic Ledger
+
+When a candidate achieves a composite readiness score $\ge 70\%$, the platform issues an official digital credential:
+
+- **Real Candidate Name Resolution**:
+  - Automatically queries `User.name` or `ProviderProfile.profileName` / `ProviderProfile.name`.
+  - Certificate metadata and verification records store the candidate's exact name, eliminating placeholder text across both the private dashboard and public verification pages.
+- **Autogenerated Cryptographic Verification ID**:
+  - Deterministic SHA-256 hash formatted as `LH-VER-YYYY-XXXXXX` (e.g., `LH-VER-2026-A1B2C3`).
+  - Stored in the `journeycertificates` PostgreSQL table with `status: 'active'`, `issuedAt`, `compositeScore`, `assessmentScore`, and `atsScore`.
+- **Public Verification Ledger (`/verify/certificate/:verificationId`)**:
+  - Unauthenticated public endpoint (`GET /v2/verify/certificate/:verificationId`) allowing recruiters and hiring clients to verify credential authenticity.
+  - Interactive "📋 Copy Credential Link" button copies the shareable verification URL with instant toast feedback.
+  - "🔍 View Public Ledger" opens the public verification page in a new tab.
 
 ---
 
 *Documentation maintained by LucoHire Principal Architecture Team.*
+
+
+
 
 

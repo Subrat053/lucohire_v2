@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useResumeJourney } from '../../context/ResumeJourneyContext';
 import { TRACKS as FALLBACK_TRACKS } from '../../data/padhaaoData';
 import { resumeJourneyAPI } from '../../../../../services/resumeJourneyAPI';
@@ -9,6 +9,10 @@ export default function LessonPlayerModal({ chapterKey, onClose, onNextChapter, 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiData, setAiData] = useState(null);
   const [userQuery, setUserQuery] = useState('');
+  const [recruiterQuestions, setRecruiterQuestions] = useState([]);
+  const [seenQuestions, setSeenQuestions] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const aiTutorRef = useRef(null);
 
   if (!chapterKey) return null;
 
@@ -90,7 +94,13 @@ export default function LessonPlayerModal({ chapterKey, onClose, onNextChapter, 
   // Interactive AI Concept Explainer Handler
   const handleAskAi = async (customPrompt) => {
     const questionText = customPrompt || userQuery.trim() || 'Explain this concept clearly with common interview pitfalls';
+    setUserQuery(questionText);
     setAiLoading(true);
+
+    if (aiTutorRef.current) {
+      aiTutorRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
     try {
       const res = await resumeJourneyAPI.explainConcept({
         topicKey: chapter.id || chapter.key || chapterKey,
@@ -107,6 +117,56 @@ export default function LessonPlayerModal({ chapterKey, onClose, onNextChapter, 
       toast.error('AI Tutor is temporarily busy. Please try again.');
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  // Initialize recruiter questions from chapter syllabus
+  useEffect(() => {
+    if (chapter?.interviewQs && chapter.interviewQs.length > 0) {
+      const initial = chapter.interviewQs.map((q, idx) => ({
+        question: q,
+        category: idx === 0 ? 'Architecture & Scale' : idx === 1 ? 'Production Incident' : 'ATS Recruiter Filter',
+        difficulty: idx === 0 ? 'Mid' : 'Senior',
+        recruiterTip: 'Recruiters evaluate your communication clarity, practical trade-off awareness, and hands-on production experience on this core competency.',
+        sampleAnswerHook: 'Structure your response using STAR, highlighting trade-offs and real-world failure mode mitigations.'
+      }));
+      setRecruiterQuestions(initial);
+      setSeenQuestions(initial.map((item) => item.question));
+    } else {
+      setRecruiterQuestions([]);
+      setSeenQuestions([]);
+    }
+  }, [chapterKey, chapter?.name]);
+
+  // Dynamic AI Recruiter Questions Resuggestion Handler
+  const handleLoadMoreQuestions = async () => {
+    if (loadingQuestions || !chapter) return;
+    setLoadingQuestions(true);
+    try {
+      const res = await resumeJourneyAPI.getRecruiterQuestions({
+        chapterKey: chapter.id || chapter.key || chapterKey,
+        topicName: chapter.name,
+        excludeQuestions: seenQuestions,
+        count: 3
+      });
+
+      if (res?.data?.success && res.data.data?.questions?.length > 0) {
+        const newQs = res.data.data.questions;
+        setRecruiterQuestions((prev) => [...prev, ...newQs]);
+        setSeenQuestions((prev) => [...prev, ...newQs.map((item) => item.question)]);
+        toast.success(
+          res.data.data.isAiGenerated
+            ? `AI Recruiter suggested ${newQs.length} fresh interview questions!`
+            : `Loaded ${newQs.length} new recruiter questions with evaluation tips!`
+        );
+      } else {
+        toast.info('All available recruiter questions for this chapter are currently displayed.');
+      }
+    } catch (err) {
+      console.error('Failed to load more recruiter questions:', err);
+      toast.error('Could not fetch additional questions. Please try again.');
+    } finally {
+      setLoadingQuestions(false);
     }
   };
 
@@ -174,7 +234,7 @@ export default function LessonPlayerModal({ chapterKey, onClose, onNextChapter, 
           </div>
 
           {/* Interactive AI Concept Explainer Card */}
-          <div className="space-y-3 p-4 bg-gradient-to-br from-[#FAF9FE] to-[#F5F2FD] border border-[#D8D2FA] rounded-2xl">
+          <div ref={aiTutorRef} className="space-y-3 p-4 bg-gradient-to-br from-[#FAF9FE] to-[#F5F2FD] border border-[#D8D2FA] rounded-2xl">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="w-7 h-7 rounded-lg bg-[#5B21D6] text-white flex items-center justify-center text-xs font-bold shrink-0">
@@ -381,18 +441,115 @@ export default function LessonPlayerModal({ chapterKey, onClose, onNextChapter, 
             </div>
           )}
 
-          {/* Interview Questions */}
-          {chapter.interviewQs && chapter.interviewQs.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-[13px] font-bold text-[#141A33] m-0">
-                Target Interview Questions to Practice
-              </h4>
-              <div className="space-y-1.5">
-                {chapter.interviewQs.map((q, idx) => (
-                  <div key={idx} className="p-2.5 bg-[#FAF9FE] rounded-lg border border-[#ECEAF9] text-[12px] text-[#181B24]">
-                    💬 "{q}"
-                  </div>
-                ))}
+          {/* Target Recruiter Interview Questions */}
+          {recruiterQuestions && recruiterQuestions.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-[13.5px] font-bold text-[#141A33] m-0">
+                    Target Recruiter Interview Questions
+                  </h4>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5B21D6] bg-[#F0EDFC] border border-[#D8D2FA] px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <span>✦</span>
+                    <span>AI Curated for 2026 Tech Hiring</span>
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#767B8A] font-medium">
+                  {recruiterQuestions.length} {recruiterQuestions.length === 1 ? 'question' : 'questions'} available
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {recruiterQuestions.map((qObj, idx) => {
+                  const qText = typeof qObj === 'string' ? qObj : qObj.question;
+                  const category = qObj.category || (idx % 2 === 0 ? 'Architecture & Scale' : 'Production Incident');
+                  const difficulty = qObj.difficulty || (idx === 0 ? 'Mid' : 'Senior');
+                  const recruiterTip = qObj.recruiterTip;
+                  const sampleAnswerHook = qObj.sampleAnswerHook;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3 bg-white rounded-xl border border-[#ECEAF9] shadow-xs hover:border-[#D8D2FA] transition-all space-y-2 group"
+                    >
+                      {/* Tag Row */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                              category.includes('Production')
+                                ? 'bg-[#FDF2F0] text-[#B3492F] border-[#F6D0CA]'
+                                : category.includes('Recruiter')
+                                ? 'bg-[#E5F6EE] text-[#0E8F5F] border-[#C7EADB]'
+                                : category.includes('Debugging')
+                                ? 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]'
+                                : category.includes('STAR')
+                                ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
+                                : 'bg-[#F0EDFC] text-[#5B21D6] border-[#D8D2FA]'
+                            }`}
+                          >
+                            {category}
+                          </span>
+                          <span className="text-[10px] font-semibold text-[#767B8A] bg-[#FAF9FE] px-1.5 py-0.5 rounded border border-[#ECEAF9]">
+                            {difficulty} Level
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleAskAi(qText)}
+                          className="text-[11px] font-semibold text-[#5B21D6] hover:text-[#4A3AE0] bg-[#FAF9FE] hover:bg-[#F0EDFC] px-2.5 py-1 rounded-lg border border-[#D8D2FA] transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                          title="Ask AI Tutor to coach you on answering this question"
+                        >
+                          <span>Practice with AI Tutor</span>
+                          <span>↗</span>
+                        </button>
+                      </div>
+
+                      {/* Question Text */}
+                      <div className="text-[12.5px] font-medium text-[#181B24] leading-snug">
+                        💬 "{qText}"
+                      </div>
+
+                      {/* Recruiter Tip & Evaluation Hook */}
+                      {recruiterTip && (
+                        <div className="p-2.5 bg-[#FAF9FE] rounded-lg border border-[#ECEAF9] text-[11.5px] space-y-1">
+                          <div className="flex items-start gap-1.5 text-[#5B21D6]">
+                            <span className="shrink-0 text-xs">💡</span>
+                            <span>
+                              <strong>What Recruiters Look For:</strong> {recruiterTip}
+                            </span>
+                          </div>
+                          {sampleAnswerHook && (
+                            <div className="flex items-start gap-1.5 text-[#0E8F5F] pl-4 text-[11px]">
+                              <span><strong>Winning Hook:</strong> "{sampleAnswerHook}"</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Resuggest / Load More Button */}
+              <div className="pt-1 flex items-center justify-between gap-3 flex-wrap">
+                <button
+                  type="button"
+                  disabled={loadingQuestions}
+                  onClick={handleLoadMoreQuestions}
+                  className="py-2 px-4 rounded-xl text-[12px] font-semibold bg-white hover:bg-[#F0EDFC] text-[#5B21D6] border border-[#D8D2FA] hover:border-[#5B21D6] shadow-xs cursor-pointer transition-all flex items-center gap-2 disabled:opacity-60"
+                >
+                  <span>{loadingQuestions ? '⏳' : '✦'}</span>
+                  <span>
+                    {loadingQuestions
+                      ? 'Consulting AI Recruiter for Fresh Questions...'
+                      : 'Ask AI for More Questions & Tips (Resuggest)'}
+                  </span>
+                </button>
+                <span className="text-[11px] text-[#767B8A]">
+                  Deduplicated · Covers varied seniority angles
+                </span>
               </div>
             </div>
           )}

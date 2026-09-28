@@ -204,6 +204,22 @@ exports.getAiTutorStatus = async (req, res) => {
   }
 };
 
+exports.getAiRecruiterQuestions = async (req, res) => {
+  try {
+    const { chapterKey, topicName, excludeQuestions, count } = req.body;
+    const data = await learningService.getRecruiterQuestionsForTopic({
+      chapterKey,
+      topicName,
+      excludeQuestions,
+      count: count ? Number(count) : 3,
+    });
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
 
 // ─── Step 3: Practice Drills ────────────────────────────────────────────────
 
@@ -309,10 +325,11 @@ exports.submitAssessment = async (req, res) => {
 exports.getReadinessVerdict = async (req, res) => {
   try {
     const userId = getUserId(req);
-    const { pathSlug } = req.query;
+    const { pathSlug, forceRefresh } = req.query;
     const data = await readinessService.calculateReadinessVerdict({
       userId,
       careerPathSlug: pathSlug || 'p1',
+      forceRefresh: forceRefresh === 'true' || forceRefresh === true,
     });
     res.json({ success: true, data });
   } catch (err) {

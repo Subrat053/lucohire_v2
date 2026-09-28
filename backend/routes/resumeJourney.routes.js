@@ -21,6 +21,7 @@ router.get('/padhaao/tracks', protect, journeyCtrl.getPadhaaoTracks);
 router.post('/padhaao/chapter/toggle', protect, journeyCtrl.toggleChapterCompletion);
 router.post('/padhaao/ai-explain', protect, journeyCtrl.getAiExplanation);
 router.get('/padhaao/ai-tutor/status', protect, journeyCtrl.getAiTutorStatus);
+router.post('/padhaao/ai-questions', protect, journeyCtrl.getAiRecruiterQuestions);
 
 // ─── Step 3: Practice Drills (Modes, Questions & Submissions) ────────────────
 router.get('/practice/modes', protect, journeyCtrl.getPracticeModes);

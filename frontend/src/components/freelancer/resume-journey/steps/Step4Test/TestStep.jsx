@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useResumeJourney } from '../../context/ResumeJourneyContext';
 import { TEST_QUESTION_BANK, SECONDS_PER_QUESTION } from '../../data/testData';
 import { resumeJourneyAPI } from '../../../../../services/resumeJourneyAPI';
@@ -19,9 +19,14 @@ export default function TestStep() {
   const [startTime, setStartTime] = useState(null);
   const [attemptId, setAttemptId] = useState(null);
   const [serverQuestions, setServerQuestions] = useState(null);
+  const [timeRemainingSeconds, setTimeRemainingSeconds] = useState(null);
+  const [questionReviews, setQuestionReviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingTest, setIsLoadingTest] = useState(false);
 
-  // Extract test questions for selected career path(s)
+  const activePathSlug = selectedPaths?.[0] || 'p1';
+
+  // Fallback questions for offline resilience
   const fallbackQuestions = useMemo(() => {
     let pool = [];
     selectedPaths.forEach((pathId) => {
@@ -37,50 +42,81 @@ export default function TestStep() {
   }, [selectedPaths]);
 
   const questions = serverQuestions && serverQuestions.length > 0 ? serverQuestions : fallbackQuestions;
-
-  const totalTimeSeconds = questions.length * (SECONDS_PER_QUESTION || 90);
+  const totalTimeSeconds = timeRemainingSeconds || (questions.length * (SECONDS_PER_QUESTION || 90));
 
   const handleStartTest = async () => {
+    setIsLoadingTest(true);
     setAnswers({});
     setFlags({});
     setCurrentQIndex(0);
     setStartTime(Date.now());
+    setQuestionReviews([]);
 
-    // Try starting server-authoritative assessment attempt
     try {
-      const res = await resumeJourneyAPI.startAssessment(selectedPaths[0] || 'p1');
+      const res = await resumeJourneyAPI.startAssessment(activePathSlug);
       if (res?.data?.success && res.data.data) {
-        setAttemptId(res.data.data.attemptId);
-        if (Array.isArray(res.data.data.questions) && res.data.data.questions.length > 0) {
+        const d = res.data.data;
+        setAttemptId(d.attemptId);
+        if (d.timeRemainingSeconds) {
+          setTimeRemainingSeconds(d.timeRemainingSeconds);
+        }
+        if (Array.isArray(d.questions) && d.questions.length > 0) {
           setServerQuestions(
-            res.data.data.questions.map((q) => ({
-              id: q.id,
-              scenario: q.text || q.scenario,
+            d.questions.map((q, idx) => ({
+              id: q.id || q.questionId,
+              orderIndex: q.orderIndex ?? idx,
+              scenario: q.scenario || q.text,
               options: q.options || [],
-              topic: q.topicName || q.topic || 'Architecture',
+              topic: q.topic || q.topicName || 'System Architecture',
+              difficulty: q.difficulty || 'medium',
               codeSnippet: q.codeSnippet,
             }))
           );
         }
-      }
-    } catch {
-      // Local fallback in case of network issue
-    }
 
-    setViewState('running');
+        // Restore previous session if resumed
+        if (d.isResumed) {
+          if (d.existingAnswers) {
+            const restoredAnswers = {};
+            d.questions.forEach((q, idx) => {
+              const qId = q.id || q.questionId;
+              if (d.existingAnswers[qId] !== undefined) {
+                restoredAnswers[idx] = d.existingAnswers[qId];
+              }
+            });
+            setAnswers(restoredAnswers);
+          }
+          if (d.existingFlags) {
+            const restoredFlags = {};
+            d.questions.forEach((q, idx) => {
+              const qId = q.id || q.questionId;
+              if (d.existingFlags[qId]) {
+                restoredFlags[idx] = true;
+              }
+            });
+            setFlags(restoredFlags);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[TestStep] Using local assessment question bank:', err.message);
+    } finally {
+      setIsLoadingTest(false);
+      setViewState('running');
+    }
   };
 
   const handlePickAnswer = (qIdx, optIdx) => {
     setAnswers((prev) => ({ ...prev, [qIdx]: optIdx }));
 
-    // Sync answer to server attempt if attemptId exists
+    // Quietly sync answer to server in background
     const q = questions[qIdx];
     if (attemptId && q?.id) {
       resumeJourneyAPI.saveAssessmentAnswer({
         attemptId,
         questionId: q.id,
         selectedOptionIndex: optIdx,
-        isFlagged: !!flags[qIdx],
+        isFlagged: Boolean(flags[qIdx]),
       }).catch(() => {});
     }
   };
@@ -106,7 +142,7 @@ export default function TestStep() {
 
     const timeUsed = startTime ? Math.round((Date.now() - startTime) / 1000) : 180;
 
-    // Try server assessment submission first
+    // Server-Authoritative Assessment Submission
     if (attemptId) {
       try {
         const payloadAnswers = {};
@@ -125,25 +161,31 @@ export default function TestStep() {
           const d = res.data.data;
           updateTestResults({
             score: d.score,
-            total: d.totalQuestions || questions.length,
+            total: d.total || questions.length,
             timeUsed: d.timeUsedSeconds || timeUsed,
             topicBreakdown: d.topicBreakdown || {},
             weakTopics: d.weakTopics || [],
           });
+
+          if (Array.isArray(d.questionReviews)) {
+            setQuestionReviews(d.questionReviews);
+          }
+
           refreshJourneyState?.();
           setIsSubmitting(false);
           setViewState('results');
           return;
         }
-      } catch {
-        // Fallback to client-side scoring
+      } catch (err) {
+        console.warn('[TestStep] Server grading failed, falling back to client scoring:', err.message);
       }
     }
 
-    // Client-side fallback scoring
+    // Client-side fallback scoring if offline
     let correctCount = 0;
     const topicBreakdown = {};
     const weakTopics = [];
+    const localReviews = [];
 
     questions.forEach((q, idx) => {
       const isCorrect = answers[idx] === q.correct;
@@ -159,6 +201,18 @@ export default function TestStep() {
       } else {
         weakTopics.push(topic);
       }
+
+      localReviews.push({
+        orderIndex: idx,
+        questionId: q.id || `local-${idx}`,
+        topic,
+        scenario: q.scenario,
+        options: q.options || [],
+        selectedOptionIndex: answers[idx] ?? null,
+        correctOptionIndex: q.correct ?? 0,
+        isCorrect,
+        explain: q.explanation || q.explain || '',
+      });
     });
 
     updateTestResults({
@@ -168,6 +222,7 @@ export default function TestStep() {
       topicBreakdown,
       weakTopics: [...new Set(weakTopics)],
     });
+    setQuestionReviews(localReviews);
 
     setIsSubmitting(false);
     setViewState('results');
@@ -189,10 +244,10 @@ export default function TestStep() {
                   Step 4 of 5 · Test Karo
                 </span>
                 <h2 className="text-[20px] sm:text-[24px] font-bold text-[#141A33] mt-2 m-0" style={{ fontFamily: 'Fraunces, serif' }}>
-                  Official Technical Assessment
+                  Server-Authoritative Technical Assessment
                 </h2>
                 <p className="text-[12.5px] text-[#767B8A] mt-1 m-0">
-                  A timed assessment verifying your ability to reason about production code, architecture tradeoffs, and edge cases.
+                  A proctored, server-timed technical exam measuring production code reasoning, concurrency, and architecture trade-offs across your domain.
                 </p>
               </div>
 
@@ -200,20 +255,20 @@ export default function TestStep() {
               <div className="p-4 bg-[#FAF9FE] border border-[#ECEAF9] rounded-xl space-y-2.5 text-[12.5px] text-[#181B24]">
                 <div className="flex items-center gap-2 font-bold text-[#141A33]">
                   <span>📋</span>
-                  <span>Assessment Rules &amp; Structure:</span>
+                  <span>Assessment Structure &amp; Honor Code:</span>
                 </div>
                 <ul className="space-y-1.5 pl-5 list-disc text-[#767B8A]">
-                  <li><strong>{questions.length} questions</strong> tailored to your selected career path</li>
-                  <li><strong>90 seconds per question</strong> ({Math.round(totalTimeSeconds / 60)} minutes total timer)</li>
-                  <li>No negative marking; answer every question</li>
-                  <li>Flag questions anytime and jump between questions via the Question Palette</li>
-                  <li>Scoring 70%+ unlocks the <strong>LucoHire Verified Ready</strong> credential</li>
+                  <li><strong>{questions.length} Scenario Questions</strong> loaded directly from the PostgreSQL assessment bank</li>
+                  <li><strong>Strict Server-Authoritative Timer:</strong> {Math.round(totalTimeSeconds / 60)} minutes total (~90s per question)</li>
+                  <li><strong>Formal Examination Flow:</strong> Correctness is masked server-side during the active test; your choices are quietly saved in real-time</li>
+                  <li><strong>Question Palette:</strong> Navigate freely and toggle flags to review questions prior to submitting</li>
+                  <li><strong>Passing Benchmark:</strong> Scoring <strong>70%+</strong> unlocks the official <strong>LucoHire Verified Ready</strong> credential in Step 5</li>
                 </ul>
               </div>
 
               <div className="p-3 bg-[#E5F6EE]/40 border border-[#0E8F5F]/20 rounded-xl flex items-center gap-2.5 text-[11.5px] text-[#0E8F5F] font-medium">
                 <span>💡</span>
-                <span>Your test score dynamically feeds into Step 5's composite readiness evaluation and 30-day action plan.</span>
+                <span>All assessment answers directly feed into your composite readiness calculation and Step 5 30-day action plan.</span>
               </div>
             </div>
 
@@ -229,12 +284,12 @@ export default function TestStep() {
                   <span className="font-bold text-[#141A33]">{questions.length} Questions</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#767B8A]">Time Limit</span>
+                  <span className="text-[#767B8A]">Total Time Allowed</span>
                   <span className="font-bold text-[#5B21D6]">{Math.round(totalTimeSeconds / 60)} Minutes</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#767B8A]">Question Pace</span>
-                  <span className="font-bold text-[#141A33]">90s / Question</span>
+                  <span className="text-[#767B8A]">Pace Guidance</span>
+                  <span className="font-bold text-[#141A33]">~90s / Question</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#767B8A]">Passing Benchmark</span>
@@ -242,17 +297,30 @@ export default function TestStep() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#767B8A]">Format</span>
-                  <span className="font-bold text-[#141A33]">MCQ + Production Code</span>
+                  <span className="font-bold text-[#141A33]">Multiple-Choice Scenarios</span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={handleStartTest}
-                className="w-full py-3 px-4 rounded-xl bg-[#5B21D6] hover:bg-[#4A3AE0] text-white font-semibold text-[13px] shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                disabled={isLoadingTest}
+                className="w-full py-3 px-4 rounded-xl bg-[#5B21D6] hover:bg-[#4A3AE0] text-white font-semibold text-[13px] shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                <span>Start Official Assessment Now</span>
-                <span>→</span>
+                {isLoadingTest ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    <span>Initiating Proctored Attempt...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Start Official Assessment Now</span>
+                    <span>→</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -260,7 +328,7 @@ export default function TestStep() {
       )}
 
       {/* Running View */}
-      {viewState === 'running' && (
+      {viewState === 'running' && questions[currentQIndex] && (
         <TestRunnerCard
           questions={questions}
           currentIndex={currentQIndex}
@@ -272,6 +340,7 @@ export default function TestStep() {
           onPromptSubmit={() => setShowSubmitModal(true)}
           totalSeconds={totalTimeSeconds}
           onTimeExpired={handleConfirmSubmit}
+          isSubmitting={isSubmitting}
         />
       )}
 
@@ -280,8 +349,9 @@ export default function TestStep() {
         <TestResultsCard
           score={testState?.score || 0}
           total={testState?.total || questions.length}
-          timeUsed={testState?.timeUsed || 240}
+          timeUsed={testState?.timeUsed || 180}
           topicBreakdown={testState?.topicBreakdown || {}}
+          questionReviews={questionReviews}
           onProceedToVerdict={() => goToStep(5)}
           onRetake={handleStartTest}
         />
@@ -295,6 +365,7 @@ export default function TestStep() {
           flaggedCount={flaggedCount}
           onConfirm={handleConfirmSubmit}
           onCancel={() => setShowSubmitModal(false)}
+          isSubmitting={isSubmitting}
         />
       )}
 

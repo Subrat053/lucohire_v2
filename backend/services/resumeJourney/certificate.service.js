@@ -8,6 +8,32 @@ function generateVerificationCode(userId, pathSlug) {
   return `LH-VER-${year}-${hash.slice(0, 6)}`;
 }
 
+async function resolveCandidateName(userId, initialUser = null) {
+  if (initialUser?.name && initialUser.name.trim()) {
+    return initialUser.name.trim();
+  }
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        providerProfileIdRecord: {
+          select: { profileName: true },
+        },
+      },
+    });
+    const candidateName =
+      user?.name?.trim() ||
+      user?.providerProfileIdRecord?.profileName?.trim() ||
+      user?.providerProfileIdRecord?.name?.trim() ||
+      'Verified Candidate';
+    return candidateName;
+  } catch {
+    return initialUser?.name || 'Verified Candidate';
+  }
+}
+
 async function getOrCreateCertificate({ userId, careerPathSlug = 'p1' }) {
   const careerPath = await prisma.careerPath.findUnique({
     where: { slug: careerPathSlug },
@@ -31,10 +57,14 @@ async function getOrCreateCertificate({ userId, careerPathSlug = 'p1' }) {
   });
 
   if (existingCert) {
+    const candidateName =
+      existingCert.metadata?.candidateName ||
+      (await resolveCandidateName(userId, existingCert.user));
+
     return {
       certificateId: existingCert.id,
       verificationId: existingCert.verificationId,
-      candidateName: existingCert.user?.name || 'Verified Freelancer',
+      candidateName,
       targetRole: existingCert.targetRole,
       compositeScore: existingCert.compositeScore,
       assessmentScore: existingCert.assessmentScore,
@@ -55,8 +85,9 @@ async function getOrCreateCertificate({ userId, careerPathSlug = 'p1' }) {
     throw new Error('Candidate does not yet meet the 70% composite benchmark to unlock official certificate.');
   }
 
-  const roleInfo = ROLE_BY_PATH[careerPathSlug] || ROLE_BY_PATH.p1;
+  const roleInfo = ROLE_BY_PATH[careerPathSlug] || { role: careerPath.title || 'Software Developer' };
   const verificationId = generateVerificationCode(userId, careerPathSlug);
+  const candidateName = await resolveCandidateName(userId);
 
   const newCert = await prisma.journeyCertificate.create({
     data: {
@@ -70,6 +101,7 @@ async function getOrCreateCertificate({ userId, careerPathSlug = 'p1' }) {
       issuedAt: new Date(),
       status: 'active',
       metadata: {
+        candidateName,
         careerPathSlug,
         bandLabel: readiness.bandLabel,
       },
@@ -82,7 +114,7 @@ async function getOrCreateCertificate({ userId, careerPathSlug = 'p1' }) {
   return {
     certificateId: newCert.id,
     verificationId: newCert.verificationId,
-    candidateName: newCert.user?.name || 'Verified Freelancer',
+    candidateName,
     targetRole: newCert.targetRole,
     compositeScore: newCert.compositeScore,
     assessmentScore: newCert.assessmentScore,
@@ -102,7 +134,13 @@ async function verifyPublicCertificate(verificationId) {
     where: { verificationId: verificationId.trim().toUpperCase() },
     include: {
       user: {
-        select: { name: true },
+        select: {
+          id: true,
+          name: true,
+          providerProfileIdRecord: {
+            select: { profileName: true },
+          },
+        },
       },
       careerPath: {
         select: { title: true, slug: true },
@@ -122,14 +160,22 @@ async function verifyPublicCertificate(verificationId) {
     };
   }
 
+  const candidateName =
+    cert.metadata?.candidateName ||
+    cert.user?.name?.trim() ||
+    cert.user?.providerProfileIdRecord?.profileName?.trim() ||
+    cert.user?.providerProfileIdRecord?.name?.trim() ||
+    'Verified Candidate';
+
   return {
     valid: true,
     verificationId: cert.verificationId,
-    candidateName: cert.user?.name || 'Verified Candidate',
+    candidateName,
     targetRole: cert.targetRole,
     careerPath: cert.careerPath?.title || 'Engineering',
     compositeScore: cert.compositeScore,
     assessmentScore: cert.assessmentScore,
+    atsScore: cert.atsScore,
     issuedAt: cert.issuedAt,
     status: 'active',
     issuer: 'LucoHire Technical Assessment Authority',
@@ -140,3 +186,4 @@ module.exports = {
   getOrCreateCertificate,
   verifyPublicCertificate,
 };
+

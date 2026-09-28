@@ -23,6 +23,8 @@ export const resumeJourneyAPI = {
     API.post('/v2/freelancer/journey/padhaao/chapter/toggle', { chapterKey, chapterId }),
   explainConcept: (data) =>
     API.post('/v2/freelancer/journey/padhaao/ai-explain', data),
+  getRecruiterQuestions: (data) =>
+    API.post('/v2/freelancer/journey/padhaao/ai-questions', data),
 
   // Step 3: Practice Drills
   getPracticeModes: () => API.get('/v2/freelancer/journey/practice/modes'),
@@ -41,8 +43,8 @@ export const resumeJourneyAPI = {
     API.post('/v2/freelancer/journey/assessment/submit', data),
 
   // Step 5: Bata Do (Readiness, Certificate & Leads)
-  getReadiness: (pathSlug) =>
-    API.get('/v2/freelancer/journey/readiness', { params: { pathSlug } }),
+  getReadiness: (pathSlug, options = {}) =>
+    API.get('/v2/freelancer/journey/readiness', { params: { pathSlug, ...options } }),
   getCertificate: (pathSlug) =>
     API.get('/v2/freelancer/journey/certificate', { params: { pathSlug } }),
   getLeadEligibility: (category) =>
